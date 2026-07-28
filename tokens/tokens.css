@@ -1,5 +1,5 @@
 /* ============================================================
-   BATHONG. — design tokens
+   BATHONG. - design tokens
    Source of truth: tokens/tokens.json
    Load this before css/bathong.css.
 
@@ -32,7 +32,7 @@
   --font-body:    'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
   --font-mono:    'Space Mono', 'Courier New', monospace;
 
-  /* display — always uppercase, tight */
+  /* display - always uppercase, tight */
   --text-mark:      clamp(4.2rem, 17.5vw, 15.5rem);  /* the wordmark, hero only */
   --text-display-1: clamp(2.2rem, 6vw, 4.6rem);      /* section titles */
   --text-display-2: clamp(1.3rem, 2.6vw, 2rem);      /* story / card titles */
@@ -71,7 +71,7 @@
   --settle: .6s ease;        /* reveals */
 }
 
-/* the film-grain overlay — apply .grain to <body> */
+/* the film-grain overlay - apply .grain to <body> */
 .grain::after {
   content: "";
   position: fixed;

@@ -1,11 +1,11 @@
-# Bathong. — brand guidelines (the one-pager)
+# Bathong. - brand guidelines (the one-pager)
 
 The condensed rules. The full reasoning lives in [BRIEF.md](BRIEF.md); the living
 version of everything below is [styleguide/index.html](../styleguide/index.html).
 
 ## The name
 
-**Bathong** — Sepedi / Setswana, from *batho* (people) with the locative *-ng*.
+**Bathong** - Sepedi / Setswana, from *batho* (people) with the locative *-ng*.
 Two meanings, both intended: literally "among the people", colloquially the
 exclamation of astonishment. Say it in copy unitalicised, like Pitori and 012.
 
@@ -19,7 +19,7 @@ exclamation of astonishment. Say it in copy unitalicised, like Pitori and 012.
 The full stop is always jacaranda. The exclamation never appears in the
 masthead or on anything that goes to a bank, CIPC or SARS.
 
-## Colour — four plates, no more
+## Colour - four plates, no more
 
 | Plate | Hex | Use |
 |---|---|---|
@@ -30,12 +30,12 @@ masthead or on anything that goes to a bank, CIPC or SARS.
 
 Surface budget per page: roughly paper 60 / ink 30 / jacaranda 8 / signal 2.
 
-## Type — three faces, three jobs
+## Type - three faces, three jobs
 
-- **Archivo Black** — display. Always uppercase, tracking −0.03em, leading 0.9.
+- **Archivo Black** - display. Always uppercase, tracking -0.03em, leading 0.9.
   The wordmark is set in nothing else, ever.
-- **Space Grotesk** — body. Ledes, essays, wall text.
-- **Space Mono** — the editorial furniture: captions, labels, metadata, frame
+- **Space Grotesk** - body. Ledes, essays, wall text.
+- **Space Mono** - the editorial furniture: captions, labels, metadata, frame
   numbers, dictionary entries, tickers. This layer is what makes Bathong read
   as contact sheets and archive cards. If a caption is not in mono, it is wrong.
 
@@ -49,10 +49,10 @@ Files: `assets/logo/punch-dot.svg`, `assets/logo/avatar.svg`.
 ## Photography treatment
 
 1. **Shown as shot.** No brand filters forced onto the photographs.
-2. **Colour lives in the frame** — borders, labels, tags — never on the work.
+2. **Colour lives in the frame** - borders, labels, tags - never on the work.
    Every photograph gets the 2px ink border and generous spacing.
 3. **Credit is non-negotiable.** Every appearance carries the maker's name.
-4. **The essay is the unit.** 12–20 frames, sequenced, short text. The feed is
+4. **The essay is the unit.** 12-20 frames, sequenced, short text. The feed is
    not the destination; the wall and the archive are.
 
 ## Texture
@@ -65,7 +65,7 @@ hard 10px offsets, like a print stacked on a print.
 
 Confident, warm, streetwise, precise. Short sentences. Local words used
 naturally and unitalicised. English base so the world can read it; Sepitori and
-Afrikaans appear the way they appear on the street — unforced. Every caption is
+Afrikaans appear the way they appear on the street - unforced. Every caption is
 a chance to make someone a better photographer.
 
 ## Never
