@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bathong. — Brand &amp; Design System · Doc 01</title>
+<meta name="description" content="The Bathong brand manual: name, colour, type, the dot, photography treatment, components, voice, don'ts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="../css/bathong.css">
+<style>
+  /* ---- manual chrome (page-specific, on top of the system) ---- */
+  .doc-head{
+    display:grid;grid-template-columns:1fr auto auto auto;border-bottom:var(--border-frame);
+    font-family:var(--font-mono);font-size:.7rem;letter-spacing:var(--track-label);text-transform:uppercase;
+    position:sticky;top:0;z-index:50;background:var(--paper);
+  }
+  .doc-head>span{padding:12px 18px;border-right:var(--border-frame);}
+  .doc-head>span:last-child{border-right:none;}
+  .doc-head .doc-id{background:var(--ink);color:var(--paper);}
+  @media(max-width:840px){.doc-head{grid-template-columns:1fr auto;} .doc-head>span:nth-child(3){display:none;}}
+
+  .manual-hero{padding:80px var(--space-4) 0;}
+  .manual-hero .rulebox{
+    margin-top:34px;border-top:var(--border-frame);border-bottom:var(--border-frame);
+    display:grid;grid-template-columns:1fr 1fr;
+  }
+  .rulebox>div{padding:24px 22px 28px;}
+  .rulebox>div:first-child{border-right:var(--border-frame);}
+  .rulebox .form{font-family:var(--font-display);font-size:clamp(2rem,5vw,3.4rem);letter-spacing:var(--track-tight);line-height:1;}
+  .rulebox .form .dot{color:var(--jacaranda);}
+  .rulebox .form .bang{color:var(--signal);-webkit-text-stroke:2px var(--ink);}
+  .rulebox p{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;line-height:1.9;margin-top:12px;color:var(--grey-ink);}
+  @media(max-width:840px){.rulebox{grid-template-columns:1fr;} .rulebox>div:first-child{border-right:none;border-bottom:var(--border-frame);}}
+
+  section.spec{padding:var(--space-6) var(--space-4);}
+  section.spec+section.spec{padding-top:0;}
+  section.spec.dark{background:var(--ink);color:var(--paper);padding-top:var(--space-6);}
+  section.spec.dark+section.spec{padding-top:var(--space-6);}
+
+  /* colour plates as test strips */
+  .plates{display:grid;grid-template-columns:repeat(4,1fr);border:var(--border-frame);}
+  .plate{border-right:var(--border-frame);cursor:copy;background:var(--paper);}
+  .plate:last-child{border-right:none;}
+  .plate .chip{height:130px;border-bottom:var(--border-frame);position:relative;}
+  .plate .chip .strip{position:absolute;inset:auto 0 0 0;height:26px;display:flex;}
+  .plate .chip .strip i{flex:1;}
+  .plate dl{padding:14px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;line-height:1.8;}
+  .plate dt{font-family:var(--font-display);font-size:.95rem;letter-spacing:0;}
+  .plate dd{color:var(--grey-ink);}
+  .plate dd.hex{color:var(--jacaranda-deep);}
+  .plate:active .chip{opacity:.85;}
+  @media(max-width:840px){.plates{grid-template-columns:1fr 1fr;} .plate:nth-child(2){border-right:none;} .plate:nth-child(-n+2){border-bottom:var(--border-frame);}}
+  .ratio-bar{display:flex;height:34px;border:var(--border-frame);margin-top:18px;}
+  .ratio-bar i{display:block;}
+  .ratio-note{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--grey-warm);margin-top:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+  /* type specimen */
+  .specimen{border:var(--border-frame);}
+  .specimen .row{display:grid;grid-template-columns:190px 1fr;border-bottom:var(--border-frame);}
+  .specimen .row:last-child{border-bottom:none;}
+  .specimen .meta{padding:16px;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--grey-warm);border-right:var(--border-frame);line-height:1.9;}
+  .specimen .meta b{color:var(--ink);font-weight:400;display:block;}
+  .specimen .sample{padding:16px;min-width:0;overflow:hidden;}
+  @media(max-width:840px){.specimen .row{grid-template-columns:1fr;} .specimen .meta{border-right:none;border-bottom:1px dashed var(--grey-warm);}}
+
+  /* the dot sizes */
+  .dot-run{display:flex;align-items:flex-end;gap:34px;flex-wrap:wrap;border:var(--border-frame);padding:30px;background:var(--paper);}
+  .dot-run .d{background:var(--jacaranda);border-radius:18%;}
+  .dot-run figure{display:flex;flex-direction:column;align-items:center;gap:10px;margin:0;}
+  .dot-run figcaption{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-warm);}
+  .avatar{width:96px;height:96px;background:var(--ink);display:grid;place-items:center;}
+  .avatar .d{width:34px;height:34px;}
+
+  /* photography demo */
+  .photo-rules{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);align-items:start;}
+  @media(max-width:840px){.photo-rules{grid-template-columns:1fr;}}
+  .demo-ph{background-image:linear-gradient(135deg,#141313 0%,#3a3357 45%,#7B5CD6 100%);}
+  .demo-ph .slot{position:absolute;inset:0;display:grid;place-items:center;color:color-mix(in srgb,var(--paper) 55%,transparent);font-family:var(--font-mono);font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;}
+
+  /* component shelf */
+  .shelf{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);}
+  @media(max-width:840px){.shelf{grid-template-columns:1fr;}}
+  .shelf-item{min-width:0;}
+  .shelf-item h3{font-family:var(--font-mono);font-size:.72rem;letter-spacing:var(--track-label);text-transform:uppercase;font-weight:400;margin-bottom:14px;color:var(--grey-ghost);}
+  .shelf-item h3 b{color:var(--signal);font-weight:400;}
+  .shelf-item .stage{border:var(--hairline);padding:26px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;}
+  .shelf-item .stage.paper-stage{background:var(--paper);color:var(--ink);}
+
+  /* voice cards */
+  .voice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media(max-width:840px){.voice-grid{grid-template-columns:1fr;}}
+  .voice{border:var(--border-frame);padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--paper);}
+  .voice .where{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);}
+  .voice .say{font-size:1.05rem;font-weight:500;line-height:1.45;}
+  .voice .say .x{background:var(--signal);padding:0 4px;}
+  .voice .note{font-size:.82rem;color:var(--grey-ink);border-top:1px dashed var(--grey-warm);padding-top:12px;}
+
+  /* don'ts */
+  .donts{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  @media(max-width:840px){.donts{grid-template-columns:1fr 1fr;}}
+  @media(max-width:520px){.donts{grid-template-columns:1fr;}}
+  .dont{border:var(--border-frame);background:var(--paper);color:var(--ink);}
+  .dont .show{height:110px;display:grid;place-items:center;border-bottom:var(--border-frame);position:relative;overflow:hidden;}
+  .dont .show::after{content:"";position:absolute;left:-8%;right:-8%;top:50%;border-top:3px solid #C4392B;transform:rotate(-9deg);}
+  .dont p{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;padding:12px 14px;line-height:1.8;}
+  .dont .wrongmark{font-family:Georgia,'Times New Roman',serif;font-size:1.7rem;font-weight:700;}
+  .dont .gradtype{font-family:var(--font-display);font-size:1.7rem;background:linear-gradient(90deg,var(--jacaranda),var(--signal));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .dont .cameracon{font-size:2rem;}
+  .dont .bangmast{font-family:var(--font-display);font-size:1.5rem;letter-spacing:var(--track-tight);}
+  .dont .bangmast span{color:var(--jacaranda);}
+
+  .manual-foot{border-top:var(--border-frame);padding:26px var(--space-4);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:var(--font-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-warm);}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--ink);color:var(--signal);font-family:var(--font-mono);font-size:.72rem;
+    letter-spacing:.14em;text-transform:uppercase;padding:10px 18px;transition:transform var(--snap);z-index:100;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body class="grain">
+
+<div class="doc-head">
+  <span class="doc-id">Bathong. — Brand &amp; design system</span>
+  <span>Doc 01 · v1.0</span>
+  <span>28 Jul 2026</span>
+  <span>Pitori · 012</span>
+</div>
+
+<header class="manual-hero">
+  <p class="b-kicker"><b>Internal</b>&nbsp; For the founding circle and anyone who makes things carry the name</p>
+  <h1 class="b-mark b-mark--hero" style="font-size:clamp(3.4rem,13vw,11rem);margin-top:18px;">Bathong<span class="dot">.</span></h1>
+  <p class="b-lede" style="margin-top:22px;">One word, two meanings, one rule of punctuation. Everything in this document exists so the work — the photographs — never has to compete with the brand.</p>
+
+  <div class="rulebox">
+    <div>
+      <span class="form">Bathong<span class="dot">.</span></span>
+      <p>The mark. Full stop, always jacaranda.<br>Masthead · membership cards · exhibition walls · legal &amp; financial documents.<br>The mark states.</p>
+    </div>
+    <div>
+      <span class="form">Bathong<span class="bang">!</span></span>
+      <p>The voice. Campaign language, photocall posters, captions, the ticker, stickers, merch.<br>Never the masthead, never on paper that goes to a bank.<br>The street shouts.</p>
+    </div>
+  </div>
+</header>
+
+<section class="spec" id="name">
+  <div class="b-sechead">
+    <h2 class="b-display-1">The name<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 00 / Why this word</span>
+  </div>
+  <div class="photo-rules">
+    <div>
+      <p style="max-width:56ch;"><strong>Bathong</strong> — Sepedi / Setswana, from <em>batho</em>, people, with the locative <em>-ng</em>. Literally <strong>among the people</strong>: where street and documentary photography is made. Colloquially, the exclamation you let out when the street shows you something unbelievable — the sound of the decisive moment.</p>
+      <p style="max-width:56ch;margin-top:14px;color:var(--grey-ink);">It passes the street test: a word actually said in Pitori every day, not one invented in a boardroom. Local at first hearing, explainable to the world in one line. Say it in captions unitalicised, like Pitori and 012 — these are not foreign words here.</p>
+    </div>
+    <div class="b-dict b-dict--paper">
+      <span class="entry">bathong!</span> <span class="pos">excl. / loc.</span><br>
+      1. what you say when you can't believe what you're seeing.<br>
+      2. <i>ba·tho·ng</i>: among the people — where this work is made.<br>
+      3. a collective of photographers from Pretoria, for the world.
+      <br><br>
+      <span style="color:var(--grey-warm)">↳ The definition card is a portable asset: IG slide, wall text, tote, back of the membership card. See <b style="font-weight:400;color:var(--jacaranda-deep)">assets/dictionary-card.html</b>.</span>
+    </div>
+  </div>
+</section>
+
+<section class="spec" id="colour">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Colour<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 01 / Four plates, no more</span>
+  </div>
+  <div class="plates">
+    <button class="plate" data-hex="#141313" type="button" aria-label="Copy ink hex value">
+      <div class="chip" style="background:#141313;"><div class="strip"><i style="background:#141313"></i><i style="background:#2b2926"></i><i style="background:#3A3833"></i><i style="background:#4C493F"></i></div></div>
+      <dl><dt>Ink</dt><dd class="hex">#141313</dd><dd>The darkroom. Text, frames, dark sections.</dd></dl>
+    </button>
+    <button class="plate" data-hex="#F2EEE6" type="button" aria-label="Copy paper hex value">
+      <div class="chip" style="background:#F2EEE6;"><div class="strip"><i style="background:#F2EEE6"></i><i style="background:#E7E2D6"></i><i style="background:#CFCABF"></i><i style="background:#A09B90"></i></div></div>
+      <dl><dt>Paper</dt><dd class="hex">#F2EEE6</dd><dd>The print. Carries every page.</dd></dl>
+    </button>
+    <button class="plate" data-hex="#7B5CD6" type="button" aria-label="Copy jacaranda hex value">
+      <div class="chip" style="background:#7B5CD6;"><div class="strip"><i style="background:#7B5CD6"></i><i style="background:#6c4cc9"></i><i style="background:#5636B8"></i><i style="background:#472fa0"></i></div></div>
+      <dl><dt>Jacaranda</dt><dd class="hex">#7B5CD6 · #5636B8</dd><dd>Pretoria in October. The identity. Nobody else owns purple.</dd></dl>
+    </button>
+    <button class="plate" data-hex="#E8FF38" type="button" aria-label="Copy signal hex value">
+      <div class="chip" style="background:#E8FF38;"><div class="strip"><i style="background:#E8FF38"></i><i style="background:#dcf22e"></i><i style="background:#c8dd24"></i><i style="background:#aebf1c"></i></div></div>
+      <dl><dt>Signal</dt><dd class="hex">#E8FF38</dd><dd>Highveld flash. Accent only — never under long text.</dd></dl>
+    </button>
+  </div>
+  <div class="ratio-bar" aria-hidden="true">
+    <i style="flex:60;background:var(--paper);border-right:var(--border-frame);"></i>
+    <i style="flex:30;background:var(--ink);border-right:var(--border-frame);"></i>
+    <i style="flex:8;background:var(--jacaranda);border-right:var(--border-frame);"></i>
+    <i style="flex:2;background:var(--signal);"></i>
+  </div>
+  <p class="ratio-note"><span>Surface budget per page — paper 60 · ink 30 · jacaranda 8 · signal 2</span><span>Click a plate to copy its hex</span></p>
+</section>
+
+<section class="spec" id="type">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Type<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 02 / Three faces, three jobs</span>
+  </div>
+  <div class="specimen">
+    <div class="row">
+      <div class="meta"><b>Archivo Black</b>Display · uppercase<br>track −0.03em · lead 0.9<br>Titles &amp; the wordmark, nothing else</div>
+      <div class="sample"><span class="b-display-1">Marabastad,<br>Still Here<span style="color:var(--jacaranda)">.</span></span></div>
+    </div>
+    <div class="row">
+      <div class="meta"><b>Space Grotesk</b>Body · 400 / 500 / 700<br>lead 1.5<br>Ledes, essays, benefits, wall text</div>
+      <div class="sample"><p class="b-lede" style="max-width:44ch;">Photography is not taken of a city. It is made among its people — on its pavements, rooftops and taxi ranks, in its first and last light.</p></div>
+    </div>
+    <div class="row">
+      <div class="meta"><b>Space Mono</b>Furniture · caption &amp; micro<br>uppercase · track 0.1–0.22em<br>Captions, labels, metadata, dictionary entries</div>
+      <div class="sample">
+        <p class="b-caption" style="margin-bottom:8px;">Essay 001 · FR 07/36 · Boom Street, Marabastad · 06:14</p>
+        <p class="b-caption" style="color:var(--jacaranda-deep);">© Member name — credit is non-negotiable, everywhere</p>
+      </div>
+    </div>
+  </div>
+  <p style="max-width:62ch;margin-top:18px;font-size:.9rem;color:var(--grey-ink);">The mono layer is the tell. It is what makes a Bathong page read as contact sheets and archive cards instead of a startup landing page. If a caption, date, frame number or credit is not in Space Mono, it is wrong.</p>
+</section>
+
+<section class="spec" id="dot">
+  <div class="b-sechead">
+    <h2 class="b-display-1">The dot<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 03 / The recurring device</span>
+  </div>
+  <div class="dot-run">
+    <figure><span class="d" style="width:10px;height:10px;"></span><figcaption>Inline / 10</figcaption></figure>
+    <figure><span class="d" style="width:18px;height:18px;"></span><figcaption>Section titles / 18</figcaption></figure>
+    <figure><span class="d" style="width:34px;height:34px;"></span><figcaption>Watermark / 34</figcaption></figure>
+    <figure><span class="d" style="width:64px;height:64px;"></span><figcaption>Standalone / 64</figcaption></figure>
+    <figure><span class="avatar"><span class="d"></span></span><figcaption>Avatar — ink field</figcaption></figure>
+    <figure style="flex:1;min-width:220px;align-items:flex-start;"><figcaption style="text-align:left;line-height:1.9;">The full stop from the wordmark, cut loose. It ends the mark, punctuates section titles, and stands alone as avatar or watermark where the name won't fit. Always jacaranda; on jacaranda ground it flips to paper. SVG at <b>assets/logo/punch-dot.svg</b>.</figcaption></figure>
+  </div>
+</section>
+
+<section class="spec" id="photo">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Photography<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 04 / The work comes first</span>
+  </div>
+  <div class="photo-rules">
+    <figure class="b-frame demo-ph" style="margin:0;">
+      <span class="b-tag">Photocall open</span>
+      <span class="slot">Lead frame — the photograph leads</span>
+      <figcaption><span>Essay 001 · Marabastad</span><span class="b-credit">Member name</span></figcaption>
+    </figure>
+    <ul class="b-ruled">
+      <li><span class="num">P/01</span><div>Shown as shot<small>No brand filters forced onto photographs. Grading choices belong to the photographer and the group edit.</small></div></li>
+      <li><span class="num">P/02</span><div>Colour lives in the frame<small>Borders, labels, tags — never on top of the work. The 2px ink border is the brand's grip on the image.</small></div></li>
+      <li><span class="num">P/03</span><div>Credit is non-negotiable<small>Every appearance of a photograph carries its maker's name. Site, IG, print, wall, everywhere.</small></div></li>
+      <li><span class="num">P/04</span><div>Essays are the unit<small>12–20 frames, sequenced, with a short text. The feed is not the destination; the wall and the archive are.</small></div></li>
+    </ul>
+  </div>
+</section>
+
+<section class="spec dark" id="components">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Components<span style="color:var(--signal)">.</span></h2>
+    <span class="idx">Sec 05 / css/bathong.css</span>
+  </div>
+  <div class="shelf">
+    <div class="shelf-item">
+      <h3><b>.b-btn</b> — actions</h3>
+      <div class="stage paper-stage">
+        <a class="b-btn" href="#components">Reserve a place →</a>
+        <a class="b-btn b-btn--signal" href="#components">Become a member →</a>
+        <a class="b-btn b-btn--ghost" href="#components">Read the essay</a>
+      </div>
+    </div>
+    <div class="shelf-item">
+      <h3><b>.b-tag</b> + <b>.b-kicker</b> — furniture</h3>
+      <div class="stage paper-stage">
+        <span class="b-tag">Photocall open</span>
+        <span class="b-tag">NPC funded</span>
+        <p class="b-kicker" style="width:100%;"><b>Pitori · 012</b>&nbsp; Street &amp; documentary photography</p>
+      </div>
+    </div>
+    <div class="shelf-item">
+      <h3><b>.b-dict</b> — the definition card, both grounds</h3>
+      <div class="stage" style="flex-direction:column;">
+        <div class="b-dict" style="width:100%;"><span class="entry">bathong!</span> <span class="pos">excl. / loc.</span><br>1. what you say when you can't believe what you're seeing.<br>2. among the people — where this work is made.</div>
+      </div>
+    </div>
+    <div class="shelf-item">
+      <h3><b>.b-card--member</b> — the membership card</h3>
+      <div class="stage paper-stage">
+        <div class="b-card--member" style="max-width:320px;width:100%;">
+          <div class="b-mark" style="font-size:1.9rem;">BATHONG<span class="dot">.</span></div>
+          <div class="card-line" style="margin-top:4px;">Member № 0001 · Pitori · 012</div>
+          <div class="card-line" style="margin-top:18px;padding-top:16px;border-top:var(--hairline);">Supported by the Press Club NPC</div>
+        </div>
+      </div>
+    </div>
+    <div class="shelf-item">
+      <h3><b>.b-field</b> — forms</h3>
+      <div class="stage paper-stage" style="flex-direction:column;">
+        <input class="b-field" type="text" placeholder="Name" aria-label="Name example field">
+        <input class="b-field" type="email" placeholder="Email" aria-label="Email example field">
+      </div>
+    </div>
+    <div class="shelf-item">
+      <h3><b>.b-ticker</b> — the shout, in motion</h3>
+      <div class="stage" style="padding:0;border:var(--border-frame);border-color:var(--grey-line);display:block;">
+        <div class="b-ticker"><div class="track">
+          BATHONG! <b>●</b> AMONG THE PEOPLE <b>●</b> PITORI <b>●</b> 012 <b>●</b> NEXT WALK 29 AUG <b>●</b> ROOFTOPS <b>●</b> SALVOKOP <b>●</b> MARABASTAD <b>●</b>&nbsp;
+          BATHONG! <b>●</b> AMONG THE PEOPLE <b>●</b> PITORI <b>●</b> 012 <b>●</b> NEXT WALK 29 AUG <b>●</b> ROOFTOPS <b>●</b> SALVOKOP <b>●</b> MARABASTAD <b>●</b>&nbsp;
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="spec" id="voice">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Voice<span style="color:var(--jacaranda)">.</span></h2>
+    <span class="idx">Sec 06 / Confident, warm, streetwise, precise</span>
+  </div>
+  <div class="voice-grid">
+    <div class="voice">
+      <span class="where">Event post — the voice, with the bang</span>
+      <p class="say">Saturday, first light, three layers of the capital. Bring one lens. <span class="x">Bathong!</span></p>
+      <p class="note">Short sentences. Local words unitalicised. The exclamation belongs here.</p>
+    </div>
+    <div class="voice">
+      <span class="where">Rejection note — teach, don't lecture</span>
+      <p class="say">Not this time — and here is why, frame by frame. Shoot the next call.</p>
+      <p class="note">Every caption and every no is a chance to make someone a better photographer.</p>
+    </div>
+    <div class="voice">
+      <span class="where">Exhibition wall text — the mark's register</span>
+      <p class="say">Boom Street has been demolished three times and photographed through all of them.</p>
+      <p class="note">Calm, factual, no exclamation. On the wall the work does the shouting.</p>
+    </div>
+  </div>
+</section>
+
+<section class="spec dark" id="donts" style="padding-top:var(--space-6);">
+  <div class="b-sechead">
+    <h2 class="b-display-1">Never<span style="color:var(--signal)">.</span></h2>
+    <span class="idx">Sec 07 / Four ways to break the brand</span>
+  </div>
+  <div class="donts">
+    <div class="dont">
+      <div class="show"><span class="wrongmark">Bathong.</span></div>
+      <p>Never set the wordmark in another typeface. Archivo Black or nothing.</p>
+    </div>
+    <div class="dont">
+      <div class="show"><span class="gradtype">STORIES</span></div>
+      <p>No gradients on type. Plates are flat; the grain is the only texture.</p>
+    </div>
+    <div class="dont">
+      <div class="show"><span class="cameracon">📷 ◎ ⌖</span></div>
+      <p>No camera iconography — apertures, lenses, focus brackets. The work is the imagery.</p>
+    </div>
+    <div class="dont">
+      <div class="show"><span class="bangmast">BATHONG<span>!</span></span></div>
+      <p>Never the exclamation in the masthead or on legal &amp; financial documents. The mark states.</p>
+    </div>
+  </div>
+</section>
+
+<div class="manual-foot">
+  <span>Bathong. — Doc 01 · Brand &amp; design system · v1.0</span>
+  <span>Tokens: tokens/tokens.json</span>
+  <span>Bathong! — among the people</span>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // click a plate → copy hex
+  const toast = document.getElementById('toast');
+  let toastTimer;
+  document.querySelectorAll('.plate').forEach(p => p.addEventListener('click', () => {
+    const hex = p.dataset.hex;
+    navigator.clipboard && navigator.clipboard.writeText(hex);
+    toast.textContent = hex + ' copied';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+  }));
+</script>
+</body>
+</html>

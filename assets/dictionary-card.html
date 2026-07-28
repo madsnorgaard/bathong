@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bathong. — dictionary card (1080×1080 export)</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* The portable definition device, sized for Instagram (1080×1080).
+     Export: open this file, screenshot the card at 100% zoom — or in
+     DevTools set the viewport to 1080×1080 and capture.
+     Variants: add class "paper" or "jacaranda" to <body>. */
+  :root{
+    --ink:#141313; --paper:#F2EEE6; --jacaranda:#7B5CD6; --jacaranda-deep:#5636B8;
+    --signal:#E8FF38; --grey-fog:#CFCABF; --grey-line:#3A3833;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{display:grid;place-items:center;min-height:100vh;background:#888;}
+  .card{
+    width:1080px;height:1080px;background:var(--ink);color:var(--grey-fog);
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:90px;position:relative;overflow:hidden;
+    font-family:'Space Mono',monospace;
+  }
+  .card::after{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .top{display:flex;justify-content:space-between;align-items:flex-start;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:#A09B90;}
+  .entry{font-family:'Archivo Black',sans-serif;font-size:150px;letter-spacing:-.02em;color:var(--paper);line-height:.9;}
+  .entry .dot{color:var(--jacaranda);}
+  .pron{font-size:30px;margin-top:26px;color:#A09B90;}
+  .pron i{color:var(--signal);font-style:italic;}
+  .defs{font-size:34px;line-height:1.85;border-top:1px solid var(--grey-line);padding-top:44px;}
+  .defs b{color:var(--paper);font-weight:400;}
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:#A09B90;}
+  .d{width:44px;height:44px;background:var(--jacaranda);border-radius:18%;}
+
+  body.paper .card{background:var(--paper);color:#4C493F;}
+  body.paper .entry{color:var(--ink);}
+  body.paper .pron,body.paper .top,body.paper .foot{color:#8D887E;}
+  body.paper .pron i{color:var(--jacaranda-deep);}
+  body.paper .defs{border-top-color:var(--ink);}
+  body.paper .defs b{color:var(--ink);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="top"><span>Bathong. — Pitori · 012</span><span>Est. 2026</span></div>
+    <div>
+      <div class="entry">ba·thong<span class="dot">!</span></div>
+      <div class="pron"><i>excl. / loc.</i> — Sepedi / Setswana, from batho: people</div>
+    </div>
+    <div class="defs">
+      <b>1.</b> what you say when you can't believe what you're seeing.<br>
+      <b>2.</b> among the people — where this work is made.<br>
+      <b>3.</b> a collective of photographers from Pretoria, for the world.
+    </div>
+    <div class="foot"><span>Street &amp; documentary photography collective</span><span class="d"></span></div>
+  </div>
+</body>
+</html>

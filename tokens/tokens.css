@@ -1,0 +1,90 @@
+/* ============================================================
+   BATHONG. — design tokens
+   Source of truth: tokens/tokens.json
+   Load this before css/bathong.css.
+
+   Rule of thumb for the palette:
+   paper carries the page, ink carries the words,
+   jacaranda is the identity, signal is the flash.
+   Roughly 60 / 30 / 8 / 2. Signal is never a background
+   for long text.
+   ============================================================ */
+
+:root {
+  /* ---- plates ------------------------------------------------ */
+  --ink:            #141313;  /* near-black. the darkroom. */
+  --ink-lift:       #1d1c1a;  /* hover state on ink surfaces */
+  --paper:          #F2EEE6;  /* warm off-white. the print. */
+  --paper-dim:      #E7E2D6;  /* recessed panels on paper */
+  --jacaranda:      #7B5CD6;  /* Pretoria in October. the identity colour. */
+  --jacaranda-deep: #5636B8;  /* links, hover, small type on paper */
+  --signal:         #E8FF38;  /* highveld flash. accent only. */
+
+  /* ---- greys (warm, derived from ink/paper) ------------------ */
+  --grey-warm:  #8D887E;  /* metadata on paper */
+  --grey-ink:   #4C493F;  /* body text at reduced emphasis */
+  --grey-line:  #3A3833;  /* hairlines on ink surfaces */
+  --grey-ghost: #A09B90;  /* metadata on ink */
+  --grey-fog:   #CFCABF;  /* body text on ink */
+
+  /* ---- type -------------------------------------------------- */
+  --font-display: 'Archivo Black', Impact, 'Arial Black', sans-serif;
+  --font-body:    'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'Space Mono', 'Courier New', monospace;
+
+  /* display — always uppercase, tight */
+  --text-mark:      clamp(4.2rem, 17.5vw, 15.5rem);  /* the wordmark, hero only */
+  --text-display-1: clamp(2.2rem, 6vw, 4.6rem);      /* section titles */
+  --text-display-2: clamp(1.3rem, 2.6vw, 2rem);      /* story / card titles */
+  --text-lede:      clamp(1.05rem, 2.1vw, 1.5rem);
+  --text-body:      1rem;
+  --text-small:     .9rem;
+  --text-caption:   .75rem;   /* mono furniture */
+  --text-micro:     .68rem;   /* tags, legal, frame labels */
+
+  --track-tight: -.03em;      /* display type */
+  --track-label: .16em;       /* uppercase mono furniture */
+  --track-wide:  .22em;       /* kickers, tickers */
+
+  --leading-display: .9;
+  --leading-body:    1.5;
+  --leading-mono:    1.7;
+
+  /* ---- structure --------------------------------------------- */
+  --frame-w:      2px;                                /* the ink border. everywhere. */
+  --border-frame: var(--frame-w) solid var(--ink);
+  --hairline:     1px solid var(--grey-line);          /* on ink surfaces only */
+  --shadow-print: 10px 10px 0 var(--ink);              /* the hard offset, like a stacked print */
+  --shadow-print-jacaranda: 10px 10px 0 var(--jacaranda);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 14px;
+  --space-4: 22px;   /* the page gutter */
+  --space-5: 44px;
+  --space-6: 90px;   /* section rhythm */
+
+  --radius: 0;       /* nothing is rounded. prints have corners. */
+
+  /* ---- motion ------------------------------------------------ */
+  --snap: .18s ease;         /* hovers */
+  --settle: .6s ease;        /* reveals */
+}
+
+/* the film-grain overlay — apply .grain to <body> */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: .5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --snap: 0s;
+    --settle: 0s;
+  }
+}
