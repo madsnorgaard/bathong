@@ -1,0 +1,9 @@
+/* Three faces, three jobs. Loaded via a <link> in app.head (nuxt.config.ts),
+   not an @import, so the stylesheet bundle stays self-contained at build time.
+   Archivo Black = display (wordmark, titles). Space Grotesk = body.
+   Space Mono = editorial furniture: captions, labels, metadata, dictionary entries. */
+:root{
+  --font-display:'Archivo Black', Impact, 'Arial Black', sans-serif;
+  --font-body:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
+  --font-mono:'Space Mono','Courier New',monospace;
+}

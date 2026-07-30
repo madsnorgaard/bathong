@@ -8,9 +8,10 @@
 #   ALT_DOMAIN=bathong.org
 # Platform stage will add: DB_PASSWORD, PAYLOAD_SECRET, CORS_ORIGINS.
 #
-# Stage 1: the holding page only. The platform services (postgres, payload,
-# nuxt) are added when the backend scaffold lands; the holding router then
-# hands ${SITE_DOMAIN} over to the frontend at cutover.
+# Stage 1: the holding page only - `docker compose up -d` starts just nginx.
+# The platform services carry the "platform" profile and start with
+# `docker compose --profile platform up -d` once the backend is ready;
+# the holding router hands ${SITE_DOMAIN} to the frontend at cutover.
 networks:
   web:
     external: true
@@ -43,3 +44,83 @@ services:
       - traefik.http.middlewares.bathong-primary.redirectregex.regex=^https?://[^/]+/(.*)
       - traefik.http.middlewares.bathong-primary.redirectregex.replacement=https://${SITE_DOMAIN}/$${1}
       - traefik.http.middlewares.bathong-primary.redirectregex.permanent=true
+
+  bathong_db:
+    profiles: ["platform"]
+    image: postgres:16-alpine
+    container_name: ${SITE_DOMAIN}_db
+    restart: always
+    environment:
+      POSTGRES_DB: bathong
+      POSTGRES_USER: bathong
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bathong -d bathong']
+      interval: 5s
+      timeout: 3s
+      retries: 24
+    labels:
+      - traefik.enable=false
+
+  bathong_payload:
+    profiles: ["platform"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        PAYLOAD_PUBLIC_SERVER_URL: https://api.${SITE_DOMAIN}
+    image: bathong-payload:latest
+    container_name: ${SITE_DOMAIN}_payload
+    restart: always
+    volumes:
+      - ./media:/app/media
+    environment:
+      NODE_ENV: production
+      DATABASE_URI: postgresql://bathong:${DB_PASSWORD}@${SITE_DOMAIN}_db:5432/bathong
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      PAYLOAD_PUBLIC_SERVER_URL: https://api.${SITE_DOMAIN}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      COOKIE_DOMAIN: .${SITE_DOMAIN}
+      MEDIA_DIR: /app/media
+    depends_on:
+      bathong_db:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.bathong_payload.rule=Host(`api.${SITE_DOMAIN}`)
+      - traefik.http.routers.bathong_payload.tls=true
+      - traefik.http.routers.bathong_payload.tls.certresolver=lets-encrypt
+      - traefik.http.services.bathong_payload.loadbalancer.server.port=3001
+
+  # No public router yet - the holding page keeps ${SITE_DOMAIN} until the
+  # M3 cutover, when this service takes the primary Host rule.
+  bathong_nuxt:
+    profiles: ["platform"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: bathong-nuxt:latest
+    container_name: ${SITE_DOMAIN}_nuxt
+    restart: always
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_CMS_URL: https://api.${SITE_DOMAIN}
+      NUXT_CMS_INTERNAL_URL: http://${SITE_DOMAIN}_payload:3001
+    depends_on:
+      - bathong_payload
+    networks:
+      - web
+      - internal
+    labels:
+      - traefik.enable=false
+
+volumes:
+  db_data: {}

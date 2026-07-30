@@ -1,0 +1,11 @@
+/* Bathong. design system - copied from ../design-system at repo root.
+   Tokens first (vars), then base (uses vars), then components. */
+@import "./colors.css";
+@import "./fonts.css";
+@import "./spacing.css";
+@import "./structure.css";
+@import "./typography.css";
+@import "./motion.css";
+@import "./base.css";
+@import "./texture.css";
+@import "./components.css";
