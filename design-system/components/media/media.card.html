@@ -1,0 +1,23 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Media" subtitle="The photo frame in four ratios, and the essay strip" -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head><body style="background:var(--paper)">
+<div id="root"></div>
+<script type="text/babel">
+const { Frame, EssayStrip } = window.BathongDesignSystem_45a193;
+const P = 'assets/photos/johannesburg/';
+const src = n => '../../' + P + n;
+const L = ({t}) => <p style={{fontFamily:'var(--font-mono)',fontSize:'.6rem',letterSpacing:'.14em',textTransform:'uppercase',color:'var(--grey-warm)',marginBottom:8}}>{t}</p>;
+ReactDOM.createRoot(document.getElementById('root')).render(<div style={{padding:'20px 22px',display:'flex',flexDirection:'column',gap:20}}>
+  <div><L t="Frame - 21/9 wide, with tag + caption + credit" />
+    <Frame src={src('street-0004.jpg')} ratio="21/9" tag="Photocall open" label="Essay 001 · Marabastad" credit="Mads Nørgaard" /></div>
+  <div style={{display:'grid',gridTemplateColumns:'1.5fr 1fr 1fr',gap:14,alignItems:'start'}}>
+    <div><L t="3/2 default" /><Frame src={src('street-0001.jpg')} label="Frame 04 / 12" credit="Mads Nørgaard" /></div>
+    <div><L t="4/5 tall" /><Frame src={src('doc-0013-portrait.jpg')} ratio="4/5" credit="Mads Nørgaard" /></div>
+    <div><L t="Empty photo slot" /><Frame ratio="4/5" label="Lead frame TBC" credit="Member name" /></div>
+  </div>
+  <div><L t="Essay strip - sequenced, numbered" />
+    <EssayStrip credit="Mads Nørgaard" frames={[{src:src('doc-0001.jpg')},{src:src('doc-0013-portrait.jpg'),ratio:'4/5'},{src:src('doc-0012.jpg')},{src:src('doc-0016.jpg')}]} /></div>
+</div>);
+</script></body></html>

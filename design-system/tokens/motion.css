@@ -1,0 +1,9 @@
+/* Motion is not tokenised - there are only two timings in the whole system,
+   written as literals wherever they apply:
+     .18s ease  - hovers, fills, the 6px arrow nudge ("snap")
+     .6s ease   - scroll reveals, opacity + 26px rise ("settle")
+   The ticker is a 26s linear loop. Nothing bounces, springs or scales.
+   Reduced motion drops every transition and stops the ticker. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:0s !important;animation-duration:0s !important;animation-iteration-count:1 !important}
+}

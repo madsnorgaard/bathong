@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x620" name="Core" subtitle="Buttons, tags, kicker, section head, cards, ruled list" -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head><body style="background:var(--paper)">
+<div id="root"></div>
+<script type="text/babel">
+const { Button, Tag, Kicker, SectionHead, Card, MemberCard, RuledList } = window.BathongDesignSystem_45a193;
+const L = ({t}) => <p style={{fontFamily:'var(--font-mono)',fontSize:'.6rem',letterSpacing:'.14em',textTransform:'uppercase',color:'var(--grey-warm)',marginBottom:8}}>{t}</p>;
+ReactDOM.createRoot(document.getElementById('root')).render(<div style={{padding:'20px 22px',display:'flex',flexDirection:'column',gap:22}}>
+  <div><L t="Button - solid / signal / ghost / small / disabled" />
+    <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
+      <Button>Reserve a place →</Button><Button variant="signal">Become a member →</Button>
+      <Button variant="ghost">Read the essay</Button><Button size="sm">Submit</Button><Button disabled>Sold out</Button>
+    </div></div>
+  <div><L t="Tag - signal / ink / outline" />
+    <div style={{display:'flex',gap:10,flexWrap:'wrap'}}><Tag>Photocall open</Tag><Tag variant="ink">In progress</Tag><Tag variant="outline">Always open</Tag></div></div>
+  <div><L t="Kicker" /><Kicker chip="Pitori · 012">Street &amp; documentary photography collective - Pretoria</Kicker></div>
+  <div><L t="Section head" /><SectionHead title="Photo Stories" index="02 / The work comes first" /></div>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:30,alignItems:'start'}}>
+    <div><L t="Ruled list" /><RuledList items={[
+      {num:'B/01',label:'Workshops & monthly photowalks',note:'Member pricing, priority booking.'},
+      {num:'B/02',label:'Photocalls & publication',note:'Published with full credit.'},
+      {num:'B/03',label:'The newsletter',note:'Assignments, critique notes, calendar.'}]} /></div>
+    <div><L t="Member card" /><MemberCard /></div>
+  </div>
+  <div style={{background:'var(--jacaranda)',padding:'26px 30px 36px'}}>
+    <L t="Card - paper on jacaranda, hard ink shadow" />
+    <Card><div className="b-display-2">Photowalk № 1 - The Layers Route</div>
+      <p style={{fontSize:'.92rem',marginTop:8,color:'var(--grey-ink)'}}>Rooftops → Salvokop → Marabastad. Ends in a group edit.</p></Card>
+  </div>
+</div>);
+</script></body></html>

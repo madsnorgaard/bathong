@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Photo essay" description="A Bathong. photo-essay page: kicker, display title, mono metadata, sequenced credited frames." -->
+<helmet><script src="./ds-base.js"></script><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><style>body{margin:0}</style></helmet>
+<div class="grain" style="background:#F2EEE6;color:#141313;font-family:'Space Grotesk','Helvetica Neue',Arial,sans-serif;min-height:100vh">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:2px solid #141313">
+<span style="font-family:'Archivo Black',Impact,sans-serif;text-transform:uppercase;letter-spacing:-.02em;font-size:1.25rem">Bathong<span style="color:#7B5CD6">.</span></span>
+<span style="font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#8D887E">Essay 001 · Photo stories</span>
+</div>
+<div style="padding:60px 22px 0">
+<p style="font-family:'Space Mono',monospace;font-size:.8rem;text-transform:uppercase;letter-spacing:.22em;margin:0 0 18px"><b style="background:#141313;color:#F2EEE6;padding:2px 8px;font-weight:400">Pitori · 012</b>&nbsp; Photo essay · 12 frames · group edit</p>
+<h1 style="font-family:'Archivo Black',Impact,sans-serif;text-transform:uppercase;letter-spacing:-.03em;line-height:.9;font-size:clamp(2.2rem,6vw,4.6rem);margin:0">Marabastad, still here<span style="color:#7B5CD6">.</span></h1>
+<div style="display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:end;padding:26px 0 34px">
+<p style="font-size:clamp(1.05rem,2.1vw,1.5rem);font-weight:500;max-width:34ch;margin:0">A century of trade, demolition and return. Photographed over three mornings, edited together, sequenced for the wall.</p>
+<p style="font-family:'Space Mono',monospace;font-size:.8rem;color:#8D887E;max-width:40ch;justify-self:end;text-align:right;line-height:1.7;margin:0">Photographs by <span style="color:#141313">Member Name</span><br>Pretoria · 2026 · 12 frames<br>Edited by the collective</p>
+</div>
+</div>
+<div style="padding:0 22px 26px">
+<x-import component-from-global-scope="BathongDesignSystem_45a193.Frame" ratio="21/9" tag="Essay 001" label="01 / 12 · Marabastad" credit="Member Name" hint-size="100%,340px"></x-import>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:0 22px 26px">
+<x-import component-from-global-scope="BathongDesignSystem_45a193.Frame" label="02 / 12" credit="Member Name" hint-size="100%,240px"></x-import>
+<x-import component-from-global-scope="BathongDesignSystem_45a193.Frame" label="03 / 12" credit="Member Name" hint-size="100%,240px"></x-import>
+</div>
+<div style="padding:0 22px 40px;display:grid;grid-template-columns:.9fr 1.1fr;gap:34px;align-items:start">
+<x-import component-from-global-scope="BathongDesignSystem_45a193.Frame" ratio="4/5" label="04 / 12" credit="Member Name" hint-size="100%,420px"></x-import>
+<div>
+<p style="font-size:1rem;line-height:1.5;color:#4C493F;margin:0 0 1.1em;max-width:56ch">Write the essay text here - short, factual, in the mark's register. No exclamation. The frames carry the story; the words carry the facts.</p>
+<p style="font-size:1rem;line-height:1.5;color:#4C493F;margin:0 0 1.1em;max-width:56ch">Sequence matters more than size. Twelve to twenty frames, in order, every one credited.</p>
+<p style="font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#8D887E;margin:0">Drop your own images into each frame's src</p>
+</div>
+</div>
+<div style="background:#141313;color:#F2EEE6;padding:44px 22px;display:flex;align-items:center;justify-content:space-between;gap:26px;flex-wrap:wrap">
+<p style="font-family:'Space Mono',monospace;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#CFCABF;margin:0">The feed is not the destination. The wall and the archive are.</p>
+<x-import component-from-global-scope="BathongDesignSystem_45a193.Button" variant="signal" hint-size="220px,52px">Submit to the next call →</x-import>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

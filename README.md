@@ -18,6 +18,8 @@ states; the street shouts. Full rules in
 | Path | What it is |
 |---|---|
 | `styleguide/index.html` | **Start here.** The living brand manual - colour, type, the dot, photography treatment, components, voice, don'ts. Open it in a browser. |
+| `design-system/` | The full design system, synced with the "Bathong. Design System" Claude Design project - split tokens (`design-system/styles.css` is the one import), 14 components (JSX + specs), guideline specimen cards, and a rebuild of the v1 site on real components (`design-system/ui_kits/website/index.html`). New surfaces build on this. |
+| `holding/index.html` | The public holding page - what answers on bathong.africa until the full site launches |
 | `tokens/tokens.json` | Design tokens, source of truth |
 | `tokens/tokens.css` | The tokens as CSS custom properties (+ the grain overlay) |
 | `css/bathong.css` | Component stylesheet - frames, tags, buttons, the dictionary card, ticker, member card, forms |
@@ -41,6 +43,12 @@ deliberately self-contained (inlined styles) so it can be dropped on any host
 as one file; when the site grows past one page, refactor it onto these
 stylesheets.
 
+**Source-of-truth flow:** `brand/` + `tokens/tokens.json` define the brand;
+`tokens/tokens.css` + `css/bathong.css` are the hand-maintained upstream
+stylesheets; `design-system/` mirrors and extends them (mapping recorded in
+`design-system/github.md`) and is kept in sync with the Claude Design project
+via /design-sync. New pages consume `design-system/styles.css`.
+
 ## Non-negotiables (short version)
 
 - Every photograph is credited, everywhere it appears.
@@ -51,9 +59,14 @@ stylesheets.
 
 ## Roadmap
 
-- **Phase 1 (now):** static site on bathong.co.za, mailto forms, socials pointing at it.
-- **Phase 2 (1-3 months):** walk booking + payment (Quicket/Payfast), newsletter, photocall upload flow.
-- **Phase 3 (3-12 months):** member accounts, the searchable open archive, essay CMS.
+Domains: **bathong.africa** (primary) and **bathong.org** (redirects). DNS is
+live; bathong.co.za remains a want (owner contacted).
+
+- **Phase 1 (now):** holding page live on bathong.africa; brand assets final.
+- **Phase 2:** full site headless on the platform (Payload CMS + Nuxt, docker
+  compose) - essays, walks, exhibitions, photocalls. See `docs/PLATFORM.md`.
+- **Phase 3:** member accounts + photocall submissions; payments (provider TBC
+  with pricing); the searchable open archive.
 
 Before launch, replace in `site/index.html`: real photographs in every
 `PHOTO SLOT`, final membership price, confirmed email, live social handles,

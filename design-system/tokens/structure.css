@@ -1,0 +1,9 @@
+/* Nothing is rounded. Prints have corners. Shadows are hard 10px offsets. */
+:root{
+  --frame-w:2px;                               /* the ink border. everywhere. */
+  --border-frame:var(--frame-w) solid var(--ink);
+  --hairline:1px solid var(--grey-line);       /* on ink surfaces only */
+  --shadow-print:10px 10px 0 var(--ink);
+  --shadow-print-jacaranda:10px 10px 0 var(--jacaranda);
+  --radius:0;
+}
