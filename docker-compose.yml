@@ -1,0 +1,45 @@
+# PRODUCTION compose - deployed manually for now: git pull on the server,
+# then `docker compose up -d`. Mirrors the aksel-pedersen / cosycreator
+# pattern: web (Traefik) + internal networks, ${SITE_DOMAIN}_<svc> names,
+# lets-encrypt resolver.
+#
+# Required in .env next to this file:
+#   SITE_DOMAIN=bathong.africa
+#   ALT_DOMAIN=bathong.org
+# Platform stage will add: DB_PASSWORD, PAYLOAD_SECRET, CORS_ORIGINS.
+#
+# Stage 1: the holding page only. The platform services (postgres, payload,
+# nuxt) are added when the backend scaffold lands; the holding router then
+# hands ${SITE_DOMAIN} over to the frontend at cutover.
+networks:
+  web:
+    external: true
+  internal:
+    external: false
+
+services:
+  bathong_holding:
+    image: nginx:alpine
+    container_name: ${SITE_DOMAIN}_holding
+    restart: always
+    volumes:
+      - ./holding:/usr/share/nginx/html:ro
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      # primary host
+      - traefik.http.routers.bathong_holding.rule=Host(`${SITE_DOMAIN}`)
+      - traefik.http.routers.bathong_holding.tls=true
+      - traefik.http.routers.bathong_holding.tls.certresolver=lets-encrypt
+      - traefik.http.services.bathong_holding.loadbalancer.server.port=80
+      # www + .org variants 301 to the primary host
+      - traefik.http.routers.bathong_alias.rule=Host(`www.${SITE_DOMAIN}`) || Host(`${ALT_DOMAIN}`) || Host(`www.${ALT_DOMAIN}`)
+      - traefik.http.routers.bathong_alias.tls=true
+      - traefik.http.routers.bathong_alias.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_alias.middlewares=bathong-primary
+      - traefik.http.routers.bathong_alias.service=bathong_holding
+      - traefik.http.middlewares.bathong-primary.redirectregex.regex=^https?://[^/]+/(.*)
+      - traefik.http.middlewares.bathong-primary.redirectregex.replacement=https://${SITE_DOMAIN}/$${1}
+      - traefik.http.middlewares.bathong-primary.redirectregex.permanent=true
