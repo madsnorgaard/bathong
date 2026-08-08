@@ -1,18 +1,42 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const cmsUrl = process.env.NUXT_PUBLIC_CMS_URL || 'http://localhost:3001'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
   devtools: { enabled: false },
+  modules: ['@nuxt/image', '@nuxt/fonts', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     // Server-only: internal container URL for SSR fetches (NUXT_CMS_INTERNAL_URL).
     cmsInternalUrl: process.env.NUXT_CMS_INTERNAL_URL || '',
     public: {
       // Public CMS base URL for the browser + media (NUXT_PUBLIC_CMS_URL).
-      cmsUrl: process.env.NUXT_PUBLIC_CMS_URL || 'http://localhost:3001',
+      cmsUrl,
       // Canonical site origin for absolute og/canonical URLs (NUXT_PUBLIC_SITE_URL).
       // Never derived from request headers; share crawlers need a stable HTTPS origin.
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://bathong.africa',
     },
+  },
+  // Photographs: srcset at 480/960/1440/1920, AVIF then WebP, via ipx + sharp.
+  // Spec: design-references/frontend-v2-direction.html section 06.
+  image: {
+    domains: [new URL(cmsUrl).host],
+    format: ['avif', 'webp'],
+    screens: { xs: 480, sm: 480, md: 960, lg: 1440, xl: 1920, xxl: 1920, '2xl': 1920 },
+    quality: 75,
+  },
+  // Self-hosted at build time: no request to Google, one less origin on the
+  // data budget, no visitor IP shared with a third party (POPIA).
+  fonts: {
+    families: [
+      { name: 'Archivo Black', provider: 'google', weights: [400] },
+      { name: 'Space Grotesk', provider: 'google', weights: [400, 500, 700] },
+      { name: 'Space Mono', provider: 'google', weights: [400], styles: ['normal', 'italic'] },
+    ],
+  },
+  routeRules: {
+    '/_ipx/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/share/**': { headers: { 'cache-control': 'public, max-age=86400' } },
   },
   app: {
     head: {
@@ -31,12 +55,6 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon-512.png' },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap',
-        },
       ],
     },
   },
