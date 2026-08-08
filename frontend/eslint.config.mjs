@@ -11,8 +11,8 @@ export default withNuxt(
     },
   },
   {
-    // Nuxt layout filenames are single words by convention.
-    files: ['layouts/**'],
+    // Nuxt layout/page/error filenames are single words by convention.
+    files: ['layouts/**', 'pages/**', 'error.vue', 'app.vue'],
     rules: { 'vue/multi-word-component-names': 'off' },
   },
 )
