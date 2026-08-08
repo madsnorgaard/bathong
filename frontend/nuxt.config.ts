@@ -9,6 +9,9 @@ export default defineNuxtConfig({
     public: {
       // Public CMS base URL for the browser + media (NUXT_PUBLIC_CMS_URL).
       cmsUrl: process.env.NUXT_PUBLIC_CMS_URL || 'http://localhost:3001',
+      // Canonical site origin for absolute og/canonical URLs (NUXT_PUBLIC_SITE_URL).
+      // Never derived from request headers; share crawlers need a stable HTTPS origin.
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://bathong.africa',
     },
   },
   app: {
@@ -23,8 +26,8 @@ export default defineNuxtConfig({
           content: 'Bathong. A street photography collective working out of Pretoria.',
         },
         { name: 'theme-color', content: '#141313' },
-        { property: 'og:title', content: 'Bathong.' },
-        { property: 'og:type', content: 'website' },
+        // og/twitter tags live in useShareMeta (one call per page) so every
+        // page emits exactly one og:image with an absolute URL.
       ],
       link: [
         { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon-512.png' },
