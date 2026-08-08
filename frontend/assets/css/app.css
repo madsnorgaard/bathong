@@ -1,0 +1,47 @@
+/* Site-specific layer on top of the design system (this file is NOT part of
+   the design-system mirror). The site runs in the darkroom: ink ground,
+   full-bleed chapter plates chosen per subject. */
+
+.chapter {
+  padding: var(--space-6) var(--space-4);
+}
+.chapter--paper {
+  background: var(--paper);
+  color: var(--ink);
+}
+.chapter--paper .b-caption {
+  color: var(--grey-warm);
+}
+/* a paper chapter sits inside the on-ink page; undo the dark-surface rules */
+.chapter--paper .b-ruled,
+.chapter--paper .b-ruled li {
+  border-color: var(--ink);
+}
+.chapter--paper .b-ruled small {
+  color: var(--grey-ink);
+}
+.chapter--paper .b-ruled .num {
+  color: var(--jacaranda-deep);
+}
+.chapter--paper .b-label {
+  color: var(--grey-warm);
+}
+.chapter--paper a {
+  color: var(--jacaranda-deep);
+}
+.chapter--paper a:hover {
+  color: var(--ink);
+}
+.chapter--paper .b-btn--ghost {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.chapter--paper .b-btn--ghost:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* labels and fields on the ink ground */
+.on-ink .b-label {
+  color: var(--grey-ghost);
+}

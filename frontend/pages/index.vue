@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Home (W1): one lead frame, the live blocks in Thabo's order of need
- * (walk / photocall / membership), stories holding state, the feed, the
- * ticker. Editorially assembled; every empty state is an honest placeholder.
+ * Home, in the darkroom: one lead frame, the walk as a full-bleed jacaranda
+ * chapter with the date set enormous, the feed staggered on ink, membership
+ * as a paper chapter. Structure is carried by scale and plate changes, not
+ * furniture; the only numbering is the walk's real №.
  */
 import type { Frame, Walk, SiteSetting } from '~/types/payload-types'
 
@@ -34,8 +35,8 @@ const tickerItems = computed(() =>
 
 <template>
   <div>
-    <!-- 2: one lead frame, 21/9, full bleed, credit bottom-left -->
-    <section class="lead full-bleed">
+    <!-- one lead frame, full bleed, credited -->
+    <section class="lead">
       <BFrame
         :src="leadFrame ? mediaUrl(leadFrame.image as never, cmsUrl) : null"
         :alt="leadFrame && typeof leadFrame.image === 'object' ? leadFrame.image?.alt ?? '' : ''"
@@ -48,39 +49,30 @@ const tickerItems = computed(() =>
       />
     </section>
 
-    <!-- 4: the three live blocks, walk / photocall / membership -->
-    <section v-reveal class="live section">
-      <EventBlock v-if="walk" :walk="walk" :walk-index="1">
-        <BButton to="/walks" variant="ghost">RSVP →</BButton>
-      </EventBlock>
-      <div v-else class="live-tile on-jacaranda">
-        <p class="b-kicker">Next walk</p>
-        <p class="b-lede">TBC</p>
-      </div>
-      <div class="live-tile recessed">
-        <p class="b-kicker">Photocall</p>
-        <p class="b-lede">Photocall 001 opens after the first walk. TBC.</p>
-      </div>
-      <div class="live-tile ghost">
-        <p class="b-kicker">Membership</p>
-        <p class="b-lede">{{ formatPrice(null) }} · Launch pricing announced soon</p>
-        <BButton to="/about#membership" variant="ghost">Become a member →</BButton>
-      </div>
-    </section>
+    <!-- the walk: the one jacaranda chapter -->
+    <EventBlock v-if="walk" :walk="walk" :walk-index="1">
+      <BButton to="/walks" variant="ghost">Reserve a place →</BButton>
+    </EventBlock>
 
-    <!-- 5: recent essays; honest holding state until Essay 001 exists -->
-    <section v-reveal class="section">
-      <SectionHead :index="2" title="Stories" />
-      <p class="b-lede">
-        Walk № 001 produces the frames. The group edit produces Essay 001. The reader is being
-        built for it. TBC.
+    <!-- the feed on ink, staggered -->
+    <section v-if="feedFrames.length" v-reveal class="chapter">
+      <ChapterHead title="The feed" />
+      <p class="b-caption feed-note">
+        Single frames from the collective · Essay 001 follows the first walk
       </p>
+      <FeedGrid :frames="feedFrames" />
     </section>
 
-    <!-- 6: the feed, six credited frames -->
-    <section v-if="feedFrames.length" v-reveal class="section">
-      <SectionHead :index="3" title="The feed" />
-      <FeedGrid :frames="feedFrames" />
+    <!-- membership: a paper chapter in the darkroom -->
+    <section v-reveal class="chapter chapter--paper">
+      <ChapterHead title="Become a member" />
+      <p class="b-lede">
+        {{ formatPrice(null) }} · Launch pricing announced soon. Walks, the group edit, the wall.
+        You keep your copyright. Always.
+      </p>
+      <div class="member-cta">
+        <BButton to="/about#membership" variant="ghost">How membership works →</BButton>
+      </div>
     </section>
 
     <BTicker :items="tickerItems" />
@@ -88,33 +80,13 @@ const tickerItems = computed(() =>
 </template>
 
 <style scoped>
-.section {
-  padding: var(--space-6) var(--space-4);
-}
 .lead-frame {
-  border-left: 0;
-  border-right: 0;
+  border: 0;
 }
-.live {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--space-3);
+.feed-note {
+  margin: calc(-1 * var(--space-4)) 0 var(--space-5);
 }
-@media (max-width: 840px) {
-  .live {
-    grid-template-columns: 1fr;
-  }
-}
-.live-tile {
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.live-tile.recessed {
-  background: var(--surface-recessed);
-}
-.live-tile.ghost {
-  border: var(--border-frame);
+.member-cta {
+  margin-top: var(--space-4);
 }
 </style>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * The walk block (W1 annotation 4, W5 annotation 1): date, time, meeting
- * point, capacity, price, one CTA. variant="block" is the compact jacaranda
- * tile on home; variant="lead" is the walks page's full plate.
- * Exactly one CTA: the default slot, or a bookingUrl link, or a /walks link.
+ * The walk chapter: a full-bleed jacaranda plate where the date is the
+ * headline, set enormous (the C4 share-card language). Everything a person
+ * needs to decide in eight seconds, then exactly one CTA (the default slot,
+ * a bookingUrl link, or the walks page).
  */
 interface WalkLike {
   title?: string
@@ -19,44 +19,35 @@ interface WalkLike {
   route?: unknown
 }
 
-const props = withDefaults(
-  defineProps<{
-    walk: WalkLike
-    walkIndex: number
-    variant?: 'block' | 'lead'
-  }>(),
-  { variant: 'block' },
-)
+const props = defineProps<{
+  walk: WalkLike
+  walkIndex: number
+}>()
 
 const spotsLine = computed(() => {
   const { capacity, spotsTaken, bookingStatus } = props.walk
   if (bookingStatus === 'closed') return 'Bookings closed'
   if (bookingStatus === 'full') return 'Walk is full'
   if (capacity == null) return null
-  const taken = spotsTaken ?? 0
-  const left = Math.max(0, capacity - taken)
+  const left = Math.max(0, capacity - (spotsTaken ?? 0))
   if (left === 0) return 'Walk is full'
   return `${left} of ${capacity} places left`
 })
 
 const priceLine = computed(() => {
   const member = props.walk.priceMember
-  const guest = props.walk.priceNonMember
   const memberPart = member === 0 ? 'free for members' : `${formatPrice(member)} for members`
-  const guestPart = `${formatPrice(guest)} for guests`
-  return `${memberPart} · ${guestPart}`
+  return `${memberPart} · ${formatPrice(props.walk.priceNonMember)} for guests`
 })
 
-const routeParagraphs = computed(() =>
-  props.variant === 'lead' ? richTextParagraphs(props.walk.route as never) : [],
-)
+const routeParagraphs = computed(() => richTextParagraphs(props.walk.route as never))
 </script>
 
 <template>
-  <section class="event on-jacaranda" :class="variant" :aria-label="`Walk ${walkIndex}`">
-    <p class="b-kicker line-index">Walk {{ walkNumber(walkIndex) }}</p>
-    <p class="when" :class="variant === 'lead' ? 'b-display-2' : ''">
-      {{ formatWalkDate(walk.date) }} · {{ formatWalkTime(walk.date) }}
+  <section class="event on-jacaranda" :aria-label="`Walk ${walkIndex}`">
+    <p class="b-kicker">Next walk · {{ walkNumber(walkIndex) }}</p>
+    <p class="when b-display-1">
+      {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>
     <p v-if="walk.meetingPoint" class="b-caption meet">{{ walk.meetingPoint }}</p>
     <p v-for="(para, i) in routeParagraphs" :key="i" class="route">{{ para }}</p>
@@ -76,28 +67,35 @@ const routeParagraphs = computed(() =>
 
 <style scoped>
 .event {
-  padding: var(--space-4);
+  padding: var(--space-6) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-}
-.event.lead {
-  padding: var(--space-5) var(--space-4);
   gap: var(--space-3);
 }
-.on-jacaranda .b-caption {
-  color: var(--paper);
+.event .b-kicker {
+  color: color-mix(in srgb, var(--paper) 80%, transparent);
 }
-.line-index {
+.event .b-caption {
   color: var(--paper);
 }
 .when {
-  font-weight: 700;
+  color: var(--paper);
+  max-width: 14ch;
 }
 .route {
   max-width: 62ch;
 }
 .cta {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
+}
+/* ghost button reads paper on jacaranda; .on-ink's signal link color is too
+   loud against the identity plate */
+.cta :deep(.b-btn--ghost) {
+  color: var(--paper);
+  border-color: var(--paper);
+}
+.cta :deep(.b-btn--ghost:hover) {
+  background: var(--ink);
+  color: var(--paper);
 }
 </style>

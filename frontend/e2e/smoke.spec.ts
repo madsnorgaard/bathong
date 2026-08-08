@@ -19,10 +19,10 @@ async function expectShareMeta(page: Page) {
 }
 
 test.describe('home', () => {
-  test('renders SSR with one absolute og:image and the live blocks', async ({ page }) => {
+  test('renders SSR with one absolute og:image and the walk chapter', async ({ page }) => {
     await page.goto('/')
     await expectShareMeta(page)
-    await expect(page.locator('.live')).toBeVisible()
+    await expect(page.locator('.event')).toBeVisible()
     await expect(page.getByText('R -').first()).toBeVisible()
   })
 

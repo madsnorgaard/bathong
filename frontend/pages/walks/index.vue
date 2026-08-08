@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Walks (W5): the next walk IS the page. Jacaranda lead with everything a
- * person needs to decide in eight seconds, four lines that answer the fear,
- * future walks as a ruled list with honest TBC, and the RSVP form inline.
+ * Walks: the next walk is the page (jacaranda chapter, date enormous), the
+ * four lines that answer the fear on a paper chapter, the RSVP back on ink.
+ * W/xx numbering stays: walks are genuinely a numbered sequence.
  */
 import type { Walk } from '~/types/payload-types'
 
@@ -36,10 +36,9 @@ const rsvpOpen = computed(
 </script>
 
 <template>
-  <div class="page">
+  <div>
     <template v-if="nextWalk">
-      <!-- 1: the next walk is the page -->
-      <EventBlock :walk="nextWalk" :walk-index="1" variant="lead">
+      <EventBlock :walk="nextWalk" :walk-index="1">
         <BButton v-if="rsvpOpen" href="#rsvp" variant="ghost">Reserve a place →</BButton>
         <BButton v-else-if="nextWalk.bookingUrl" :href="nextWalk.bookingUrl" variant="ghost">
           Reserve a place →
@@ -47,27 +46,29 @@ const rsvpOpen = computed(
         <p v-else class="b-caption">Bookings closed</p>
       </EventBlock>
 
-      <!-- 2: answer the fear, not the feature -->
-      <section v-reveal class="what">
-        <p>Meet at first light. Shoot together. Edit together at the end.</p>
-        <p>No experience needed. No gear requirement. A phone camera counts.</p>
-        <p>Bring one lens if you have one, water, and shoes you can walk four hours in.</p>
-        <p>Everyone welcome. That is the point.</p>
+      <!-- answer the fear, on paper -->
+      <section v-reveal class="chapter chapter--paper">
+        <ChapterHead title="What a walk is" />
+        <div class="what">
+          <p class="b-lede">Meet at first light. Shoot together. Edit together at the end.</p>
+          <p class="b-lede">No experience needed. No gear requirement. A phone camera counts.</p>
+          <p class="b-lede">Bring one lens if you have one, water, and shoes for four hours.</p>
+          <p class="b-lede">Everyone welcome. That is the point.</p>
+        </div>
       </section>
 
-      <section v-if="rsvpOpen" id="rsvp" v-reveal class="rsvp-section">
-        <SectionHead :index="1" title="Reserve a place" />
+      <section v-if="rsvpOpen" id="rsvp" v-reveal class="chapter">
+        <ChapterHead title="Reserve a place" />
         <RsvpForm :walk-id="nextWalk.id" />
       </section>
     </template>
-    <section v-else class="what">
-      <SectionHead :index="1" title="Walks & sessions" />
+    <section v-else class="chapter">
+      <ChapterHead title="Walks & sessions" />
       <p class="b-lede">No walk is scheduled right now. The next date lands here first. TBC.</p>
     </section>
 
-    <!-- 3: future walks, honest TBC -->
-    <section v-reveal class="future">
-      <SectionHead :index="2" title="After that" />
+    <section v-reveal class="chapter">
+      <ChapterHead title="After that" />
       <ul v-if="futureWalks.length" class="b-ruled">
         <li v-for="(walk, i) in futureWalks" :key="walk.id">
           <span class="num">W/{{ String(i + 2).padStart(2, '0') }}</span>
@@ -83,9 +84,8 @@ const rsvpOpen = computed(
       </ul>
     </section>
 
-    <!-- 4: frames from the last walk close the page -->
-    <section v-if="pastWalks.length" v-reveal class="future">
-      <SectionHead :index="3" title="From the last walk" />
+    <section v-if="pastWalks.length" v-reveal class="chapter">
+      <ChapterHead title="From the last walk" />
       <ul class="b-ruled">
         <li v-for="walk in pastWalks" :key="walk.id">
           <span class="num">№</span>
@@ -97,19 +97,10 @@ const rsvpOpen = computed(
 </template>
 
 <style scoped>
-.page {
-  display: flex;
-  flex-direction: column;
-}
 .what {
-  padding: var(--space-6) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   max-width: 62ch;
-}
-.rsvp-section,
-.future {
-  padding: 0 var(--space-4) var(--space-6);
 }
 </style>

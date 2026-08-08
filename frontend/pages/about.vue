@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * About: the word, the directors, the NPC (W-series + "governance in public",
- * the NOOR lesson). The dictionary card lives here in v2. Membership is
- * application-only with honest R - pricing until the board decides (#17).
+ * About, in the darkroom: the word (the dictionary card is ink-native), the
+ * founding circle on ink, membership as the paper chapter, the record line.
+ * No archive indices; B-numbering dropped, the benefits are a list, not a
+ * sequence.
  */
 import type { Person, Manifesto, Membership, SiteSetting } from '~/types/payload-types'
 
@@ -44,7 +45,7 @@ function personContact(person: Person): string | null {
 <template>
   <div>
     <!-- the word -->
-    <section class="section word">
+    <section class="chapter word">
       <DictionaryCard
         v-if="senses.length"
         :headword="manifesto?.headword ?? 'ba·thong'"
@@ -56,15 +57,21 @@ function personContact(person: Person): string | null {
     </section>
 
     <!-- the directors -->
-    <section v-reveal class="section">
-      <SectionHead :index="1" title="The founding circle" />
+    <section v-reveal class="chapter">
+      <ChapterHead title="The founding circle" />
       <div class="people">
-        <article v-for="person in directors" :key="person.id" class="person">
+        <article
+          v-for="(person, i) in directors"
+          :key="person.id"
+          class="person"
+          :class="{ dropped: i % 2 === 1 }"
+        >
           <BFrame
             :src="mediaUrl(person.portrait as never, cmsUrl)"
             :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
             ratio="tall"
             sizes="xs:50vw md:25vw"
+            class="portrait"
           />
           <h3 class="b-display-2">{{ person.name }}</h3>
           <p v-if="person.roleTitle" class="b-caption">{{ person.roleTitle }}</p>
@@ -76,12 +83,11 @@ function personContact(person: Person): string | null {
       <p v-if="!directors.length" class="b-lede">The founding circle is being confirmed. TBC.</p>
     </section>
 
-    <!-- membership -->
-    <section id="membership" v-reveal class="section on-ink full-bleed membership">
-      <SectionHead :index="2" title="Membership" />
+    <!-- membership: the paper chapter -->
+    <section id="membership" v-reveal class="chapter chapter--paper">
+      <ChapterHead title="Membership" />
       <ul class="b-ruled benefits">
         <li v-for="(benefit, i) in benefits" :key="i">
-          <span class="num">B/{{ String(i + 1).padStart(2, '0') }}</span>
           <div>
             {{ benefit.title }}
             <small v-if="benefit.description">{{ benefit.description }}</small>
@@ -102,9 +108,9 @@ function personContact(person: Person): string | null {
       </BButton>
     </section>
 
-    <!-- the NPC -->
-    <section v-reveal class="section">
-      <SectionHead :index="3" title="On the record" />
+    <!-- the record -->
+    <section v-reveal class="chapter">
+      <ChapterHead title="On the record" />
       <p class="b-lede npc">
         Bathong. Collective is registering as a non-profit company (NPC) in South Africa.
         Registration number to follow. Photographers keep their copyright. Always.
@@ -114,9 +120,6 @@ function personContact(person: Person): string | null {
 </template>
 
 <style scoped>
-.section {
-  padding: var(--space-6) var(--space-4);
-}
 .word {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -136,7 +139,8 @@ function personContact(person: Person): string | null {
 .people {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-4);
+  align-items: start;
 }
 @media (max-width: 840px) {
   .people {
@@ -148,10 +152,16 @@ function personContact(person: Person): string | null {
   flex-direction: column;
   gap: var(--space-2);
 }
-.contact {
-  color: var(--jacaranda-deep);
+.person.dropped {
+  margin-top: var(--space-5);
 }
-.membership .benefits {
+.portrait {
+  border: 1px solid var(--grey-line);
+}
+.contact {
+  color: var(--signal);
+}
+.benefits {
   max-width: 44rem;
 }
 .price {

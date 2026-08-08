@@ -1,9 +1,8 @@
 <script setup lang="ts">
 /**
- * Sticky nav (W1 annotation 1): paper at 88% with a 10px backdrop blur, the
- * only fixed element. Join is always present. At 840px the links become a
- * focus-trapped sheet (W7). Phase 1 carries the live pages only; the three
- * doors return as their sections come online.
+ * Sticky nav on the ink ground: translucent ink with the system's 10px
+ * backdrop blur, hairline below. Join is always present. At 840px the links
+ * become a focus-trapped sheet (W7).
  */
 const links = [
   { to: '/walks', label: 'Walks' },
@@ -55,7 +54,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <nav class="links b-kicker" aria-label="Main">
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
       </nav>
-      <BButton to="/about#membership" size="sm" class="join">Join →</BButton>
+      <BButton to="/about#membership" variant="ghost" size="sm" class="join">Join →</BButton>
       <button
         ref="toggleEl"
         class="sheet-toggle b-kicker"
@@ -66,7 +65,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         {{ sheetOpen ? '✕' : '≡' }}<span class="sr-only"> menu</span>
       </button>
     </div>
-    <div v-if="sheetOpen" id="sheet-menu" ref="sheetEl" class="sheet on-ink" role="dialog" aria-modal="true" aria-label="Menu">
+    <div v-if="sheetOpen" id="sheet-menu" ref="sheetEl" class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
       <nav class="sheet-links" aria-label="Main">
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="b-display-2">
           {{ link.label }}
@@ -82,9 +81,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
   backdrop-filter: blur(10px);
-  border-bottom: var(--border-frame);
+  border-bottom: var(--hairline);
 }
 .nav-inner {
   display: flex;
@@ -94,6 +93,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 }
 .nav-inner :deep(.b-mark) {
   font-size: 1.5rem;
+  color: var(--paper);
 }
 .links {
   display: flex;
@@ -101,16 +101,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   flex: 1;
 }
 .links a {
-  color: inherit;
+  color: var(--grey-fog);
 }
 .links a:hover,
 .links a.router-link-active {
-  color: var(--jacaranda-deep);
+  color: var(--signal);
 }
 .sheet-toggle {
   display: none;
   background: none;
-  border: var(--border-frame);
+  border: 1px solid var(--grey-line);
+  color: var(--paper);
   padding: 8px 14px;
   min-width: 44px;
   min-height: 44px;
@@ -134,6 +135,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     display: flex;
     flex-direction: column;
     padding: var(--space-5) var(--space-4);
+    border-bottom: var(--hairline);
   }
   .sheet-links {
     display: flex;

@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
   devtools: { enabled: false },
   modules: ['@nuxt/image', '@nuxt/fonts', '@nuxt/eslint'],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/app.css'],
   runtimeConfig: {
     // Server-only: internal container URL for SSR fetches (NUXT_CMS_INTERNAL_URL).
     cmsInternalUrl: process.env.NUXT_CMS_INTERNAL_URL || '',

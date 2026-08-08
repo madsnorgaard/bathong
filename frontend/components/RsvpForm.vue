@@ -97,10 +97,10 @@ async function submit() {
   overflow: hidden;
 }
 .error {
-  color: var(--jacaranda-deep);
+  color: var(--signal);
 }
 .state {
-  border: var(--border-frame);
+  border: 1px solid var(--grey-line);
   padding: var(--space-4);
 }
 .popia {
