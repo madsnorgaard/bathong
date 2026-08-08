@@ -1,0 +1,11 @@
+/* Minimal base. Everything else lives on components. */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);line-height:var(--leading-body);overflow-x:hidden}
+::selection{background:var(--signal);color:var(--ink)}
+img{max-width:100%;display:block}
+a{color:var(--jacaranda-deep);text-decoration:none}
+a:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+.on-ink a{color:var(--signal)}
+.on-ink a:hover{color:var(--paper)}

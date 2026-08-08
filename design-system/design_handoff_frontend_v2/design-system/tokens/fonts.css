@@ -1,6 +1,7 @@
 /* Three faces, three jobs. All Google Fonts - no binaries needed, no local files.
    Archivo Black = display (wordmark, titles). Space Grotesk = body.
    Space Mono = editorial furniture: captions, labels, metadata, dictionary entries. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:ital@0;1&display=swap");
 :root{
   --font-display:'Archivo Black', Impact, 'Arial Black', sans-serif;
   --font-body:'Space Grotesk','Helvetica Neue',Arial,sans-serif;

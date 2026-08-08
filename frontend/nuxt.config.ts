@@ -27,6 +27,7 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
       ],
       link: [
+        { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon-512.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {

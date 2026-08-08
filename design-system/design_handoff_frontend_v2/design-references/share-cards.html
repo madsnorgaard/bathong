@@ -1,0 +1,246 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Bathong. share cards</title><link rel="stylesheet" href="../styles.css">
+<style>
+body{background:var(--paper);color:var(--ink);padding:0 0 140px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.masthead{background:var(--ink);color:var(--paper);padding:70px 0 56px;margin-bottom:70px}
+.masthead .wrap{display:flex;flex-direction:column;gap:22px}
+.mk{font-family:var(--font-display);text-transform:uppercase;letter-spacing:-.035em;line-height:.86}
+.masthead .mk{font-size:clamp(2.6rem,7vw,5.4rem)}
+.masthead .mk .dot{color:var(--jacaranda)}
+.masthead .sub{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--grey-ghost);line-height:2}
+.masthead p{font-family:var(--font-body);font-size:1.05rem;color:var(--grey-fog);max-width:62ch;text-wrap:pretty}
+h2{font-family:var(--font-display);text-transform:uppercase;font-size:clamp(1.5rem,3.4vw,2.4rem);letter-spacing:-.03em;line-height:.95}
+.sec{margin-bottom:90px}
+.sechead{border-top:2px solid var(--ink);padding-top:18px;margin-bottom:34px}
+.idx{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;color:var(--grey-warm);display:block;margin-bottom:14px}
+.lede{font-family:var(--font-body);font-size:1.05rem;color:var(--grey-ink);max-width:70ch;text-wrap:pretty}
+p,li{font-family:var(--font-body);text-wrap:pretty}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.pnl{border:2px solid var(--ink);padding:22px;background:var(--paper)}
+.pnl h3{font-family:var(--font-body);font-weight:700;font-size:1rem;margin-bottom:10px}
+.pnl p{font-size:.92rem;color:var(--grey-ink);margin-bottom:8px}
+.kick{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--jacaranda-deep);display:block;margin-bottom:10px}
+.mono{font-family:var(--font-mono);font-size:.8rem}
+/* card artboards, real pixels, scaled to fit */
+.card-row{display:grid;grid-template-columns:1fr .58fr;gap:26px;margin-bottom:48px;align-items:start}
+@media(max-width:1050px){.card-row{grid-template-columns:1fr}}
+.hold{width:100%;overflow:hidden;border:2px solid var(--ink)}
+.scale{transform-origin:top left}
+.og{width:1200px;height:630px;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.og .photo{flex:1;background-size:cover;background-position:center;position:relative}
+.og .bar{background:var(--ink);padding:26px 40px;display:flex;align-items:center;justify-content:space-between;gap:30px;border-top:4px solid var(--jacaranda)}
+.og .bar .wm{font-family:var(--font-display);text-transform:uppercase;font-size:44px;letter-spacing:-.035em;line-height:1;color:var(--paper)}
+.og .bar .wm i{color:var(--jacaranda);font-style:normal}
+.og .bar .meta{font-family:var(--font-mono);font-size:19px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-ghost);text-align:right;line-height:1.7}
+.og .cred{position:absolute;left:0;bottom:0;background:var(--ink);color:var(--grey-fog);font-family:var(--font-mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;padding:12px 20px}
+.og .title{font-family:var(--font-display);text-transform:uppercase;letter-spacing:-.035em;line-height:.9;font-size:78px}
+.notes{border-left:2px solid var(--ink);padding-left:18px}
+.notes .ttl{font-family:var(--font-display);text-transform:uppercase;font-size:1.15rem;letter-spacing:-.02em;margin-bottom:4px}
+.notes .rt{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);margin-bottom:14px}
+.notes ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.notes li{font-size:.86rem;color:var(--grey-ink);padding-left:18px;position:relative}
+.notes li::before{content:"\2192";position:absolute;left:0;color:var(--jacaranda);font-family:var(--font-mono);font-size:.8rem}
+pre{background:var(--ink);color:var(--grey-fog);padding:26px;overflow-x:auto;font-family:var(--font-mono);font-size:.78rem;line-height:1.85;border:2px solid var(--ink)}
+pre .t{color:var(--signal)}
+pre .c{color:var(--grey-warm)}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;background:var(--ink);border:2px solid var(--ink)}
+.spec div{background:var(--paper);padding:16px}
+.spec .k{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);margin-bottom:6px}
+.spec .v{font-family:var(--font-mono);font-size:.84rem;color:var(--ink);line-height:1.6}
+.flag{background:var(--signal);color:var(--ink);padding:22px;border:2px solid var(--ink);margin-top:22px}
+.flag p{font-size:.94rem}
+.flag .kick{color:var(--ink)}
+/* in-situ mocks */
+.situ{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.wa{background:#ECE5DD;padding:18px;border:2px solid var(--ink)}
+.wa .bub{background:#fff;padding:8px;max-width:300px;box-shadow:0 1px 1px rgba(0,0,0,.15);font-family:-apple-system,'Helvetica Neue',sans-serif}
+.wa .prev{background:#F5F5F5;overflow:hidden}
+.wa .prev img{width:100%;display:block;aspect-ratio:1.91/1;object-fit:cover}
+.wa .prev .tt{padding:8px 10px}
+.wa .prev .t1{font-size:13px;font-weight:600;color:#111;line-height:1.3;margin-bottom:3px}
+.wa .prev .t2{font-size:12px;color:#667781;line-height:1.35}
+.wa .prev .t3{font-size:11px;color:#8696a0;margin-top:4px}
+.wa .msg{font-size:14px;color:#111;padding:6px 4px 2px}
+.li{background:#F4F2EE;padding:18px;border:2px solid var(--ink)}
+.li .cardm{background:#fff;border:1px solid #e0dfdc;max-width:320px;font-family:-apple-system,'Helvetica Neue',sans-serif}
+.li .cardm img{width:100%;display:block;aspect-ratio:1.91/1;object-fit:cover}
+.li .tt{padding:10px 12px;background:#F4F2EE}
+.li .t1{font-size:14px;font-weight:600;color:#000;line-height:1.35}
+.li .t2{font-size:12px;color:#666;margin-top:3px}
+.situ .lbl{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);margin-bottom:12px}
+a{color:var(--jacaranda-deep)}a:hover{color:var(--jacaranda)}
+</style></head><body>
+
+<div class="masthead"><div class="wrap">
+<div class="sub">Share cards · Open Graph · social assets · draft 01 · 08 Aug 2026</div>
+<div class="mk">The share<span class="dot">.</span></div>
+<p>Most people will meet Bathong as a link in a WhatsApp group, not as a homepage. That preview card is the first thing the collective ever shows them, and right now it is the least designed surface we own. This is the system that fixes it: six card templates, the exact meta block, and the rules that keep a photograph looking like a photograph when a platform crops it.</p>
+</div></div>
+
+<div class="wrap">
+
+<section class="sec"><div class="sechead"><span class="idx">00 / why this matters more than it looks</span><h2>The card is the front door</h2></div>
+<p class="lede">This collective already runs on WhatsApp. So does most of South Africa, and so will most of our sharing: a member sends a photocall to a group, a curator forwards an essay, someone drops the walk link in a camera-club chat. The preview card is doing the work a homepage never gets the chance to do.</p>
+<div class="cols" style="margin-top:26px">
+<div class="pnl"><span class="kick">The strict one</span><h3>WhatsApp decides in kilobytes</h3><p>WhatsApp chooses between the big banner preview and a tiny thumbnail mostly on image size - too small, too heavy, or not landscape enough and it falls back to the thumbnail. The 600 KB cap is the single most common reason previews break.</p><p><strong>Our rule: 1200×630 JPEG, quality 82, under 300 KB. No exceptions.</strong></p></div>
+<div class="pnl"><span class="kick">The crop</span><h3>Design for the centre 80%</h3><p>WhatsApp centre-crops anything that is not 1.91:1, so key visuals and text must sit inside the centre 80%. Our wordmark bar is full width but its content is inset 40px, and the title never runs to the edge.</p></div>
+<div class="pnl"><span class="kick">The cache</span><h3>You get one shot</h3><p>WhatsApp caches previews for days or weeks and there is no official way to force a refresh. A query parameter on the URL is the workaround. Practically: get the card right before the link goes in the group, because the group will see the first version for a fortnight.</p></div>
+</div>
+<div class="flag"><span class="kick">Right now</span><p>bathong.africa currently ships a description and a title but <strong>no og:image</strong>. Every link shared to date has rendered as a bare grey text row. That is the cheapest, highest-impact fix on the whole site and it can ship this week, before any of the v2 build.</p></div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">01 / the rules</span><h2>Five rules, then the templates</h2></div>
+<div class="cols">
+<div class="pnl"><span class="kick">01</span><h3>The photograph is the card</h3><p>A share card is a frame with a bar under it. It is never a poster with a photo behind the type. Brand furniture sits below the image on its own ink plate - colour is never laid over the work, exactly as everywhere else in the system.</p></div>
+<div class="pnl"><span class="kick">02</span><h3>Credit travels</h3><p>Every card carrying a photograph carries <span class="mono">© Photographer</span>. A card is the most-copied object we make, and an uncredited frame in circulation is the one failure this collective cannot have.</p></div>
+<div class="pnl"><span class="kick">03</span><h3>One line of display type, maximum</h3><p>The card is read at 300px wide in a chat bubble. A headline of more than five words is unreadable. The essay title goes in <span class="mono">og:title</span>, where the platform sets it in its own type - not burned into the image twice.</p></div>
+<div class="pnl"><span class="kick">04</span><h3>The jacaranda rule bar</h3><p>A 4px jacaranda rule between the photograph and the ink bar is the one piece of consistent brand furniture across all six cards. At thumbnail size it is the only thing that reads as us, and it costs nothing.</p></div>
+<div class="pnl"><span class="kick">05</span><h3>No card without a photograph, except one</h3><p>The only type-only card is the site default, and it exists purely as a fallback for pages with no image yet. Every other card is led by a frame. If there is no frame, the page is not ready to be shared.</p></div>
+</div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">02 / the templates</span><h2>Six cards</h2></div>
+<p class="lede" style="margin-bottom:40px">All artboards are real 1200×630 pixels, scaled to fit this page. Photographs are the repo's demo frames, © Mads Nørgaard, standing in for Pretoria lead frames.</p>
+
+<!-- C1 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og">
+<div class="photo" style="background-image:url('../assets/photos/johannesburg/street-0002.jpg')"><div class="cred">© Mads Nørgaard</div></div>
+<div class="bar"><div class="wm">Bathong<i>.</i></div><div class="meta">Street &amp; documentary photography<br>Pitori · 012</div></div>
+</div></div></div>
+<div class="notes"><div class="ttl">C1 · Site default</div><div class="rt">og:image for / and any page without its own frame</div>
+<ul><li>One strong frame, changed quarterly by editorial decision. This is the card a stranger sees first.</li><li>Wordmark left, positioning line right. No CTA, no URL, no strapline stack.</li><li>The credit capsule sits bottom-left of the photograph, on ink, never over a face.</li><li><strong>Ship this one first.</strong> It covers every page on the site until per-page cards exist.</li></ul></div></div>
+
+<!-- C2 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og">
+<div class="photo" style="background-image:url('../assets/photos/johannesburg/doc-0009.jpg')"><div class="cred">© Thabo Mokoena · frame 04 / 16</div></div>
+<div class="bar"><div class="wm" style="font-size:34px">Bathong<i>.</i></div><div class="meta">Essay 004 · 16 frames<br>Salvokop, before six</div></div>
+</div></div></div>
+<div class="notes"><div class="ttl">C2 · Essay</div><div class="rt">og:image for /stories/[slug] · generated per essay</div>
+<ul><li>The lead frame of the essay, uncropped where possible, centre-weighted where not.</li><li>The bar carries the essay index, frame count and title in mono - small, factual, archival.</li><li>Credit names the photographer <em>and</em> the frame, so a screenshot of the card is still attributable.</li><li>Generated automatically on publish. This is the card that will be shared most.</li></ul></div></div>
+
+<!-- C3 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og" style="flex-direction:row">
+<div class="photo" style="flex:0 0 470px;background-image:url('../assets/photos/johannesburg/doc-0013-portrait.jpg');border-right:4px solid var(--jacaranda)"></div>
+<div style="flex:1;padding:56px 46px;display:flex;flex-direction:column;justify-content:space-between">
+<div class="meta" style="font-family:var(--font-mono);font-size:19px;letter-spacing:.18em;text-transform:uppercase;color:var(--grey-ghost)">Member № 0014 · Pretoria</div>
+<div class="title" style="font-size:62px">Thabo<br>Mokoena</div>
+<div style="font-family:var(--font-mono);font-size:17px;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-ghost);line-height:1.9">3 essays · 214 frames<br>Bathong. collective</div>
+</div></div></div></div>
+<div class="notes"><div class="ttl">C3 · Photographer</div><div class="rt">og:image for /photographers/[name]</div>
+<ul><li>The one card where type shares the frame, because the subject is a person, not a story.</li><li>Portrait left at 4/5, jacaranda rule vertical instead of horizontal.</li><li>Name in display, member number and body of work in mono. No bio - that is <span class="mono">og:description</span>.</li><li>Built so a photographer can share their own page and it looks like representation, not a profile.</li></ul></div></div>
+
+<!-- C4 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og" style="background:var(--jacaranda)">
+<div style="flex:1;padding:56px 50px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="font-family:var(--font-mono);font-size:20px;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,238,230,.8)">Walk № 001 · Free for members</div>
+<div class="title" style="font-size:88px;color:var(--paper)">Saturday<br>29 August<br>05:30</div>
+<div style="font-family:var(--font-mono);font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--paper)">Church Square → Marabastad → Salvokop</div>
+</div>
+<div class="bar" style="border-top:4px solid var(--ink);background:var(--ink)"><div class="wm" style="font-size:34px">Bathong<i>.</i></div><div class="meta">Bring one lens<br>bathong.africa/walks</div></div>
+</div></div></div>
+<div class="notes"><div class="ttl">C4 · Walk</div><div class="rt">og:image for /walks and each walk</div>
+<ul><li>The one card built to be read at thumbnail size, because it is shared to recruit. The date is the headline and it is enormous.</li><li>Full jacaranda plate - this is the page's one identity-colour moment, used because there is no photograph before the first walk happens.</li><li><strong>After walk 001, this card gets a frame from the walk</strong> and reverts to the C1 structure. The type-led version is a launch-only state.</li></ul></div></div>
+
+<!-- C5 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og">
+<div class="photo" style="flex:0 0 380px;background-image:url('../assets/photos/johannesburg/street-0004.jpg')"><div class="cred">© Mads Nørgaard</div></div>
+<div style="background:var(--signal);color:var(--ink);padding:36px 46px;display:flex;align-items:center;justify-content:space-between;gap:30px;border-top:4px solid var(--ink)">
+<div><div style="font-family:var(--font-mono);font-size:18px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px">Photocall 001 · open · closes 12 Sep</div><div class="title" style="font-size:56px;color:var(--ink)">Before six</div></div>
+<div class="wm" style="font-size:34px;color:var(--ink)">Bathong<i style="color:var(--jacaranda-deep)">.</i></div>
+</div></div></div></div>
+<div class="notes"><div class="ttl">C5 · Photocall</div><div class="rt">og:image for /photocalls · the loudest card we make</div>
+<ul><li>Signal plate, used once. An open call is the only thing urgent enough to earn it.</li><li>Status and deadline sit above the brief title, because "closes 12 Sep" is what makes someone act.</li><li>The photograph shrinks to a third so the plate can carry weight in a chat list.</li><li>Retire the card the day the call closes. A stale open call in circulation is worse than no card.</li></ul></div></div>
+
+<!-- C6 -->
+<div class="card-row">
+<div class="hold" style="height:315px"><div class="scale" style="transform:scale(.5)"><div class="og">
+<div class="photo" style="background-image:url('../assets/photos/johannesburg/doc-0016.jpg')"><div class="cred">© Mads Nørgaard</div></div>
+<div class="bar"><div class="wm" style="font-size:34px">Bathong<i>.</i></div><div class="meta">Frame of the week<br>Marabastad, 06:12</div></div>
+</div></div></div>
+<div class="notes"><div class="ttl">C6 · Single frame</div><div class="rt">Instagram 1080×1080 and 1080×1920, same construction</div>
+<ul><li>One frame, one credit, one bar. The everyday unit - a member's frame posted with the collective's furniture under it.</li><li>Square and story crops use the same bar at proportional size. The photograph is re-cropped by a human, never by CSS.</li><li>This is the card that keeps the account alive between essays, per the Everyday Africa lesson in the frontend direction.</li></ul></div></div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">03 / in situ</span><h2>What it actually looks like</h2></div>
+<p class="lede" style="margin-bottom:30px">The card is never seen at full size. This is the honest test.</p>
+<div class="situ">
+<div><div class="lbl">WhatsApp · the primary channel</div>
+<div class="wa"><div class="bub">
+<div class="prev"><img src="../assets/photos/johannesburg/doc-0009.jpg" alt="Essay share card preview">
+<div class="tt"><div class="t1">Salvokop, before six</div><div class="t2">Sixteen frames from the first hour of light in the capital. Photographs by Thabo Mokoena.</div><div class="t3">bathong.africa</div></div></div>
+<div class="msg">Bathong! new essay is up 🔥</div>
+</div></div></div>
+<div><div class="lbl">LinkedIn · the institutional channel</div>
+<div class="li"><div class="cardm"><img src="../assets/photos/johannesburg/street-0002.jpg" alt="Site default card preview">
+<div class="tt"><div class="t1">Bathong. - street &amp; documentary photography collective, Pretoria</div><div class="t2">bathong.africa</div></div></div></div></div>
+</div>
+<div class="flag"><span class="kick">Read the two together</span><p>In the chat mock, <strong>the image is doing all the work and the title is doing the rest</strong> - the description is truncated and the URL is grey. That is the real hierarchy: frame, then five words of title. Everything in the templates above is built around that fact, and it is why we do not burn the headline into the image.</p></div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">04 / the meta block</span><h2>Ship this</h2></div>
+<p class="lede" style="margin-bottom:26px">Goes in <span class="mono">&lt;head&gt;</span> of every page. Per-page values in the marked lines; everything else is constant.</p>
+<pre><span class="c">&lt;!-- core --&gt;</span>
+&lt;title&gt;<span class="t">Salvokop, before six - Bathong.</span>&lt;/title&gt;
+&lt;meta name="description" content="<span class="t">Sixteen frames from the first hour of light in the capital. Photographs by Thabo Mokoena.</span>"&gt;
+&lt;link rel="canonical" href="<span class="t">https://bathong.africa/stories/salvokop-before-six</span>"&gt;
+
+<span class="c">&lt;!-- open graph: read by whatsapp, facebook, linkedin, imessage, slack, signal --&gt;</span>
+&lt;meta property="og:type" content="article"&gt;
+&lt;meta property="og:site_name" content="Bathong."&gt;
+&lt;meta property="og:locale" content="en_ZA"&gt;
+&lt;meta property="og:title" content="<span class="t">Salvokop, before six</span>"&gt;
+&lt;meta property="og:description" content="<span class="t">Sixteen frames from the first hour of light in the capital. Photographs by Thabo Mokoena.</span>"&gt;
+&lt;meta property="og:url" content="<span class="t">https://bathong.africa/stories/salvokop-before-six</span>"&gt;
+&lt;meta property="og:image" content="<span class="t">https://bathong.africa/share/essay-004.jpg</span>"&gt;  <span class="c">absolute url, https, jpeg, &lt;300kb</span>
+&lt;meta property="og:image:width" content="1200"&gt;
+&lt;meta property="og:image:height" content="630"&gt;
+&lt;meta property="og:image:alt" content="<span class="t">A man crossing an empty street at dawn, Salvokop, Pretoria.</span>"&gt;
+
+<span class="c">&lt;!-- x / twitter --&gt;</span>
+&lt;meta name="twitter:card" content="summary_large_image"&gt;
+&lt;meta name="twitter:title" content="<span class="t">Salvokop, before six</span>"&gt;
+&lt;meta name="twitter:description" content="<span class="t">Sixteen frames from the first hour of light in the capital.</span>"&gt;
+&lt;meta name="twitter:image" content="<span class="t">https://bathong.africa/share/essay-004.jpg</span>"&gt;
+
+<span class="c">&lt;!-- credit, so the photographer is attached to the object itself --&gt;</span>
+&lt;meta property="article:author" content="<span class="t">Thabo Mokoena</span>"&gt;
+&lt;meta name="copyright" content="<span class="t">© Thabo Mokoena / Bathong. Collective</span>"&gt;</pre>
+<div class="cols" style="margin-top:22px">
+<div class="pnl"><span class="kick">Watch</span><h3>One og:image tag only</h3><p>Multiple og:image tags cause unpredictable behaviour - WhatsApp typically takes the first it finds, and some readers take the last. Emit exactly one.</p></div>
+<div class="pnl"><span class="kick">Watch</span><h3>Absolute HTTPS URLs</h3><p>The page must be HTTPS and og:image must be an absolute URL, or the preview is silently dropped. A relative path is the second most common failure after file size.</p></div>
+<div class="pnl"><span class="kick">Watch</span><h3>Do not ship WebP here</h3><p>WebP is right for the site's own frames and wrong for og:image - support is unreliable across preview crawlers. JPEG at 80-85% keeps a 1200×630 under 200 KB and looks identical at preview size.</p></div>
+</div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">05 / specification</span><h2>The numbers</h2></div>
+<div class="spec">
+<div><div class="k">Master size</div><div class="v">1200 × 630<br>1.91:1</div></div>
+<div><div class="k">Format</div><div class="v">JPEG, quality 82<br>never PNG, never SVG</div></div>
+<div><div class="k">File size</div><div class="v">target &lt; 200 KB<br>hard ceiling 300 KB</div></div>
+<div><div class="k">Safe zone</div><div class="v">centre 80%<br>inset 60px all sides</div></div>
+<div><div class="k">Bar height</div><div class="v">120 px<br>4px jacaranda rule above</div></div>
+<div><div class="k">Wordmark</div><div class="v">44px display<br>34px when the bar carries a title</div></div>
+<div><div class="k">Mono furniture</div><div class="v">17-20px<br>tracking .14-.20em</div></div>
+<div><div class="k">Instagram square</div><div class="v">1080 × 1080<br>bar 150px</div></div>
+<div><div class="k">Instagram story</div><div class="v">1080 × 1920<br>bar 200px, content inset 120px top</div></div>
+<div><div class="k">File naming</div><div class="v">/share/essay-004.jpg<br>/share/default.jpg</div></div>
+<div><div class="k">Cache busting</div><div class="v">?v=2 on the URL<br>when a card is replaced</div></div>
+<div><div class="k">Alt text</div><div class="v">always<br>describes the photograph</div></div>
+</div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">06 / order of work</span><h2>What to do about it</h2></div>
+<div class="cols">
+<div class="pnl"><span class="kick">This week · one hour</span><h3>Ship C1</h3><p>Export the site default card, put it at <span class="mono">/share/default.jpg</span>, add the meta block to the holding page. Every link shared from now on stops looking broken. This is worth doing before a single line of v2 is written.</p></div>
+<div class="pnl"><span class="kick">With Phase 1</span><h3>C4 and C5 by hand</h3><p>The walk card and the photocall card are one-offs at launch. Design them as files, not as a generator. Two exports, done in an afternoon.</p></div>
+<div class="pnl"><span class="kick">With Phase 2</span><h3>Generate C2 and C3</h3><p>Once essays and photographer pages exist there are too many to hand-make. The card becomes a rendered template: lead frame in, credit and index from the CMS, JPEG out on publish. Same six layouts, no design decisions at runtime.</p></div>
+</div>
+<div class="flag"><span class="kick">Decisions I need</span><p><strong>1.</strong> Which frame is the site default? It is the single most-seen photograph we will own and it should be a Pretoria frame, chosen by group edit, not a demo image. <strong>2.</strong> Do we want an Instagram story template in this system now, or is the grid enough until launch?</p></div>
+</section>
+
+</div></body></html>

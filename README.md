@@ -25,7 +25,8 @@ states; the street shouts. Full rules in
 | `css/bathong.css` | Component stylesheet - frames, tags, buttons, the dictionary card, ticker, member card, forms |
 | `brand/BRIEF.md` | The full brand & platform brief, v1.0 (28 Jul 2026) |
 | `brand/GUIDELINES.md` | The condensed one-page rules |
-| `assets/logo/` | The punch-dot and avatar SVGs |
+| `assets/logo/` | The punch-dot and avatar SVGs, the 512px favicon, wordmark PNGs, LinkedIn exports, and `exports.html` (the artboards behind them) |
+| `assets/share/` | `default.jpg`, the site og:image (1200×630 JPEG), and `exports.html` (its artboard) |
 | `assets/dictionary-card.html` | The definition card at 1080×1080, ready to screenshot for Instagram |
 | `site/index.html` | The live v1 website - single self-contained file, deploys anywhere |
 

@@ -1,0 +1,341 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Bathong. frontend v2 - direction &amp; wireframes</title><link rel="stylesheet" href="../styles.css">
+<style>
+body{background:var(--paper);color:var(--ink);padding:0 0 140px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.masthead{background:var(--ink);color:var(--paper);padding:70px 0 56px;margin-bottom:70px}
+.masthead .wrap{display:flex;flex-direction:column;gap:22px}
+.mk{font-family:var(--font-display);text-transform:uppercase;letter-spacing:-.035em;line-height:.86}
+.masthead .mk{font-size:clamp(2.6rem,7vw,5.4rem)}
+.masthead .mk .dot{color:var(--jacaranda)}
+.masthead .sub{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--grey-ghost);line-height:2}
+.masthead p{font-family:var(--font-body);font-size:1.05rem;color:var(--grey-fog);max-width:60ch;text-wrap:pretty}
+h2{font-family:var(--font-display);text-transform:uppercase;font-size:clamp(1.5rem,3.4vw,2.4rem);letter-spacing:-.03em;line-height:.95;margin-bottom:8px}
+.sec{margin-bottom:90px}
+.sechead{border-top:2px solid var(--ink);padding-top:18px;margin-bottom:34px}
+.idx{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;color:var(--grey-warm);display:block;margin-bottom:14px}
+.lede{font-family:var(--font-body);font-size:1.05rem;color:var(--grey-ink);max-width:70ch;text-wrap:pretty}
+p,li{font-family:var(--font-body);text-wrap:pretty}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.pnl{border:2px solid var(--ink);padding:22px;background:var(--paper)}
+.pnl h3{font-family:var(--font-body);font-weight:700;font-size:1rem;margin-bottom:10px}
+.pnl p{font-size:.92rem;color:var(--grey-ink);margin-bottom:8px}
+.kick{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--jacaranda-deep);display:block;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:.9rem}
+th{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;text-align:left;padding:10px 14px 10px 0;border-bottom:2px solid var(--ink);color:var(--grey-warm);vertical-align:bottom}
+td{padding:14px 14px 14px 0;border-bottom:1px solid var(--paper-dim);vertical-align:top;color:var(--grey-ink)}
+td strong{color:var(--ink);font-weight:700}
+td:first-child{width:20%}
+.mono{font-family:var(--font-mono);font-size:.8rem}
+ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul li{font-size:.94rem;color:var(--grey-ink);padding-left:20px;position:relative}
+ul li::before{content:"\2192";position:absolute;left:0;color:var(--jacaranda);font-family:var(--font-mono)}
+ol{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:10px}
+ol li{counter-increment:s;font-size:.94rem;color:var(--grey-ink);padding-left:34px;position:relative}
+ol li::before{content:counter(s,decimal-leading-zero);position:absolute;left:0;font-family:var(--font-mono);font-size:.72rem;color:var(--jacaranda-deep);top:3px}
+/* wireframe kit */
+.frame{display:grid;grid-template-columns:1.35fr .65fr;gap:22px;margin-bottom:56px;align-items:start}
+@media(max-width:1150px){.frame{grid-template-columns:1fr}}
+.wf{border:2px solid var(--ink);background:#EDE9E0;padding:10px 10px 10px 34px;display:flex;flex-direction:column;gap:8px}
+.wf.dark{background:#2A2825;border-color:var(--ink)}
+.row{display:flex;gap:8px}
+.b{background:#D6D1C5;border:1px dashed #A09B90;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:#6E6A61;text-align:center;padding:6px;line-height:1.5}
+.b.solid{background:#141313;color:#EDE9E0;border-style:solid;border-color:#141313}
+.b.sig{background:#E8FF38;color:#141313;border-color:#141313;border-style:solid}
+.b.jac{background:#7B5CD6;color:#F2EEE6;border-color:#7B5CD6;border-style:solid}
+.b.photo{background:#BFBAAE;color:#4C493F}
+.b.ghost{background:transparent;border-color:#8D887E}
+.b.type{background:transparent;border:none;color:#141313;font-family:var(--font-display);text-transform:uppercase;letter-spacing:-.03em;justify-content:flex-start;font-size:1.1rem}
+.wf.dark .b.type{color:#EDE9E0}
+.wf.dark .b{background:#3A3833;border-color:#5A574F;color:#A09B90}
+.wf.dark .b.photo{background:#4A4740;color:#CFCABF}
+.ann{position:absolute;background:var(--jacaranda);color:#fff;font-family:var(--font-mono);font-size:.56rem;width:16px;height:16px;display:grid;place-items:center;z-index:2}
+.rel{position:relative}
+.notes{border-left:2px solid var(--ink);padding-left:18px}
+.notes .ttl{font-family:var(--font-display);text-transform:uppercase;font-size:1.15rem;letter-spacing:-.02em;margin-bottom:4px}
+.notes .rt{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);margin-bottom:14px}
+.notes ol li{font-size:.86rem}
+.rule{height:2px;background:var(--ink);margin:0 0 34px}
+.flag{background:var(--signal);color:var(--ink);padding:22px;border:2px solid var(--ink);margin-top:22px}
+.flag p{font-size:.94rem;color:var(--ink)}
+.flag .kick{color:var(--ink)}
+.dark-pnl{background:var(--ink);color:var(--paper);padding:34px;border:2px solid var(--ink)}
+.dark-pnl p,.dark-pnl li{color:var(--grey-fog)}
+.dark-pnl h3{color:var(--paper)}
+.dark-pnl .kick{color:var(--signal)}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px;background:var(--ink);border:2px solid var(--ink)}
+.spec div{background:var(--paper);padding:16px}
+.spec .k{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-warm);margin-bottom:6px}
+.spec .v{font-family:var(--font-mono);font-size:.86rem;color:var(--ink);line-height:1.6}
+a{color:var(--jacaranda-deep)}a:hover{color:var(--jacaranda)}
+</style></head><body>
+
+<div class="masthead"><div class="wrap">
+<div class="sub">Frontend v2 · direction, wireframes and specification · draft 01 · 08 Aug 2026</div>
+<div class="mk">The build<span class="dot">.</span></div>
+<p>bathong.africa is live as a holding page. This document is the dictate for what replaces it: what we are learning from the houses that came before us, who we are building for, the eleven templates, and the exact rules for putting a photograph on a screen in South Africa. Nothing here invents a new visual language - it applies the one in this design system at full scale.</p>
+</div></div>
+
+<div class="wrap">
+
+<section class="sec"><div class="sechead"><span class="idx">00 / where we are</span><h2>A holding page and a promise</h2></div>
+<p class="lede">What is live today: a masthead, three doors labelled Build / Engage / Show, the dictionary card, a ticker, and a date - first walk, Saturday 29 August 2026. It does one job well, which is to say we exist and we are serious. It cannot do any of the jobs a collective actually needs: publish work, represent photographers, take submissions, sell membership, fill a walk, or put a show on a wall.</p>
+<div class="cols" style="margin-top:26px">
+<div class="pnl"><span class="kick">Keep</span><h3>The three doors</h3><p>Build / Engage / Show is a genuinely good structure. It is our navigation, not a homepage widget. Every page in v2 sits under one of those three.</p></div>
+<div class="pnl"><span class="kick">Keep</span><h3>The dictionary card</h3><p>The definition is the strongest brand object we own. It moves to the About page and becomes the shareable 1080 asset it was designed to be.</p></div>
+<div class="pnl"><span class="kick">Retire</span><h3>"Launching soon"</h3><p>The ticker survives; the coming-soon copy does not. From v2 the ticker carries live content - next walk, open photocall, latest essay.</p></div>
+</div></section>
+
+<section class="sec"><div class="sechead"><span class="idx">01 / what we learn from</span><h2>Seven houses, and what we take from each</h2></div>
+<p class="lede">These are studied for structure and behaviour, not for looks. We take the operating model and the reading experience. We take nothing of their visual identity - our identity is settled and is in this design system.</p>
+<table style="margin-top:26px">
+<thead><tr><th>House</th><th>What it does that matters</th><th>What we take</th></tr></thead>
+<tbody>
+<tr><td><strong>Magnum</strong><br><span class="mono">Paris / NY, 1947</span></td><td>A photographer-owned co-operative whose site is <strong>assembled from modules</strong> rather than fixed page designs, with an archive API that carries every image's caption and metadata alongside it.</td><td>The modular page. Editors compose a homepage or an essay from a library of blocks, so no two pages look identical and nobody needs a developer to publish.</td></tr>
+<tr><td><strong>VII</strong><br><span class="mono">New York, 2001</span></td><td>Runs a <strong>mentor programme</strong> as a first-class product - young photographers mentored by full members, then represented by the agency.</td><td>Mentorship is a page, not a paragraph. Our membership tiers and group-edit model get the same billing as the work itself.</td></tr>
+<tr><td><strong>NOOR</strong><br><span class="mono">Amsterdam, 2007</span></td><td>A <strong>co-operative owned and directed by its member photographers</strong>, publishing independent work aimed at social change.</td><td>Governance in public. Our NPC status, directors and how you become a member are on the site, not hidden in a PDF.</td></tr>
+<tr><td><strong>Panos</strong><br><span class="mono">London</span></td><td>Long-term documentary projects that <strong>interpret rather than record</strong>, delivered as exhibitions, multimedia and video sitting <strong>next to stills at the heart of the site</strong>.</td><td>Video and audio are not a separate section. An essay can carry a clip or field audio inline, in the same frame furniture as a photograph.</td></tr>
+<tr><td><strong>Market Photo Workshop</strong><br><span class="mono">Johannesburg, 1989</span></td><td>The closest structural sibling on the continent: school, gallery and platform in one institution, built to open access to photographers excluded from the industry.</td><td>The teaching and the showing are the same building. Our Learn and Show sections cross-link at every opportunity - a walk leads to an edit, an edit leads to a wall.</td></tr>
+<tr><td><strong>Of Soul and Joy</strong><br><span class="mono">Thokoza</span></td><td>A township-rooted programme that turned local workshops into internationally exhibited photographers.</td><td>Proof that Pitori-first is not Pitori-only. Every photographer page is built to be sent to a curator in Arles.</td></tr>
+<tr><td><strong>Everyday Africa</strong><br><span class="mono">continental</span></td><td>Countered a single-story continent by publishing volume, daily, from many hands at once.</td><td>Cadence. A feed of single frames with credit, sitting under the slow work, so the site is alive between essays.</td></tr>
+</tbody></table>
+<div class="flag"><span class="kick">The line we hold</span><p><strong>We are a collective, not an agency.</strong> Magnum, VII, NOOR and Panos all sell licences to editors; that is the business their sites are built around, and it is why their archives are search-first. We sell membership, teaching, walls and prints. Our site is <strong>reading-first</strong>. The archive comes in Phase 3 and serves curators and members, not stock buyers.</p></div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">02 / user-centricity</span><h2>Three people, three journeys</h2></div>
+<p class="lede">Every template below is justified by one of these three. If a page serves none of them it does not get built.</p>
+<div class="cols" style="margin-top:26px">
+<div class="pnl"><span class="kick">A · the photographer</span><h3>Thabo, 24, Mamelodi</h3><p>Shoots on a phone and a borrowed body. Found us on Instagram. Wants to know: is this for me, what does it cost, when is the next walk, will anyone actually look at my work.</p><p><strong>Needs, in order:</strong> next walk date and whether it is free · what membership costs · how to submit to a photocall · proof that members get shown.</p><p><strong>Failure mode:</strong> a site that reads as a gallery for people who already made it.</p></div>
+<div class="pnl"><span class="kick">B · the viewer</span><h3>Anyone who clicked a link</h3><p>Arrived at one essay from a share. Has ninety seconds and probably 4G. Will either read to the end or leave.</p><p><strong>Needs, in order:</strong> the first frame, fast · who made it · a way to keep going at the end.</p><p><strong>Failure mode:</strong> a hero that loads for six seconds and a related-posts grid that shows nothing they want.</p></div>
+<div class="pnl"><span class="kick">C · the institution</span><h3>Curator, funder, editor, brand</h3><p>Checking whether we are real before an email. Looking for governance, a body of work, and a named person to contact.</p><p><strong>Needs, in order:</strong> who runs it · what has been shown and where · a photographer roster with contactable pages · NPC registration and reporting.</p><p><strong>Failure mode:</strong> no About page with real names, no exhibition history, no way to reach a photographer directly.</p></div>
+</div>
+<div class="dark-pnl" style="margin-top:22px"><span class="kick">The data question, which is a design question</span><p>Thabo is on a prepaid bundle. In South Africa a megabyte is a real cost to the person we most want to reach, and a photography site is the heaviest thing on the web. <strong>Every performance decision in section 06 is a user-centricity decision, not an engineering nicety.</strong> The budget: a homepage that costs under 1 MB on first view, an essay that streams frame by frame rather than loading twenty at once, and no autoplaying anything, ever.</p></div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">03 / the unit</span><h2>The photo essay is the atom. Everything else is packaging.</h2></div>
+<p class="lede">The brief already says it: 12 to 20 sequenced frames, edited as a body, published as a story. That is the thing we make. A walk produces frames; a group edit turns frames into an essay; an essay earns a wall; a wall makes a photographer. The site should make that pipeline visible, because the pipeline is the argument for joining.</p>
+<div class="spec" style="margin-top:26px">
+<div><div class="k">Atom</div><div class="v">Frame<br>one photograph + credit + caption</div></div>
+<div><div class="k">Molecule</div><div class="v">Essay<br>12-20 sequenced frames</div></div>
+<div><div class="k">Body</div><div class="v">Photographer<br>a page of essays + a bio</div></div>
+<div><div class="k">Institution</div><div class="v">Exhibition<br>essays on a wall, with a date</div></div>
+</div>
+<p style="margin-top:22px">Consequence for the build: <strong>the essay reader is the template we design first and best.</strong> If the reader is not excellent nothing else matters. The homepage is a shop window for the reader; the archive is an index of readers; the photographer page is a shelf of readers.</p>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">04 / architecture</span><h2>Eleven templates, three doors</h2></div>
+<table style="margin-top:8px">
+<thead><tr><th>Door</th><th>Route</th><th>Template</th><th>Serves</th></tr></thead>
+<tbody>
+<tr><td><strong>-</strong></td><td class="mono">/</td><td><strong>Home</strong> - editorially assembled</td><td>A · B · C</td></tr>
+<tr><td><strong>Show</strong></td><td class="mono">/stories</td><td><strong>Stories index</strong> - the published body of work</td><td>B · C</td></tr>
+<tr><td><strong>Show</strong></td><td class="mono">/stories/[slug]</td><td><strong>Essay reader</strong> - the hero template</td><td>B</td></tr>
+<tr><td><strong>Show</strong></td><td class="mono">/exhibitions</td><td><strong>Exhibitions</strong> - upcoming and past, with venues</td><td>C · A</td></tr>
+<tr><td><strong>Build</strong></td><td class="mono">/photographers</td><td><strong>Members index</strong> - the roster</td><td>C · A</td></tr>
+<tr><td><strong>Build</strong></td><td class="mono">/photographers/[name]</td><td><strong>Photographer page</strong> - a photographer's own front page</td><td>C · B</td></tr>
+<tr><td><strong>Build</strong></td><td class="mono">/join</td><td><strong>Membership</strong> - tiers, benefits, apply</td><td>A</td></tr>
+<tr><td><strong>Engage</strong></td><td class="mono">/walks</td><td><strong>Walks &amp; sessions</strong> - dates, meeting points, RSVP</td><td>A</td></tr>
+<tr><td><strong>Engage</strong></td><td class="mono">/photocalls</td><td><strong>Photocall</strong> - open brief, deadline, submit</td><td>A</td></tr>
+<tr><td><strong>-</strong></td><td class="mono">/about</td><td><strong>About</strong> - the word, the directors, the NPC</td><td>C</td></tr>
+<tr><td><strong>Show</strong></td><td class="mono">/archive</td><td><strong>Archive</strong> - every frame, filterable · <em>Phase 3</em></td><td>C</td></tr>
+</tbody></table>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">05 / wireframes</span><h2>The frames</h2></div>
+<p class="lede" style="margin-bottom:44px">Greyscale, structural, annotated. Grey blocks are photographs. Black is ink, purple is jacaranda, yellow is signal - shown only where colour is structural. All frames are the 1180 desktop unless marked. Numbers key to the notes beside each.</p>
+
+<!-- W1 HOME -->
+<div class="frame">
+<div class="wf rel" style="min-height:560px">
+<span class="ann" style="top:12px;left:-26px">1</span>
+<div class="row" style="min-height:34px"><div class="b type" style="flex:0 0 130px">Bathong.</div><div class="b ghost" style="flex:1">build · engage · show</div><div class="b solid" style="flex:0 0 110px">Join →</div></div>
+<div class="row rel" style="min-height:230px"><span class="ann" style="top:8px;left:-26px">2</span><div class="b photo" style="flex:1">Lead frame · 21/9 · one photograph, full bleed, credit bottom-left</div></div>
+<div class="row rel" style="min-height:52px"><span class="ann" style="top:8px;left:-26px">3</span><div class="b type" style="flex:1;font-size:1.6rem">Essay 004 / Salvokop, before six</div><div class="b ghost" style="flex:0 0 130px">Read →</div></div>
+<div class="row rel" style="min-height:112px"><span class="ann" style="top:8px;left:-26px">4</span><div class="b jac" style="flex:0 0 30%">Next walk<br>Sat 29 Aug · 05:30<br>Church Sq · RSVP →</div><div class="b sig" style="flex:0 0 30%">Photocall open<br>closes 12 Sep<br>Submit →</div><div class="b ghost" style="flex:1">Membership<br>R - · launch pricing<br>Become a member →</div></div>
+<div class="row rel" style="min-height:130px"><span class="ann" style="top:8px;left:-26px">5</span><div class="b photo" style="flex:1">essay</div><div class="b photo" style="flex:1">essay</div><div class="b photo" style="flex:1">essay</div></div>
+<div class="row rel" style="min-height:74px"><span class="ann" style="top:8px;left:-26px">6</span><div class="b" style="flex:1">Feed · single frames from members this week · 6 up, credited</div></div>
+<div class="row" style="min-height:26px"><div class="b solid" style="flex:1">Bathong! ● among the people ● Pitori ● 012 ●</div></div>
+</div>
+<div class="notes"><div class="ttl">W1 · Home</div><div class="rt">Route / · paper → ink alternating</div>
+<ol>
+<li><strong>Sticky nav.</strong> Three doors only. Paper at 88% with a 10px backdrop blur, as specified in the system. Join is an ink button, always present.</li>
+<li><strong>One lead frame, 21/9, full bleed.</strong> Not a carousel. Not a slideshow. One photograph, changed weekly by editorial decision, credited in a mono capsule bottom-left. This is the whole first impression.</li>
+<li><strong>The lead essay title sits under the photograph, not on it.</strong> Colour never goes over the work - system rule. Display type, uppercase, with the essay index.</li>
+<li><strong>The three live blocks.</strong> Walk / photocall / membership, in that order, because that is Thabo's order of need. Jacaranda, signal and ghost - the only place three plates meet.</li>
+<li><strong>Three recent essays.</strong> 3/2 frames, title and photographer below in mono. No excerpt text - the frame is the excerpt.</li>
+<li><strong>The feed.</strong> Six single frames from members this week. This is the Everyday Africa lesson: the site must have a pulse between essays.</li>
+</ol></div></div>
+
+<!-- W2 ESSAY READER -->
+<div class="frame">
+<div class="wf dark rel" style="min-height:600px">
+<span class="ann" style="top:12px;left:-26px">1</span>
+<div class="row" style="min-height:30px"><div class="b type" style="flex:0 0 110px;font-size:.9rem">Bathong.</div><div class="b ghost" style="flex:0 0 74px">04 / 16</div><div style="flex:1;align-self:center;height:2px;background:#5A574F"></div><div class="b ghost" style="flex:0 0 90px">✕ close</div></div>
+<div class="row rel" style="min-height:300px"><span class="ann" style="top:8px;left:-26px">2</span><div class="b photo" style="flex:1">Frame 04 · sized to fit the viewport, never cropped, never full-width by default</div></div>
+<div class="row rel" style="min-height:44px"><span class="ann" style="top:8px;left:-26px">3</span><div class="b" style="flex:1;text-align:left;justify-content:flex-start">04 / 16 &nbsp;·&nbsp; Marabastad, 06:12 &nbsp;·&nbsp; © Thabo M.</div></div>
+<div class="row rel" style="min-height:86px"><span class="ann" style="top:8px;left:-26px">4</span><div class="b ghost" style="flex:1;text-align:left;justify-content:flex-start;padding:12px">Interleaved text block. Body copy, 62ch, appears between frames where the edit calls for it - not as an intro dumped at the top.</div></div>
+<div class="row rel" style="min-height:70px"><span class="ann" style="top:8px;left:-26px">5</span><div class="b photo" style="flex:1">frame 05</div><div class="b photo" style="flex:1">frame 06 · paired frames where the edit pairs them</div></div>
+<div class="row rel" style="min-height:56px"><span class="ann" style="top:8px;left:-26px">6</span><div class="b ghost" style="flex:0 0 60%;text-align:left;justify-content:flex-start;padding:10px">© Thabo Mokoena · member № 0014 · view all work →</div><div class="b" style="flex:1">Next essay →</div></div>
+</div>
+<div class="notes"><div class="ttl">W2 · Essay reader</div><div class="rt">Route /stories/[slug] · ink ground · the hero template</div>
+<ol>
+<li><strong>Reader chrome, not site chrome.</strong> The nav collapses to a wordmark, a frame counter that doubles as a progress rule, and a close. Everything else gets out of the way.</li>
+<li><strong>Frames are sized to fit the viewport height, not the width.</strong> This is the single most important decision in the build. A 3/2 landscape frame at full browser width forces the viewer to scroll past a photograph to see it. We cap every frame at roughly 82vh so it is seen whole, as a print is seen whole.</li>
+<li><strong>Caption capsule under every frame.</strong> Mono, index / place / time / credit. Opaque bar, hard edge, never a gradient over the image.</li>
+<li><strong>Text is interleaved, not front-loaded.</strong> The photographer's words appear where the sequence needs them. Maximum 62 characters per line.</li>
+<li><strong>The edit decides the layout.</strong> Two frames sit side by side when the edit pairs them, a single frame runs alone when it should breathe. This is why the template is modular - see the Magnum lesson.</li>
+<li><strong>The end is a door, not a dead stop.</strong> Photographer credit with a link to their page, then the next essay. Never a grid of thumbnails.</li>
+</ol></div></div>
+
+<!-- W3 STORIES INDEX -->
+<div class="frame">
+<div class="wf rel" style="min-height:430px">
+<div class="row" style="min-height:30px"><div class="b type" style="flex:0 0 130px">Bathong.</div><div class="b ghost" style="flex:1">build · engage · show</div><div class="b solid" style="flex:0 0 100px">Join →</div></div>
+<div class="row rel" style="min-height:56px"><span class="ann" style="top:8px;left:-26px">1</span><div class="b type" style="flex:1;font-size:1.7rem">02 / Stories</div><div class="b ghost" style="flex:0 0 240px">all · pitori · portrait · night · b&amp;w</div></div>
+<div class="row rel" style="min-height:170px"><span class="ann" style="top:8px;left:-26px">2</span><div class="b photo" style="flex:0 0 62%">Latest essay · lead frame, 3/2</div><div class="b ghost" style="flex:1;flex-direction:column;text-align:left;justify-content:flex-end;padding:14px">Essay 004<br><br>SALVOKOP,<br>BEFORE SIX<br><br>© Thabo Mokoena · 16 frames · Aug 2026</div></div>
+<div class="row rel" style="min-height:120px"><span class="ann" style="top:8px;left:-26px">3</span><div class="b photo" style="flex:1">003</div><div class="b photo" style="flex:1">002</div><div class="b photo" style="flex:1">001</div></div>
+<div class="row" style="min-height:36px"><div class="b ghost" style="flex:1">Load more · 4 of 4 essays</div></div>
+</div>
+<div class="notes"><div class="ttl">W3 · Stories index</div><div class="rt">Route /stories · paper ground</div>
+<ol>
+<li><strong>Filters are words, not a sidebar.</strong> A single mono row of tags. Five at most. No faceted search here - that is the archive's job in Phase 3.</li>
+<li><strong>The newest essay gets an asymmetric hero row</strong> (1.2fr / .8fr, per the system's layout rule), so the index always leads with an editorial decision rather than a uniform grid.</li>
+<li><strong>Everything below is an even grid</strong> of lead frames with the essay index, title and photographer in mono underneath. Honest at four essays; still honest at four hundred.</li>
+</ol>
+<p style="font-size:.86rem;margin-top:14px"><strong>At launch we will have very few essays.</strong> The template must not look broken with three. That is why the hero row exists and why the grid is three-up rather than four.</p>
+</div></div>
+
+<!-- W4 PHOTOGRAPHER -->
+<div class="frame">
+<div class="wf rel" style="min-height:460px">
+<div class="row" style="min-height:30px"><div class="b type" style="flex:0 0 130px">Bathong.</div><div class="b ghost" style="flex:1">build · engage · show</div><div class="b solid" style="flex:0 0 100px">Join →</div></div>
+<div class="row rel" style="min-height:150px"><span class="ann" style="top:8px;left:-26px">1</span><div class="b photo" style="flex:0 0 30%">Portrait 4/5</div><div class="b ghost" style="flex:1;flex-direction:column;text-align:left;justify-content:center;padding:16px">Member № 0014 · Pretoria<br><br>THABO MOKOENA<br><br>Two-line bio in body copy. Works in Mamelodi and the inner city. Joined 2026.<br><br>[ Contact → ] [ Instagram → ]</div></div>
+<div class="row rel" style="min-height:26px"><span class="ann" style="top:6px;left:-26px">2</span><div class="b" style="flex:1">Essays 3 &nbsp;·&nbsp; Frames in archive 214 &nbsp;·&nbsp; Exhibited 2 &nbsp;·&nbsp; Walks led 1</div></div>
+<div class="row rel" style="min-height:130px"><span class="ann" style="top:8px;left:-26px">3</span><div class="b photo" style="flex:1">essay 004</div><div class="b photo" style="flex:1">essay 002</div><div class="b photo" style="flex:1">essay 001</div></div>
+<div class="row rel" style="min-height:76px"><span class="ann" style="top:8px;left:-26px">4</span><div class="b ghost" style="flex:1">Selected single frames · contact sheet run, 8 up</div></div>
+<div class="row" style="min-height:36px"><div class="b jac" style="flex:1">All work © Thabo Mokoena. Licensing enquiries go directly to the photographer.</div></div>
+</div>
+<div class="notes"><div class="ttl">W4 · Photographer page</div><div class="rt">Route /photographers/[name] · paper ground</div>
+<ol>
+<li><strong>This page must survive being sent to a curator on its own.</strong> Portrait, name, member number, two-line bio, direct contact. It is a photographer's front page, hosted by us.</li>
+<li><strong>A count row, not a badge system.</strong> Essays, frames, exhibitions, walks led. Real numbers or the row does not render - never a zero dressed up as a milestone.</li>
+<li><strong>Essays first, singles second.</strong> The body of work outranks the highlights reel.</li>
+<li><strong>The copyright line is a jacaranda plate, on the record.</strong> "You keep your copyright. Always." is a promise in the brief - here it is load-bearing UI, and it is what makes the page safe to send anywhere.</li>
+</ol></div></div>
+
+<!-- W5 WALKS -->
+<div class="frame">
+<div class="wf rel" style="min-height:400px">
+<div class="row" style="min-height:30px"><div class="b type" style="flex:0 0 130px">Bathong.</div><div class="b ghost" style="flex:1">build · engage · show</div><div class="b solid" style="flex:0 0 100px">Join →</div></div>
+<div class="row rel" style="min-height:120px"><span class="ann" style="top:8px;left:-26px">1</span><div class="b jac" style="flex:1;flex-direction:column;padding:14px">WALK № 001 · SATURDAY 29 AUGUST 2026 · 05:30<br><br>Church Square → Marabastad → Salvokop · 4 hours · bring one lens<br><br>[ Reserve a place → ] &nbsp; 18 of 25 places left · free for members, R- for guests</div></div>
+<div class="row rel" style="min-height:70px"><span class="ann" style="top:8px;left:-26px">2</span><div class="b ghost" style="flex:1;text-align:left;justify-content:flex-start;padding:12px">What a walk is · 4 short lines. Meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.</div></div>
+<div class="row rel" style="min-height:90px"><span class="ann" style="top:8px;left:-26px">3</span><div class="b ghost" style="flex:1;flex-direction:column;text-align:left;justify-content:center;padding:10px">W/02 · Rooftop session · Sep · TBC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; →<br>W/03 · Night walk, Sunnyside · Oct · TBC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; →</div></div>
+<div class="row rel" style="min-height:80px"><span class="ann" style="top:8px;left:-26px">4</span><div class="b photo" style="flex:1">from walk 001</div><div class="b photo" style="flex:1">from walk 001</div><div class="b photo" style="flex:1">from walk 001</div><div class="b photo" style="flex:1">from walk 001</div></div>
+</div>
+<div class="notes"><div class="ttl">W5 · Walks &amp; sessions</div><div class="rt">Route /walks · jacaranda lead on paper</div>
+<ol>
+<li><strong>The next walk is the page.</strong> Date, time, meeting point, route, duration, what to bring, price, places left, one button. Everything a person needs to decide in eight seconds.</li>
+<li><strong>Answer the fear, not the feature.</strong> The barrier to a first walk is not information, it is "am I good enough to come". Four lines that say no experience and no gear requirement do more work than any photograph.</li>
+<li><strong>Ruled list for future walks</strong> with honest TBC dates, per the content rules. Never invent a date.</li>
+<li><strong>Frames from the last walk close the page.</strong> The proof that showing up produces work.</li>
+</ol></div></div>
+
+<!-- W6 PHOTOCALL -->
+<div class="frame">
+<div class="wf rel" style="min-height:400px">
+<div class="row" style="min-height:30px"><div class="b type" style="flex:0 0 130px">Bathong.</div><div class="b ghost" style="flex:1">build · engage · show</div><div class="b solid" style="flex:0 0 100px">Join →</div></div>
+<div class="row rel" style="min-height:74px"><span class="ann" style="top:8px;left:-26px">1</span><div class="b sig" style="flex:1;flex-direction:column;padding:12px">PHOTOCALL 001 · OPEN · CLOSES 12 SEPTEMBER 2026<br><br>"Before six" - the capital in the first hour of light. Up to 8 frames.</div></div>
+<div class="row" style="min-height:120px"><div class="b ghost rel" style="flex:0 0 58%;flex-direction:column;text-align:left;justify-content:flex-start;padding:12px"><span class="ann" style="top:8px;left:-26px">2</span>THE BRIEF<br><br>Body copy, 3 short paragraphs. What we are looking for, what we are not looking for, and how the edit will be made.<br><br>WHO CAN ENTER · anyone, member or not<br>WHAT IT COSTS · nothing<br>WHAT YOU KEEP · everything</div><div class="b rel" style="flex:1;flex-direction:column;padding:12px"><span class="ann" style="top:8px;right:8px">3</span>SUBMIT<br><br>[ Name ]<br>[ Email ]<br>[ Where you shoot ]<br>[ Drop up to 8 frames ]<br><br>[ Send it - Bathong! → ]</div></div>
+<div class="row rel" style="min-height:64px"><span class="ann" style="top:8px;left:-26px">4</span><div class="b ghost" style="flex:1;text-align:left;justify-content:flex-start;padding:12px">WHAT HAPPENS NEXT · Every entrant gets a written response, frame by frame. Selected work is published as Essay 005 and shown at the first exhibition.</div></div>
+</div>
+<div class="notes"><div class="ttl">W6 · Photocall</div><div class="rt">Route /photocalls · signal lead on paper</div>
+<ol>
+<li><strong>Status, deadline and brief in one signal plate.</strong> Signal is the accent for the single most urgent thing on the site, and an open call is exactly that. Only one signal plate per page.</li>
+<li><strong>The three lines that remove the excuse:</strong> anyone can enter, it costs nothing, you keep everything. These sit above the form, not in terms and conditions.</li>
+<li><strong>The form is on the same screen as the brief.</strong> No "click here to apply" page. Fields are mono, 2px framed, per the system.</li>
+<li><strong>Say what happens after.</strong> The written response frame by frame is our single strongest differentiator from every open call these photographers have entered before. It goes on the page, in public, as a promise.</li>
+</ol></div></div>
+
+<!-- W7 MOBILE -->
+<div class="frame">
+<div style="display:flex;gap:14px">
+<div class="wf rel" style="width:190px;min-height:420px">
+<span class="ann" style="top:8px;left:-26px">1</span>
+<div class="row" style="min-height:26px"><div class="b type" style="flex:1;font-size:.8rem">Bathong.</div><div class="b ghost" style="flex:0 0 34px">≡</div></div>
+<div class="row" style="min-height:150px"><div class="b photo" style="flex:1">Lead frame<br>4/5 crop on mobile</div></div>
+<div class="row" style="min-height:40px"><div class="b type" style="flex:1;font-size:.85rem">Salvokop,<br>before six</div></div>
+<div class="row" style="min-height:44px"><div class="b jac" style="flex:1">Next walk · 29 Aug<br>RSVP →</div></div>
+<div class="row" style="min-height:44px"><div class="b sig" style="flex:1">Photocall open<br>Submit →</div></div>
+<div class="row" style="min-height:66px"><div class="b photo" style="flex:1">essay</div></div>
+</div>
+<div class="wf dark rel" style="width:190px;min-height:420px">
+<span class="ann" style="top:8px;left:-26px">2</span>
+<div class="row" style="min-height:24px"><div class="b ghost" style="flex:0 0 58px;font-size:.52rem">04 / 16</div><div style="flex:1;align-self:center;height:2px;background:#5A574F"></div></div>
+<div class="row" style="min-height:200px"><div class="b photo" style="flex:1">Frame 04<br><br>full width on mobile<br>portrait frames get<br>the whole screen</div></div>
+<div class="row" style="min-height:40px"><div class="b" style="flex:1">04/16 · Marabastad<br>© Thabo M.</div></div>
+<div class="row" style="min-height:120px"><div class="b photo" style="flex:1">Frame 05</div></div>
+</div>
+</div>
+<div class="notes"><div class="ttl">W7 · Mobile</div><div class="rt">360px · the majority case</div>
+<ol>
+<li><strong>Mobile is not a reduction, it is the primary target.</strong> Most of audience A finds us on a phone. The three doors become a sheet menu; the lead frame crops to 4/5 because a 21/9 frame on a phone is a stripe; the two live blocks stack directly under the lead and above everything else.</li>
+<li><strong>In the reader, frames go full width and the caption sits below.</strong> Portrait frames get the full screen height. The frame counter stays pinned as a 2px progress rule. Tap advances, swipe advances, nothing autoplays.</li>
+</ol>
+<p style="font-size:.86rem;margin-top:14px"><strong>Hit targets 44px minimum</strong> everywhere, including the frame counter and the caption's photographer link.</p>
+</div></div>
+
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">06 / the photograph on screen</span><h2>Size, ratio and delivery</h2></div>
+<p class="lede">This is the section that separates a photography site from a website with photographs on it. These are rules, not defaults.</p>
+<div class="spec" style="margin-top:26px">
+<div><div class="k">Frame cap in the reader</div><div class="v">max-height: 82vh<br>never full-bleed by default</div></div>
+<div><div class="k">Ratios in use</div><div class="v">3/2 default<br>21/9 lead<br>4/5 portrait<br>1/1 social only</div></div>
+<div><div class="k">Never</div><div class="v">crop to square<br>crop to fill a grid<br>zoom on hover</div></div>
+<div><div class="k">Widths served</div><div class="v">480 · 960 · 1440 · 1920<br>srcset, AVIF then WebP</div></div>
+<div><div class="k">First view budget</div><div class="v">under 1 MB total<br>lead frame under 180 KB</div></div>
+<div><div class="k">Loading</div><div class="v">lead eager<br>everything else lazy<br>LQIP: flat paper-dim, no blur-up</div></div>
+<div><div class="k">Treatment</div><div class="v">contrast(1.05)<br>nothing else, ever</div></div>
+<div><div class="k">Grain</div><div class="v">page-level overlay only<br>never baked into a frame</div></div>
+</div>
+<div class="cols" style="margin-top:22px">
+<div class="pnl"><span class="kick">Sizing, in principle</span><h3>A photograph is seen whole or it is not seen</h3><p>The most common failure on photography sites is a landscape frame set to 100% width on a 1600px monitor: the viewer scrolls through the middle of the picture and never sees the composition. Capping frame height at 82vh means the frame and its caption both sit within the viewport at the moment it arrives. Width follows from height and ratio, not the other way round.</p></div>
+<div class="pnl"><span class="kick">Full bleed, when</span><h3>Twice per essay at most</h3><p>Full bleed is a device, not a layout. Reserve it for the opening frame and, if the edit calls for it, one turn in the middle. A full-bleed frame carries its caption below the fold of the image, in the standard capsule - never overlaid.</p></div>
+<div class="pnl"><span class="kick">Delivery, in principle</span><h3>Stream the essay, do not load it</h3><p>Sixteen frames at 1440px is a 6 MB page if loaded naively. We serve frame 1 eagerly, frames 2 and 3 on idle, and everything else on approach. On a slow connection the reader still starts in under two seconds, which is the only number that matters.</p></div>
+</div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">07 / style specifics</span><h2>What v2 adds to the system, and what it must not touch</h2></div>
+<div class="cols">
+<div class="pnl"><span class="kick">Unchanged</span><h3>The foundations hold</h3><p>Four plates, three faces, radius 0, hard offset shadows, the 2px ink frame, two motion durations, inversion hovers, no camera iconography, credit on every frame. v2 changes no token. If a screen seems to need a fifth colour, the screen is wrong.</p></div>
+<div class="pnl"><span class="kick">New · reader</span><h3>Ink is the reading ground</h3><p>The essay reader is the one template that runs ink-dominant end to end, because a dark ground is how photographs are looked at. Paper returns at the essay's end card. This is the only inversion of the paper 60 / ink 30 budget in the system, and it is deliberate.</p></div>
+<div class="pnl"><span class="kick">New · progress</span><h3>The counter is a rule</h3><p>The reader's frame counter doubles as a 2px progress rule across the top - ink on paper, signal on ink. It is the only new graphic device v2 introduces, and it is made of the system's existing hairline.</p></div>
+<div class="pnl"><span class="kick">New · density</span><h3>The contact sheet run</h3><p><span class="mono">EssayStrip</span> already exists in the system as a numbered contact-sheet run. v2 promotes it to a primary layout on photographer pages and walk recaps, at 8 up desktop and 3 up mobile.</p></div>
+<div class="pnl"><span class="kick">Watch</span><h3>Signal discipline</h3><p>Signal is 2% of the surface budget. With a photocall block on the homepage, the walks page and the photocall page, it is now the easiest token in the system to overuse. One signal element per page. If a page has an open call, that is the signal element.</p></div>
+<div class="pnl"><span class="kick">Watch</span><h3>The grain on photographs</h3><p>The grain overlay sits on the page, at 0.5 opacity, over everything. On a dark reader with large frames this will read as noise on the photograph itself. <strong>Test at 0.3 in the reader, and be prepared to disable it over frames entirely.</strong> Real grain in the file beats fake grain on top of it.</p></div>
+</div>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">08 / components</span><h2>What has to be built</h2></div>
+<table>
+<thead><tr><th>Have</th><th>Need</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td class="mono">Frame, EssayStrip, Card, MemberCard, Button, Tag, Kicker, SectionHead, RuledList, Ticker, Wordmark, PunchDot, DictionaryCard, Field</td><td class="mono"><strong>EssayReader</strong></td><td>The sequencer. Owns the 82vh cap, the counter rule, keyboard and swipe advance, and the streaming loader.</td></tr>
+<tr><td></td><td class="mono"><strong>FrameCaption</strong></td><td>Index / place / time / credit capsule. Currently inline inside Frame; needs to stand alone for full-bleed use.</td></tr>
+<tr><td></td><td class="mono"><strong>PhotographerHeader</strong></td><td>Portrait, name, member number, bio, contact row, count row.</td></tr>
+<tr><td></td><td class="mono"><strong>EventBlock</strong></td><td>The walk block: date, time, meeting point, capacity, price, one CTA. Reused on home, walks and member area.</td></tr>
+<tr><td></td><td class="mono"><strong>SubmitForm</strong></td><td>Multi-file drop built from the existing Field. Needs an upload state, a progress rule and a written confirmation.</td></tr>
+<tr><td></td><td class="mono"><strong>FeedGrid</strong></td><td>Six recent single frames with credit. Trivial, but it is the site's pulse.</td></tr>
+</tbody></table>
+<p style="margin-top:22px">Six new components. Everything else in the eleven templates composes from what is already in this system.</p>
+</section>
+
+<section class="sec"><div class="sechead"><span class="idx">09 / order of work</span><h2>What we build, in what order</h2></div>
+<div class="cols">
+<div class="pnl"><span class="kick">Phase 1 · before 29 August</span><h3>The walk has to fill</h3><ul><li>Home with the three live blocks</li><li>Walks page with RSVP</li><li>About with directors and the NPC line</li><li>Everything else stays a holding state</li></ul><p style="margin-top:10px"><strong>One job: get twenty-five people to Church Square at half past five.</strong></p></div>
+<div class="pnl"><span class="kick">Phase 2 · September</span><h3>The first essay ships</h3><ul><li>Essay reader, built properly</li><li>Stories index</li><li>Photocall page and submission</li><li>Photographer pages for founding members</li></ul><p style="margin-top:10px">Walk 001 produces the frames; the group edit produces Essay 001; the reader has to be ready for it.</p></div>
+<div class="pnl"><span class="kick">Phase 3 · Q4</span><h3>Membership and the wall</h3><ul><li>Join, with real pricing</li><li>Member area and the digital card</li><li>Exhibitions page</li><li>Archive with filters</li></ul><p style="margin-top:10px">Pricing stays <span class="mono">R -</span> on the site until the board sets it. Never invent a number.</p></div>
+</div>
+<div class="flag" style="margin-top:22px"><span class="kick">Decisions I need from the group before hi-fi</span><p><strong>1.</strong> Does the reader run on ink, as specified here, or on paper? This is the single biggest visual call in the build. <strong>2.</strong> Is membership paid at launch or free for a founding cohort? It changes the homepage's third block entirely. <strong>3.</strong> Do photographer pages carry direct contact details, or does licensing route through the collective? Magnum and NOOR route through the agency; we said photographers keep everything. <strong>4.</strong> Who edits? The modular homepage assumes someone composes it weekly.</p></div>
+</section>
+
+</div></body></html>

@@ -1,0 +1,33 @@
+/* Four plates, no more. Surface budget per page: paper 60 / ink 30 / jacaranda 8 / signal 2. */
+:root{
+  --ink:#141313;            /* near-black. the darkroom. */
+  --ink-lift:#1d1c1a;       /* hover state on ink surfaces */
+  --paper:#F2EEE6;          /* warm off-white. the print. */
+  --paper-dim:#E7E2D6;      /* recessed panels on paper */
+  --jacaranda:#7B5CD6;      /* Pretoria in October. the identity colour. */
+  --jacaranda-deep:#5636B8; /* links, hover, small type on paper */
+  --signal:#E8FF38;         /* highveld flash. accent only. */
+
+  /* warm greys, derived from ink/paper */
+  --grey-warm:#8D887E;      /* metadata on paper */
+  --grey-ink:#4C493F;       /* body text at reduced emphasis */
+  --grey-line:#3A3833;      /* hairlines on ink surfaces */
+  --grey-ghost:#A09B90;     /* metadata on ink */
+  --grey-fog:#CFCABF;       /* body text on ink */
+
+  /* semantic aliases */
+  --surface-page:var(--paper);
+  --surface-dark:var(--ink);
+  --surface-recessed:var(--paper-dim);
+  --surface-identity:var(--jacaranda);
+  --surface-accent:var(--signal);
+  --text-primary:var(--ink);
+  --text-muted:var(--grey-ink);
+  --text-meta:var(--grey-warm);
+  --text-on-dark:var(--paper);
+  --text-muted-on-dark:var(--grey-fog);
+  --text-meta-on-dark:var(--grey-ghost);
+  --text-link:var(--jacaranda-deep);
+  --border-color:var(--ink);
+  --focus-ring:var(--jacaranda);
+}
