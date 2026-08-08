@@ -78,6 +78,21 @@ manifesto/membership globals.
 | globals | R | R | U | U |
 | /admin panel | - | - | yes | yes |
 
+## Local development
+
+- `docker compose -f docker-compose.dev.yml up -d` starts Postgres 16 on
+  localhost:5432 (user/db `bathong`, password `bathong-dev`).
+- Backend: copy `backend/.env.example` to `backend/.env` (set a real
+  `PAYLOAD_SECRET`), then `npm run migrate`, `npm run seed` (idempotent;
+  `SEED_DEMO=true` adds e2e state fixtures, `SEED_ADMIN_EMAIL`/`_PASSWORD`
+  create the admin) and `npm run dev` on port 3001.
+- Frontend: `npm run dev` on port 3000. Checks: `npm run lint`,
+  `npm run tokens:check` (design-system drift), `npm run types:check`
+  (payload-types drift), `npm test` (unit), `npm run test:e2e` (Playwright,
+  needs the seeded stack).
+- CI (`.github/workflows/ci.yml`) runs lint, typecheck, both drift checks,
+  unit tests, builds and the e2e smoke on every push and PR.
+
 ## Migrations (Postgres + Payload)
 
 - Migrations are the source of truth everywhere; Drizzle push is dev-only and
