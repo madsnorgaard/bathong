@@ -3,8 +3,8 @@ FROM node:22-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 ENV NUXT_TELEMETRY_DISABLED=1
@@ -17,7 +17,8 @@ ENV NUXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
-COPY --from=builder /app/.output ./.output
+COPY --from=builder --chown=node:node /app/.output ./.output
+USER node
 
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]

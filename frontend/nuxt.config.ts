@@ -35,6 +35,16 @@ export default defineNuxtConfig({
     ],
   },
   routeRules: {
+    // Baseline security headers. CSP is a follow-up (issue #37): a real one
+    // needs nonces for SSR inline scripts, not unsafe-inline.
+    '/**': {
+      headers: {
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin',
+        'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+      },
+    },
     '/_ipx/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/share/**': { headers: { 'cache-control': 'public, max-age=86400' } },
   },

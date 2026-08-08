@@ -98,7 +98,20 @@ services:
       - traefik.http.routers.bathong_payload.rule=Host(`api.${SITE_DOMAIN}`)
       - traefik.http.routers.bathong_payload.tls=true
       - traefik.http.routers.bathong_payload.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_payload.middlewares=bathong-api-ratelimit
       - traefik.http.services.bathong_payload.loadbalancer.server.port=3001
+      # Rate limits: a modest ceiling on the whole API, a strict one on the
+      # endpoints an anonymous visitor can write to (login, RSVP create).
+      - traefik.http.middlewares.bathong-api-ratelimit.ratelimit.average=30
+      - traefik.http.middlewares.bathong-api-ratelimit.ratelimit.burst=60
+      - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.average=1
+      - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.burst=5
+      - traefik.http.routers.bathong_payload_strict.rule=Host(`api.${SITE_DOMAIN}`) && (PathPrefix(`/api/users/login`) || (Path(`/api/rsvps`) && Method(`POST`)))
+      - traefik.http.routers.bathong_payload_strict.priority=100
+      - traefik.http.routers.bathong_payload_strict.tls=true
+      - traefik.http.routers.bathong_payload_strict.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_payload_strict.middlewares=bathong-strict-ratelimit
+      - traefik.http.routers.bathong_payload_strict.service=bathong_payload
 
   # No public router yet - the holding page keeps ${SITE_DOMAIN} until the
   # M3 cutover, when this service takes the primary Host rule.

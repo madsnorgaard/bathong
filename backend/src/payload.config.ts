@@ -23,6 +23,15 @@ import { Membership } from './globals/Membership'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Fail fast: a missing secret must never fall back to a guessable default,
+// and a missing database URI should stop the boot, not surface as a
+// confusing connection error later.
+for (const name of ['PAYLOAD_SECRET', 'DATABASE_URI'] as const) {
+  if (!process.env[name]) {
+    throw new Error(`${name} is required. Set it in the environment (see .env.example).`)
+  }
+}
+
 const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim())
@@ -52,10 +61,13 @@ export default buildConfig({
   ],
   globals: [SiteSettings, Manifesto, Membership],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  // The frontend is REST-only; removing the GraphQL surface (and with it the
+  // unauthenticated playground route) beats gating it.
+  graphQL: { disable: true },
+  secret: process.env.PAYLOAD_SECRET as string,
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URI || '' },
+    pool: { connectionString: process.env.DATABASE_URI as string },
     // Migrations are the source of truth (run on container start). Opt into
     // Drizzle dev-push only when explicitly requested.
     push: process.env.PAYLOAD_DB_PUSH === 'true',
