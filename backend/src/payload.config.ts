@@ -15,6 +15,7 @@ import { Exhibitions } from './collections/Exhibitions'
 import { Photocalls } from './collections/Photocalls'
 import { Submissions } from './collections/Submissions'
 import { Orders } from './collections/Orders'
+import { Rsvps } from './collections/Rsvps'
 import { SiteSettings } from './globals/SiteSettings'
 import { Manifesto } from './globals/Manifesto'
 import { Membership } from './globals/Membership'
@@ -47,6 +48,7 @@ export default buildConfig({
     Photocalls,
     Submissions,
     Orders,
+    Rsvps,
   ],
   globals: [SiteSettings, Manifesto, Membership],
   editor: lexicalEditor(),

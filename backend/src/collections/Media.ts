@@ -53,7 +53,15 @@ export const Media: CollectionConfig = {
       { name: 'card', width: 768 },
       { name: 'feature', width: 1280 },
       { name: 'hero', width: 2200 },
-      { name: 'og', width: 1200, height: 630, position: 'centre' },
+      {
+        // Share-card rendition: always JPEG q82 per the share-cards spec
+        // (crawler-safe format, under the WhatsApp size ceiling).
+        name: 'og',
+        width: 1200,
+        height: 630,
+        position: 'centre',
+        formatOptions: { format: 'jpeg', options: { quality: 82 } },
+      },
     ],
     adminThumbnail: 'thumbnail',
     focalPoint: true,

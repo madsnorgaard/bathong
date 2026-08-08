@@ -10,6 +10,16 @@ export const SiteSettings: GlobalConfig = {
     { name: 'contactEmail', type: 'text' },
     { name: 'instagram', type: 'text' },
     { name: 'facebook', type: 'text' },
+    { name: 'linkedin', type: 'text' },
+    {
+      name: 'defaultShareImage',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description:
+          'Optional CMS override for the og:image default. The static /share/default.jpg ships with the frontend as the fallback.',
+      },
+    },
     {
       name: 'ticker',
       type: 'array',

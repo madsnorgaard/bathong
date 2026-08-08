@@ -11,6 +11,23 @@ export const Walks: CollectionConfig = {
   versions: { drafts: true },
   access: { read: publishedOrEditor, create: isEditor, update: isEditor, delete: isAdmin },
   defaultSort: '-date',
+  hooks: {
+    afterRead: [
+      // Virtual spotsTaken so EventBlock can render "X of Y places left"
+      // without a second request. Walk lists are short; the count is cheap.
+      async ({ doc, req }) => {
+        if (typeof doc?.capacity !== 'number') return doc
+        const confirmed = await req.payload.count({
+          collection: 'rsvps',
+          where: {
+            and: [{ walk: { equals: doc.id } }, { status: { equals: 'confirmed' } }],
+          },
+          req,
+        })
+        return { ...doc, spotsTaken: confirmed.totalDocs }
+      },
+    ],
+  },
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text', unique: true, index: true },

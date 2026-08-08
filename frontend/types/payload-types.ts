@@ -79,6 +79,7 @@ export interface Config {
     photocalls: Photocall;
     submissions: Submission;
     orders: Order;
+    rsvps: Rsvp;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -96,6 +97,7 @@ export interface Config {
     photocalls: PhotocallsSelect<false> | PhotocallsSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    rsvps: RsvpsSelect<false> | RsvpsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -208,6 +210,14 @@ export interface Person {
   foundingCircle?: boolean | null;
   instagram?: string | null;
   website?: string | null;
+  /**
+   * Shown on the public page only when "Show contact" is on.
+   */
+  contactEmail?: string | null;
+  /**
+   * Photographer choice: show their own contact on the site. Off means enquiries route to the collective address.
+   */
+  showContact?: boolean | null;
   /**
    * Manual sort order on the People page (lowest first).
    */
@@ -576,6 +586,21 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rsvps".
+ */
+export interface Rsvp {
+  id: number;
+  walk: number | Walk;
+  name: string;
+  email: string;
+  note?: string | null;
+  status?: ('confirmed' | 'waitlist' | 'cancelled') | null;
+  website?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -637,6 +662,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'rsvps';
+        value: number | Rsvp;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -721,6 +750,8 @@ export interface PeopleSelect<T extends boolean = true> {
   foundingCircle?: T;
   instagram?: T;
   website?: T;
+  contactEmail?: T;
+  showContact?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -942,6 +973,20 @@ export interface OrdersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rsvps_select".
+ */
+export interface RsvpsSelect<T extends boolean = true> {
+  walk?: T;
+  name?: T;
+  email?: T;
+  note?: T;
+  status?: T;
+  website?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -990,6 +1035,11 @@ export interface SiteSetting {
   contactEmail?: string | null;
   instagram?: string | null;
   facebook?: string | null;
+  linkedin?: string | null;
+  /**
+   * Optional CMS override for the og:image default. The static /share/default.jpg ships with the frontend as the fallback.
+   */
+  defaultShareImage?: (number | null) | Media;
   /**
    * Short lines for the homepage ticker.
    */
@@ -1071,6 +1121,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   contactEmail?: T;
   instagram?: T;
   facebook?: T;
+  linkedin?: T;
+  defaultShareImage?: T;
   ticker?:
     | T
     | {

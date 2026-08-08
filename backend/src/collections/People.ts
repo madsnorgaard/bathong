@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, isAdmin, isEditor } from '../access'
+import { anyone, hasEditorRole, isAdmin, isEditor } from '../access'
 
 export const People: CollectionConfig = {
   slug: 'people',
@@ -24,6 +24,24 @@ export const People: CollectionConfig = {
     },
     { name: 'instagram', type: 'text' },
     { name: 'website', type: 'text' },
+    {
+      name: 'contactEmail',
+      type: 'email',
+      access: {
+        // Public read only when the photographer opted in; editors always.
+        read: ({ req: { user }, doc }) => hasEditorRole(user) || Boolean(doc?.showContact),
+      },
+      admin: { description: 'Shown on the public page only when "Show contact" is on.' },
+    },
+    {
+      name: 'showContact',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'Photographer choice: show their own contact on the site. Off means enquiries route to the collective address.',
+      },
+    },
     {
       name: 'order',
       type: 'number',
