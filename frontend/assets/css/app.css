@@ -45,3 +45,20 @@
 .on-ink .b-label {
   color: var(--grey-ghost);
 }
+
+/* hit targets never below 44px (W7) */
+.b-field {
+  min-height: 44px;
+}
+.b-btn--sm {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* W7: a 21/9 lead on a phone is a stripe; the lead slot crops to 4/5 */
+@media (max-width: 840px) {
+  .lead-frame.b-frame--wide {
+    aspect-ratio: 4/5;
+  }
+}
