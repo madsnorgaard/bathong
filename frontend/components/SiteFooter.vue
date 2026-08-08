@@ -65,6 +65,10 @@ const year = new Date().getFullYear()
 }
 .footer-inner :deep(.b-mark) {
   font-size: 2.2rem;
+  color: var(--paper); /* the mark is paper on ink; .on-ink a would turn it signal */
+}
+.footer-inner :deep(.b-mark:hover) {
+  color: var(--paper);
 }
 .cols {
   display: grid;

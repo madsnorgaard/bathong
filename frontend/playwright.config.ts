@@ -12,11 +12,15 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: 'http://localhost:3000',
+    // Use the installed Chrome locally; CI installs chromium explicitly.
+    channel: process.env.CI ? undefined : 'chrome',
   },
   webServer: {
-    command: 'npm run dev',
+    // Production build: the 1 MB budget is only honest against minified
+    // output, and hydration timing matches what visitors get.
+    command: 'npm run build && node .output/server/index.mjs',
     url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120_000,
+    reuseExistingServer: false,
+    timeout: 300_000,
   },
 })

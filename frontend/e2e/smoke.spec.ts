@@ -50,7 +50,7 @@ test.describe('home', () => {
 
 test.describe('walks', () => {
   test('shows the next walk and accepts an RSVP', async ({ page }) => {
-    await page.goto('/walks')
+    await page.goto('/walks', { waitUntil: 'networkidle' })
     await expectShareMeta(page)
     await expect(page.getByText('№ 001')).toBeVisible()
 
@@ -63,7 +63,7 @@ test.describe('walks', () => {
   test('rejects a duplicate RSVP with a readable error', async ({ page }) => {
     const email = `pw-dup-${Date.now()}@example.org`
     for (const _ of [1, 2]) {
-      await page.goto('/walks')
+      await page.goto('/walks', { waitUntil: 'networkidle' })
       await page.getByLabel(/^Name/).fill('Playwright Dup')
       await page.getByLabel(/^Email/).fill(email)
       await page.getByRole('button', { name: /Reserve a place/ }).click()

@@ -43,8 +43,7 @@ const tickerItems = computed(() =>
         :credit="leadFrame ? frameCredit(leadFrame) : 'Bathong. Collective'"
         :place="leadFrame?.location ?? undefined"
         eager
-        sizes="100vw"
-        :max-width="1920"
+        sizes="xs:100vw md:100vw lg:100vw xl:1440px"
         class="lead-frame"
       />
     </section>

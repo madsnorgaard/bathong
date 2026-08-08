@@ -64,8 +64,7 @@ function personContact(person: Person): string | null {
             :src="mediaUrl(person.portrait as never, cmsUrl)"
             :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
             ratio="tall"
-            sizes="(min-width: 840px) 25vw, 50vw"
-            :max-width="960"
+            sizes="xs:50vw md:25vw"
           />
           <h3 class="b-display-2">{{ person.name }}</h3>
           <p v-if="person.roleTitle" class="b-caption">{{ person.roleTitle }}</p>

@@ -15,12 +15,13 @@ const props = withDefaults(
     time?: string
     /** Lead frames load eagerly; everything else is lazy. */
     eager?: boolean
-    /** Responsive sizes hint, e.g. "(min-width: 960px) 33vw, 100vw" */
+    /**
+     * Nuxt Image screen-keyed sizes ("xs:100vw md:33vw"). Screens are pinned
+     * to the spec widths 480/960/1440/1920 in nuxt.config.
+     */
     sizes?: string
-    /** Cap the source width requested for the largest breakpoint. */
-    maxWidth?: number
   }>(),
-  { alt: '', ratio: 'default', eager: false, sizes: '100vw', maxWidth: 1920 },
+  { alt: '', ratio: 'default', eager: false, sizes: 'xs:100vw md:100vw lg:100vw xl:100vw' },
 )
 
 const ratioClass = computed(() => ({
@@ -37,7 +38,6 @@ const ratioClass = computed(() => ({
       :src="src"
       :alt="alt"
       :sizes="sizes"
-      :width="maxWidth"
       format="avif,webp"
       :loading="eager ? 'eager' : 'lazy'"
       :preload="eager"

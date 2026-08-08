@@ -25,8 +25,7 @@ const { public: { cmsUrl } } = useRuntimeConfig()
       :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : (frame.caption ?? '')"
       :credit="frameCredit(frame)"
       :place="frame.location ?? undefined"
-      sizes="(min-width: 840px) 33vw, 50vw"
-      :max-width="960"
+      sizes="xs:50vw md:33vw"
     />
   </div>
 </template>
