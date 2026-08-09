@@ -5,6 +5,7 @@
  * become a focus-trapped sheet (W7).
  */
 const links = [
+  { to: '/stories', label: 'Stories' },
   { to: '/walks', label: 'Walks' },
   { to: '/about', label: 'About' },
 ]
