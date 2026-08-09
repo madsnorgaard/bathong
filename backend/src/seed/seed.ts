@@ -208,6 +208,55 @@ async function run() {
 
   // ---- demo state fixtures (e2e): SEED_DEMO=true only ----
   if (process.env.SEED_DEMO === 'true') {
+    // A demo essay so the reader exists before Essay 001 does. Clearly demo:
+    // demo frames, demo copy, replaced by the group edit after Walk 001.
+    const existingEssay = await payload.find({
+      collection: 'essays',
+      where: { slug: { equals: 'demo-reader-essay' } },
+      limit: 1,
+    })
+    if (!existingEssay.docs.length) {
+      const frameDocs = await payload.find({
+        collection: 'frames',
+        sort: 'createdAt',
+        limit: 6,
+        depth: 0,
+      })
+      const ids = frameDocs.docs.map((f) => f.id)
+      if (ids.length >= 6) {
+        await payload.create({
+          collection: 'essays',
+          data: {
+            title: 'Demo: the reader test essay',
+            slug: 'demo-reader-essay',
+            deck: 'Six demo frames standing in for the first group edit. PHOTO SLOT throughout.',
+            leadFrame: ids[0],
+            sequence: [
+              { blockType: 'frame', frame: ids[0], fullBleed: true },
+              {
+                blockType: 'text',
+                body: lex([
+                  'A walk produces frames. A group edit turns frames into an essay. This demo essay exists so the reader is ready before Essay 001 is.',
+                ]),
+              },
+              { blockType: 'frame', frame: ids[1] },
+              { blockType: 'pair', left: ids[2], right: ids[3] },
+              {
+                blockType: 'text',
+                body: lex(['Text appears where the sequence needs it, never front-loaded.']),
+              },
+              { blockType: 'frame', frame: ids[4] },
+              { blockType: 'frame', frame: ids[5] },
+            ],
+            contributors: [peopleBySlug['mads-norgaard']],
+            publishedDate: '2026-08-01',
+            tags: ['demo'],
+            _status: 'published',
+          },
+        })
+        console.log('  essay (demo): the reader test essay')
+      }
+    }
     const demoWalks = [
       {
         title: 'Demo: full walk',

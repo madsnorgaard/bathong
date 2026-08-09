@@ -18,15 +18,40 @@ export const Essays: CollectionConfig = {
     { name: 'body', type: 'richText' },
     { name: 'leadFrame', type: 'relationship', relationTo: 'frames' },
     {
+      // The edit decides the layout (W2): single frames, paired frames where
+      // the edit pairs them, text interleaved where the sequence needs it.
       name: 'sequence',
-      type: 'array',
+      type: 'blocks',
       admin: {
         description:
-          'The photo sequence. Editorial range is 12-20 frames - shorter or longer is allowed but should be deliberate.',
+          'The photo sequence. Editorial range is 12-20 frames - shorter or longer is allowed but should be deliberate. Full bleed is a device: the opening frame and at most one turn in the middle.',
       },
-      fields: [
-        { name: 'frame', type: 'relationship', relationTo: 'frames', required: true },
-        { name: 'captionOverride', type: 'textarea' },
+      blocks: [
+        {
+          slug: 'frame',
+          fields: [
+            { name: 'frame', type: 'relationship', relationTo: 'frames', required: true },
+            { name: 'captionOverride', type: 'textarea' },
+            {
+              name: 'fullBleed',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: { description: 'At most two per essay; the hook enforces it.' },
+            },
+          ],
+        },
+        {
+          slug: 'pair',
+          fields: [
+            { name: 'left', type: 'relationship', relationTo: 'frames', required: true },
+            { name: 'right', type: 'relationship', relationTo: 'frames', required: true },
+            { name: 'captionOverride', type: 'textarea' },
+          ],
+        },
+        {
+          slug: 'text',
+          fields: [{ name: 'body', type: 'richText', required: true }],
+        },
       ],
     },
     { name: 'contributors', type: 'relationship', relationTo: 'people', hasMany: true },
@@ -38,14 +63,27 @@ export const Essays: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, originalDoc }) => {
-        // A published essay must actually contain a sequence.
+        const sequence = data?.sequence ?? originalDoc?.sequence ?? []
+        // A published essay must actually contain frames.
         if (data?._status === 'published') {
-          const sequence = data?.sequence ?? originalDoc?.sequence ?? []
-          if (!Array.isArray(sequence) || sequence.length < 1) {
+          const frameBlocks = Array.isArray(sequence)
+            ? sequence.filter((b: { blockType?: string }) => b.blockType !== 'text')
+            : []
+          if (frameBlocks.length < 1) {
             throw new APIError(
               'A published essay needs at least one frame in its sequence.',
               400,
             )
+          }
+        }
+        // Full bleed is a device, used at most twice per essay.
+        if (Array.isArray(sequence)) {
+          const bleeds = sequence.filter(
+            (b: { blockType?: string; fullBleed?: boolean }) =>
+              b.blockType === 'frame' && b.fullBleed,
+          ).length
+          if (bleeds > 2) {
+            throw new APIError('Full bleed is used at most twice per essay.', 400)
           }
         }
         return data

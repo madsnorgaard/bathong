@@ -460,14 +460,50 @@ export interface Essay {
   } | null;
   leadFrame?: (number | null) | Frame;
   /**
-   * The photo sequence. Editorial range is 12-20 frames - shorter or longer is allowed but should be deliberate.
+   * The photo sequence. Editorial range is 12-20 frames - shorter or longer is allowed but should be deliberate. Full bleed is a device: the opening frame and at most one turn in the middle.
    */
   sequence?:
-    | {
-        frame: number | Frame;
-        captionOverride?: string | null;
-        id?: string | null;
-      }[]
+    | (
+        | {
+            frame: number | Frame;
+            captionOverride?: string | null;
+            /**
+             * At most two per essay; the hook enforces it.
+             */
+            fullBleed?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'frame';
+          }
+        | {
+            left: number | Frame;
+            right: number | Frame;
+            captionOverride?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'pair';
+          }
+        | {
+            body: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'text';
+          }
+      )[]
     | null;
   contributors?: (number | Person)[] | null;
   relatedWalk?: (number | null) | Walk;
@@ -860,9 +896,31 @@ export interface EssaysSelect<T extends boolean = true> {
   sequence?:
     | T
     | {
-        frame?: T;
-        captionOverride?: T;
-        id?: T;
+        frame?:
+          | T
+          | {
+              frame?: T;
+              captionOverride?: T;
+              fullBleed?: T;
+              id?: T;
+              blockName?: T;
+            };
+        pair?:
+          | T
+          | {
+              left?: T;
+              right?: T;
+              captionOverride?: T;
+              id?: T;
+              blockName?: T;
+            };
+        text?:
+          | T
+          | {
+              body?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   contributors?: T;
   relatedWalk?: T;
