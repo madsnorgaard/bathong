@@ -73,7 +73,9 @@ function personContact(person: Person): string | null {
             sizes="xs:50vw md:25vw"
             class="portrait"
           />
-          <h3 class="b-display-2">{{ person.name }}</h3>
+          <NuxtLink :to="`/photographers/${person.slug}`" class="name-link">
+            <h3 class="b-display-2">{{ person.name }}</h3>
+          </NuxtLink>
           <p v-if="person.roleTitle" class="b-caption">{{ person.roleTitle }}</p>
           <a v-if="personContact(person)" :href="`mailto:${personContact(person)}`" class="b-caption contact">
             {{ personContact(person) }}
@@ -159,6 +161,12 @@ function personContact(person: Person): string | null {
   border: 1px solid var(--grey-line);
 }
 .contact {
+  color: var(--signal);
+}
+.name-link {
+  color: inherit;
+}
+.name-link:hover .b-display-2 {
   color: var(--signal);
 }
 .benefits {

@@ -185,6 +185,10 @@ export interface Person {
   id: number;
   name: string;
   slug?: string | null;
+  /**
+   * The member register number, rendered as № 0001. Real numbers only.
+   */
+  memberNumber?: number | null;
   portrait?: (number | null) | Media;
   bio?: {
     root: {
@@ -778,6 +782,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface PeopleSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  memberNumber?: T;
   portrait?: T;
   bio?: T;
   roleTitle?: T;

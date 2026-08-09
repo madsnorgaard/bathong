@@ -13,6 +13,12 @@ export const People: CollectionConfig = {
   fields: [
     { name: 'name', type: 'text', required: true },
     { name: 'slug', type: 'text', unique: true, index: true },
+    {
+      name: 'memberNumber',
+      type: 'number',
+      unique: true,
+      admin: { description: 'The member register number, rendered as № 0001. Real numbers only.' },
+    },
     { name: 'portrait', type: 'upload', relationTo: 'media' },
     { name: 'bio', type: 'richText' },
     { name: 'roleTitle', type: 'text' },

@@ -83,19 +83,21 @@ async function run() {
 
   // ---- people: the founding circle (role proposal; titles editable in CMS) ----
   const directors = [
-    { name: 'Emmanuel Munano', slug: 'emmanuel-munano', roleTitle: 'Founder and CEO', order: 1 },
-    { name: 'Jacques Nel', slug: 'jacques-nel', roleTitle: 'Chief Operating Officer', order: 2 },
+    { name: 'Emmanuel Munano', slug: 'emmanuel-munano', roleTitle: 'Founder and CEO', order: 1, memberNumber: 1 },
+    { name: 'Jacques Nel', slug: 'jacques-nel', roleTitle: 'Chief Operating Officer', order: 2, memberNumber: 2 },
     {
       name: 'Alet Pretorius',
       slug: 'alet-pretorius',
       roleTitle: 'Director of Photography and Education',
       order: 3,
+      memberNumber: 3,
     },
     {
       name: 'Mads Nørgaard',
       slug: 'mads-norgaard',
       roleTitle: 'Director of International Programmes and Partnerships',
       order: 4,
+      memberNumber: 4,
     },
   ]
   const peopleBySlug: Record<string, number> = {}
