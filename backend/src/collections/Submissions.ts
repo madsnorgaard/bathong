@@ -43,11 +43,26 @@ export const Submissions: CollectionConfig = {
       name: 'submitter',
       type: 'relationship',
       relationTo: 'users',
-      required: true,
       admin: {
         readOnly: true,
-        description: 'Set automatically from the logged-in user; never changes afterwards.',
+        description:
+          'Set automatically from the logged-in user; empty for anonymous photocall entries. Never changes afterwards.',
       },
+    },
+    {
+      name: 'submitterName',
+      type: 'text',
+      admin: { description: 'Anonymous entries: the photographer name as given.' },
+    },
+    {
+      name: 'submitterEmail',
+      type: 'email',
+      access: { read: isEditorField },
+      admin: { description: 'Anonymous entries: contact email. Editors only.' },
+    },
+    {
+      name: 'whereYouShoot',
+      type: 'text',
     },
     { name: 'title', type: 'text' },
     { name: 'statement', type: 'textarea' },
@@ -94,8 +109,12 @@ export const Submissions: CollectionConfig = {
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
         if (operation === 'create') {
-          // The submitter is always the logged-in user.
-          if (req.user) data.submitter = req.user.id
+          // Logged-in entries pin the user; anonymous ones carry name + email.
+          if (req.user) {
+            data.submitter = req.user.id
+          } else if (!data.submitterName || !data.submitterEmail) {
+            throw new APIError('An entry needs a name and an email.', 400)
+          }
 
           // Only accept submissions while the photocall is actually open.
           const photocallId = relationId(data.photocall)

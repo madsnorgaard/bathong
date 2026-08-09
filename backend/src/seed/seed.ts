@@ -293,6 +293,36 @@ async function run() {
     }
   }
 
+    // A demo photocall so the entry flow is testable end to end.
+    const existingCall = await payload.find({
+      collection: 'photocalls',
+      where: { slug: { equals: 'demo-open-call' } },
+      limit: 1,
+    })
+    if (!existingCall.docs.length) {
+      await payload.create({
+        collection: 'photocalls',
+        data: {
+          title: 'Demo: open call',
+          slug: 'demo-open-call',
+          theme: lex([
+            'A demo brief standing in for Photocall 001. What we are looking for, what we are not looking for, and how the edit will be made.',
+            'Photocall 001 opens after the first walk, with its licence text signed off.',
+          ]),
+          opensAt: '2026-08-01T00:00:00+02:00',
+          closesAt: '2026-09-12T23:59:00+02:00',
+          maxImagesPerSubmission: 8,
+          membersOnly: false,
+          terms: lex([
+            'Demo terms: you keep your copyright. You grant the collective a non-exclusive licence to publish selected frames with credit. Real terms land with issue #21.',
+          ]),
+          status: 'open',
+          _status: 'published',
+        },
+      })
+      console.log('  photocall (demo): open call')
+    }
+
   // ---- globals ----
   await payload.updateGlobal({
     slug: 'site-settings',

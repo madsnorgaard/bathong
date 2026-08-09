@@ -331,9 +331,18 @@ export interface Submission {
   id: number;
   photocall: number | Photocall;
   /**
-   * Set automatically from the logged-in user; never changes afterwards.
+   * Set automatically from the logged-in user; empty for anonymous photocall entries. Never changes afterwards.
    */
-  submitter: number | User;
+  submitter?: (number | null) | User;
+  /**
+   * Anonymous entries: the photographer name as given.
+   */
+  submitterName?: string | null;
+  /**
+   * Anonymous entries: contact email. Editors only.
+   */
+  submitterEmail?: string | null;
+  whereYouShoot?: string | null;
   title?: string | null;
   statement?: string | null;
   images: (number | Media)[];
@@ -1005,6 +1014,9 @@ export interface PhotocallsSelect<T extends boolean = true> {
 export interface SubmissionsSelect<T extends boolean = true> {
   photocall?: T;
   submitter?: T;
+  submitterName?: T;
+  submitterEmail?: T;
+  whereYouShoot?: T;
   title?: T;
   statement?: T;
   images?: T;

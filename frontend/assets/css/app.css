@@ -41,6 +41,16 @@
   color: var(--paper);
 }
 
+/* the one signal plate a page may carry (W6: an open call earns it) */
+.chapter--signal {
+  background: var(--signal);
+  color: var(--ink);
+}
+.chapter--signal .b-kicker,
+.chapter--signal .b-caption {
+  color: var(--ink);
+}
+
 /* labels and fields on the ink ground */
 .on-ink .b-label {
   color: var(--grey-ghost);

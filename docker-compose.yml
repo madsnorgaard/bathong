@@ -106,7 +106,7 @@ services:
       - traefik.http.middlewares.bathong-api-ratelimit.ratelimit.burst=60
       - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.average=1
       - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.burst=5
-      - traefik.http.routers.bathong_payload_strict.rule=Host(`api.${SITE_DOMAIN}`) && (PathPrefix(`/api/users/login`) || (Path(`/api/rsvps`) && Method(`POST`)))
+      - traefik.http.routers.bathong_payload_strict.rule=Host(`api.${SITE_DOMAIN}`) && (PathPrefix(`/api/users/login`) || ((Path(`/api/rsvps`) || Path(`/api/photocall-entries`)) && Method(`POST`)))
       - traefik.http.routers.bathong_payload_strict.priority=100
       - traefik.http.routers.bathong_payload_strict.tls=true
       - traefik.http.routers.bathong_payload_strict.tls.certresolver=lets-encrypt
