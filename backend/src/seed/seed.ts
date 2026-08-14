@@ -155,6 +155,69 @@ async function run() {
   }
 
   // ---- walks ----
+  // Walk 001 route: the inner-city loop as traced from Jacques' sketch, snapped
+  // to OSM street geometry (draft until Jacques signs it off). Coordinates are
+  // [lng, lat]. One LineString is the route; Point features are the landmark
+  // markers the frontend renders as labels.
+  const walk001RouteGeo = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { name: 'Walk 001 loop' },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [28.1881, -25.746], // Church Square, north edge
+            [28.188, -25.74576], // Paul Kruger St, north
+            [28.18797, -25.74499],
+            [28.18785, -25.74372],
+            [28.18764, -25.74203], // Struben St corner (the park)
+            [28.18779, -25.74202], // Struben St, east
+            [28.19013, -25.74185],
+            [28.192, -25.74174],
+            [28.19256, -25.74171], // Lilian Ngoyi St corner
+            [28.19271, -25.74317], // Lilian Ngoyi St, south
+            [28.19283, -25.7446],
+            [28.19296, -25.7462], // Helen Joseph St corner
+            [28.19171, -25.74622], // Helen Joseph St, west to Queen St
+            [28.19165, -25.74548], // Queen Street, the pedestrian lane, north
+            [28.19159, -25.74474], // Madiba St corner
+            [28.19042, -25.74483], // Madiba St, west
+            [28.18941, -25.7449],
+            [28.18874, -25.74494],
+            [28.18797, -25.74499], // Paul Kruger St corner
+            [28.188, -25.74576], // Paul Kruger St, south
+            [28.1881, -25.746], // back to Church Square
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Church Square', kind: 'start' },
+        geometry: { type: 'Point', coordinates: [28.1881, -25.746] },
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Home Affairs' },
+        geometry: { type: 'Point', coordinates: [28.18944, -25.74388] },
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Queen Street' },
+        geometry: { type: 'Point', coordinates: [28.19165, -25.74548] },
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Navy House' },
+        geometry: { type: 'Point', coordinates: [28.1912, -25.74465] },
+      },
+    ],
+  }
+  const walk001Route = lex([
+    'A loop through the inner city: Church Square, up Paul Kruger, along Struben, down Lilian Ngoyi past the State Theatre, back through Queen Street and Madiba. Route is a draft until Jacques signs it off.',
+    'Bring one lens. No experience needed, no gear requirement, everyone welcome.',
+  ])
   const walk001 = await payload.find({
     collection: 'walks',
     where: { slug: { equals: 'walk-001-first-light' } },
@@ -169,10 +232,8 @@ async function run() {
         date: '2026-08-29T05:30:00+02:00',
         endTime: '2026-08-29T09:30:00+02:00',
         meetingPoint: 'Church Square, Pretoria',
-        route: lex([
-          'Church Square → Marabastad → Salvokop. Four hours on foot.',
-          'Bring one lens. No experience needed, no gear requirement, everyone welcome.',
-        ]),
+        route: walk001Route,
+        routeGeo: walk001RouteGeo,
         capacity: 25,
         priceMember: 0,
         priceNonMember: null,
@@ -182,6 +243,14 @@ async function run() {
       },
     })
     console.log('  walk: № 001')
+  } else if (!walk001.docs[0].routeGeo) {
+    // Already-seeded stacks pick up the route without a reseed.
+    await payload.update({
+      collection: 'walks',
+      id: walk001.docs[0].id,
+      data: { route: walk001Route, routeGeo: walk001RouteGeo },
+    })
+    console.log('  walk: № 001 (routeGeo backfilled)')
   }
   // Future walks are real intentions without dates; dates are never invented,
   // so they stay drafts until the collective sets them.

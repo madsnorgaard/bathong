@@ -46,6 +46,9 @@ export default defineNuxtConfig({
       },
     },
     '/_ipx/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    // Self-hosted basemap extract; the filename is versioned (pta-inner-v1),
+    // so it can cache forever. Route data itself rides on the walk document.
+    '/map/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/share/**': { headers: { 'cache-control': 'public, max-age=86400' } },
   },
   app: {

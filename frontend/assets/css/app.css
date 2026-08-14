@@ -72,3 +72,84 @@
     aspect-ratio: 4/5;
   }
 }
+
+/* W5: the route map. Self-hosted basemap on the ink ground, jacaranda line.
+   The caption carries the OSM attribution in every state (ODbL). */
+.route-map {
+  margin: 0;
+  max-width: 1100px;
+}
+.route-map__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--ink-lift);
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .route-map__stage {
+    aspect-ratio: 4 / 5;
+  }
+}
+/* explicit size, not inset: maplibre's stylesheet forces position:relative
+   on its container, which would collapse an inset-stretched box to 0 */
+.route-map__canvas {
+  width: 100%;
+  height: 100%;
+}
+.route-map__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--grey-ghost);
+  pointer-events: none;
+}
+.route-map__caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  color: var(--grey-ghost);
+}
+
+/* landmark markers: a dot and the name in mono; labels, never hit targets */
+.route-marker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.route-marker__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.route-marker--start .route-marker__dot {
+  width: 12px;
+  height: 12px;
+  background: var(--signal);
+}
+.route-marker__name {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-shadow: 0 1px 3px rgb(20 19 19 / 0.9);
+  white-space: nowrap;
+}
+
+/* maplibre chrome, recolored to the darkroom */
+.route-map .maplibregl-cooperative-gesture-screen {
+  background: rgb(20 19 19 / 0.78);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}

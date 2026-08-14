@@ -2,3 +2,6 @@
 Thumbs.db
 node_modules/
 *.log
+# photocall e2e runs upload entries into media/; never commit them
+media/entry-*
+Untitled.jpg

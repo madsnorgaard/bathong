@@ -5,6 +5,7 @@ import * as migration_20260809_101633_phase2_essay_blocks from './20260809_10163
 import * as migration_20260809_102630_phase2_member_number from './20260809_102630_phase2_member_number';
 import * as migration_20260809_134609_phase2_anonymous_submissions from './20260809_134609_phase2_anonymous_submissions';
 import * as migration_20260809_140000_phase2_photocall_status_values from './20260809_140000_phase2_photocall_status_values';
+import * as migration_20260814_090000_phase3_walk_route_geo from './20260814_090000_phase3_walk_route_geo';
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20260809_140000_phase2_photocall_status_values.up,
     down: migration_20260809_140000_phase2_photocall_status_values.down,
     name: '20260809_140000_phase2_photocall_status_values'
+  },
+  {
+    up: migration_20260814_090000_phase3_walk_route_geo.up,
+    down: migration_20260814_090000_phase3_walk_route_geo.down,
+    name: '20260814_090000_phase3_walk_route_geo'
   },
 ];

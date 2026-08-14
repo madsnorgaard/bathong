@@ -551,6 +551,18 @@ export interface Walk {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * GeoJSON FeatureCollection: one LineString (the route, [lng, lat] pairs) plus optional Point features with a "name" property for landmark markers. Drives the interactive map on /walks.
+   */
+  routeGeo?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   routeMap?: (number | null) | Media;
   capacity?: number | null;
   priceMember?: number | null;
@@ -954,6 +966,7 @@ export interface WalksSelect<T extends boolean = true> {
   endTime?: T;
   meetingPoint?: T;
   route?: T;
+  routeGeo?: T;
   routeMap?: T;
   capacity?: T;
   priceMember?: T;

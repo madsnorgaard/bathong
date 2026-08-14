@@ -113,8 +113,9 @@ services:
       - traefik.http.routers.bathong_payload_strict.middlewares=bathong-strict-ratelimit
       - traefik.http.routers.bathong_payload_strict.service=bathong_payload
 
-  # No public router yet - the holding page keeps ${SITE_DOMAIN} until the
-  # M3 cutover, when this service takes the primary Host rule.
+  # Staging router (#39): the real site at next.${SITE_DOMAIN} behind basic
+  # auth while the holding page keeps the primary host. The M3 cutover (#12)
+  # later swaps the primary Host rule to this service and drops the auth.
   bathong_nuxt:
     profiles: ["platform"]
     build:
@@ -127,13 +128,26 @@ services:
       NODE_ENV: production
       NUXT_PUBLIC_CMS_URL: https://api.${SITE_DOMAIN}
       NUXT_CMS_INTERNAL_URL: http://${SITE_DOMAIN}_payload:3001
+      # Canonical origin for og/canonical URLs; flips to https://${SITE_DOMAIN}
+      # in .env at cutover.
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://next.${SITE_DOMAIN}}
     depends_on:
       - bathong_payload
     networks:
       - web
       - internal
     labels:
-      - traefik.enable=false
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.bathong_next.rule=Host(`next.${SITE_DOMAIN}`)
+      - traefik.http.routers.bathong_next.tls=true
+      - traefik.http.routers.bathong_next.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_next.middlewares=bathong-next-auth
+      - traefik.http.services.bathong_nuxt.loadbalancer.server.port=3000
+      # htpasswd bcrypt user:hash from .env (STAGING_BASIC_AUTH). Generate with
+      # `htpasswd -nB bathong`; double every $ as $$ inside .env so compose
+      # does not try to interpolate the hash.
+      - traefik.http.middlewares.bathong-next-auth.basicauth.users=${STAGING_BASIC_AUTH}
 
 volumes:
   db_data: {}

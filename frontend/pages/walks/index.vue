@@ -28,6 +28,7 @@ const [{ data: upcoming }, { data: past }] = await Promise.all([
 ])
 
 const nextWalk = computed(() => upcoming.value?.docs?.[0] ?? null)
+const nextRoute = computed(() => (nextWalk.value ? parseRouteGeo(nextWalk.value.routeGeo) : null))
 const futureWalks = computed(() => upcoming.value?.docs?.slice(1) ?? [])
 const pastWalks = computed(() => past.value?.docs ?? [])
 const rsvpOpen = computed(
@@ -45,6 +46,12 @@ const rsvpOpen = computed(
         </BButton>
         <p v-else class="b-caption">Bookings closed</p>
       </EventBlock>
+
+      <!-- the route on the ink ground; the jacaranda line is the subject -->
+      <section v-if="nextRoute" v-reveal class="chapter">
+        <ChapterHead title="The route" />
+        <RouteMap :route="nextRoute" :meeting-point="nextWalk.meetingPoint" />
+      </section>
 
       <!-- answer the fear, on paper -->
       <section v-reveal class="chapter chapter--paper">

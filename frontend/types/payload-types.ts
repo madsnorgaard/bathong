@@ -187,6 +187,10 @@ export interface Person {
   id: number;
   name: string;
   slug?: string | null;
+  /**
+   * The member register number, rendered as № 0001. Real numbers only.
+   */
+  memberNumber?: number | null;
   portrait?: (number | null) | Media;
   bio?: {
     root: {
@@ -329,9 +333,18 @@ export interface Submission {
   id: number;
   photocall: number | Photocall;
   /**
-   * Set automatically from the logged-in user; never changes afterwards.
+   * Set automatically from the logged-in user; empty for anonymous photocall entries. Never changes afterwards.
    */
-  submitter: number | User;
+  submitter?: (number | null) | User;
+  /**
+   * Anonymous entries: the photographer name as given.
+   */
+  submitterName?: string | null;
+  /**
+   * Anonymous entries: contact email. Editors only.
+   */
+  submitterEmail?: string | null;
+  whereYouShoot?: string | null;
   title?: string | null;
   statement?: string | null;
   images: (number | Media)[];
@@ -540,6 +553,18 @@ export interface Walk {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * GeoJSON FeatureCollection: one LineString (the route, [lng, lat] pairs) plus optional Point features with a "name" property for landmark markers. Drives the interactive map on /walks.
+   */
+  routeGeo?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   routeMap?: (number | null) | Media;
   capacity?: number | null;
   priceMember?: number | null;
@@ -780,6 +805,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface PeopleSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  memberNumber?: T;
   portrait?: T;
   bio?: T;
   roleTitle?: T;
@@ -942,6 +968,7 @@ export interface WalksSelect<T extends boolean = true> {
   endTime?: T;
   meetingPoint?: T;
   route?: T;
+  routeGeo?: T;
   routeMap?: T;
   capacity?: T;
   priceMember?: T;
@@ -1002,6 +1029,9 @@ export interface PhotocallsSelect<T extends boolean = true> {
 export interface SubmissionsSelect<T extends boolean = true> {
   photocall?: T;
   submitter?: T;
+  submitterName?: T;
+  submitterEmail?: T;
+  whereYouShoot?: T;
   title?: T;
   statement?: T;
   images?: T;

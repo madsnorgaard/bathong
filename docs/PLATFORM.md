@@ -38,6 +38,55 @@ git):
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | holding (now) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
+| `STAGING_BASIC_AUTH` | staging (#39) |
+| `NUXT_PUBLIC_SITE_URL` | optional; defaults to `https://next.$SITE_DOMAIN`, set to `https://$SITE_DOMAIN` at cutover |
+
+## Staging (#39): the site at next.SITE_DOMAIN behind basic auth
+
+The compose file routes `bathong_nuxt` at `next.${SITE_DOMAIN}` with basic
+auth, so the team reviews the real site while the holding page keeps the
+primary domain. Blast radius: none for the public domain.
+
+Prerequisites, once per server:
+
+1. DNS: an `A` record for `next.bathong.africa` pointing at the server
+   (Let's Encrypt must be able to resolve it).
+2. `STAGING_BASIC_AUTH` in `.env`: `htpasswd -nB bathong`, then double every
+   `$` in the hash as `$$` (compose interpolates single `$`).
+3. `CORS_ORIGINS` must include `https://next.bathong.africa` or the RSVP and
+   photocall forms cannot POST to `api.bathong.africa` from staging.
+
+Deploy:
+
+```bash
+# on the server, in the compose directory
+git pull
+docker compose --profile platform build
+docker compose --profile platform up -d
+# (the payload container applies pending migrations itself before serving)
+```
+
+Content and the first admin: migrations run automatically, but the database
+starts empty. Seed it once from inside the container (tsx ships in the
+image):
+
+```bash
+docker compose exec \
+  -e SEED_ADMIN_EMAIL=you@example.com \
+  -e SEED_ADMIN_PASSWORD='a-real-password' \
+  -e SEED_DEMO=true \
+  bathong_payload npm run seed
+```
+
+`SEED_ADMIN_*` creates the first admin login for `api.bathong.africa/admin`.
+`SEED_DEMO=true` adds the demo essay/frames so the site looks lived-in for a
+review; drop it for the real launch (the demo frames are still Johannesburg
+placeholders, issue #11). The seed is idempotent - rerunning updates rather
+than duplicates.
+
+Verify: `https://next.bathong.africa` challenges for the password, `/walks`
+shows the route map, an RSVP submits, and `https://bathong.africa` still
+serves the holding page.
 
 ## Data model (Payload collections)
 

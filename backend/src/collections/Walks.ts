@@ -35,6 +35,41 @@ export const Walks: CollectionConfig = {
     { name: 'endTime', type: 'date' },
     { name: 'meetingPoint', type: 'text' },
     { name: 'route', type: 'richText' },
+    {
+      name: 'routeGeo',
+      type: 'json',
+      admin: {
+        description:
+          'GeoJSON FeatureCollection: one LineString (the route, [lng, lat] pairs) plus optional Point features with a "name" property for landmark markers. Drives the interactive map on /walks. Workflow for producing one precisely: docs/ROUTES.md.',
+      },
+      validate: (value: unknown) => {
+        if (value === null || value === undefined) return true
+        if (typeof value !== 'object' || Array.isArray(value)) {
+          return 'routeGeo must be a GeoJSON FeatureCollection object'
+        }
+        const features = (value as { features?: unknown }).features
+        if (!Array.isArray(features)) return 'routeGeo needs a "features" array'
+        const validLngLat = (c: unknown) =>
+          Array.isArray(c) &&
+          typeof c[0] === 'number' &&
+          typeof c[1] === 'number' &&
+          Math.abs(c[0]) <= 180 &&
+          Math.abs(c[1]) <= 90
+        const hasLine = features.some((f) => {
+          const geometry = (f as { geometry?: { type?: unknown; coordinates?: unknown } })?.geometry
+          return (
+            geometry?.type === 'LineString' &&
+            Array.isArray(geometry.coordinates) &&
+            geometry.coordinates.length >= 2 &&
+            geometry.coordinates.every(validLngLat)
+          )
+        })
+        if (!hasLine) {
+          return 'routeGeo needs one LineString of at least two valid [lng, lat] pairs (lng first - a [lat, lng] paste is the usual mistake)'
+        }
+        return true
+      },
+    },
     { name: 'routeMap', type: 'upload', relationTo: 'media' },
     { name: 'capacity', type: 'number' },
     { name: 'priceMember', type: 'number' },
