@@ -84,7 +84,8 @@ jobs:
         working-directory: backend
         run: |
           npm run dev &
-          npx wait-on -t 120000 http://localhost:3001/api/access
+          # http-get:// - wait-on's default HEAD probe 404s on this endpoint
+          npx wait-on -t 120000 http-get://localhost:3001/api/access
       - name: Install frontend
         working-directory: frontend
         run: |
