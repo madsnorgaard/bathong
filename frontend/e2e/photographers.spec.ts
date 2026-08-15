@@ -26,9 +26,10 @@ test('a photographer page: header, honest counts, copyright plate', async ({ pag
 
   await expect(page.getByText(/All work © Mads Nørgaard/)).toBeVisible()
 
-  // essays first: the demo essay links into the reader
+  // essays first: the demo essay links into the reader. Generous timeout:
+  // in CI the reader route SSR-compiles on first hit and can exceed 5s.
   await page.getByRole('link', { name: /Demo: the reader test essay/ }).click()
-  await expect(page).toHaveURL(/\/stories\/demo-reader-essay/)
+  await expect(page).toHaveURL(/\/stories\/demo-reader-essay/, { timeout: 20_000 })
 })
 
 test('a person with no essays or frames shows no count row', async ({ page }) => {
