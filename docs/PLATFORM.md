@@ -1,8 +1,8 @@
 # Bathong. - platform architecture
 
-The platform behind bathong.africa. Status: holding page live; backend and
-frontend scaffolding in progress. This document is the reference for how the
-pieces fit, how data is modelled and how deploys happen.
+The platform behind bathong.africa. Status: v1 site live (M3 cutover done);
+members, payments and the archive still ahead. This document is the reference
+for how the pieces fit, how data is modelled and how deploys happen.
 
 ## Stack
 
@@ -10,8 +10,8 @@ pieces fit, how data is modelled and how deploys happen.
   (postgres:16-alpine). Admin UI + REST/GraphQL API on `api.bathong.africa`.
 - **Frontend:** Nuxt 3, server-rendered, consuming the design system
   (`design-system/styles.css`) and the Payload API.
-- **Holding page:** `holding/index.html` served by nginx:alpine - the public
-  face until the v1 site content is in Payload (cutover at M3).
+- **Holding page:** `holding/index.html` served by nginx:alpine - retired at
+  the M3 cutover, kept unrouted as the fallback.
 - **Hosting:** docker compose behind Traefik (external `web` network,
   per-project `internal` network, lets-encrypt resolver), same pattern as the
   other production sites.
@@ -21,15 +21,22 @@ it; `api.bathong.africa` reserved for Payload.
 
 ## Deploy (manual for now)
 
-Deploys are git + SSH; no CI pipeline yet.
+Deploys are git + SSH; CI runs the test suite on push, no deploy pipeline yet.
+Since the M3 cutover (#12), `bathong.africa` is served by `bathong_nuxt` and
+the holding page is the unrouted fallback (re-point the primary router to
+`bathong_holding` to take the platform down gracefully).
 
 ```bash
 # on the server, in the compose directory (a clone of this repo)
 git pull
-docker compose up -d            # holding page: that's all
-# once platform services exist:
-docker compose build && docker compose up -d
+docker compose --profile platform build
+docker compose --profile platform up -d
+# (the payload container applies pending migrations itself before serving)
 ```
+
+`.env` for the live site needs `CORS_ORIGINS` to include
+`https://bathong.africa` (plus `https://next.bathong.africa` if the preview
+router is used).
 
 Required `.env` next to the compose file (names only - values never live in
 git):
@@ -38,14 +45,14 @@ git):
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | holding (now) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
-| `STAGING_BASIC_AUTH` | staging (#39) |
-| `NUXT_PUBLIC_SITE_URL` | optional; defaults to `https://next.$SITE_DOMAIN`, set to `https://$SITE_DOMAIN` at cutover |
+| `STAGING_BASIC_AUTH` | preview router (#39) |
+| `NUXT_PUBLIC_SITE_URL` | optional override; defaults to `https://$SITE_DOMAIN` |
 
-## Staging (#39): the site at next.SITE_DOMAIN behind basic auth
+## Preview router (#39): next.SITE_DOMAIN behind basic auth
 
-The compose file routes `bathong_nuxt` at `next.${SITE_DOMAIN}` with basic
-auth, so the team reviews the real site while the holding page keeps the
-primary domain. Blast radius: none for the public domain.
+Alongside the primary host, `bathong_nuxt` also answers at
+`next.${SITE_DOMAIN}` behind basic auth - same build, same content, useful
+for reviewing on a real URL before pointing people at the primary domain.
 
 Prerequisites, once per server:
 
@@ -54,19 +61,11 @@ Prerequisites, once per server:
 2. `STAGING_BASIC_AUTH` in `.env`: `htpasswd -nB bathong`, then double every
    `$` in the hash as `$$` (compose interpolates single `$`).
 3. `CORS_ORIGINS` must include `https://next.bathong.africa` or the RSVP and
-   photocall forms cannot POST to `api.bathong.africa` from staging.
+   photocall forms cannot POST to `api.bathong.africa` from the preview host.
 
-Deploy:
+## First deploy: content and the first admin
 
-```bash
-# on the server, in the compose directory
-git pull
-docker compose --profile platform build
-docker compose --profile platform up -d
-# (the payload container applies pending migrations itself before serving)
-```
-
-Content and the first admin: migrations run automatically, but the database
+Migrations run automatically, but the database
 starts empty. Seed it once from inside the container (tsx ships in the
 image):
 
@@ -84,9 +83,10 @@ review; drop it for the real launch (the demo frames are still Johannesburg
 placeholders, issue #11). The seed is idempotent - rerunning updates rather
 than duplicates.
 
-Verify: `https://next.bathong.africa` challenges for the password, `/walks`
-shows the route map, an RSVP submits, and `https://bathong.africa` still
-serves the holding page.
+Verify after a deploy: `https://bathong.africa` serves the site (walks page
+shows the route map, an RSVP submits, admin reachable at
+`api.bathong.africa/admin`), `www.` and `bathong.org` 301 to the primary
+host, and `next.bathong.africa` (if DNS exists) challenges for the password.
 
 ## Data model (Payload collections)
 
