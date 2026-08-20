@@ -89,6 +89,16 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon-512.png' },
       ],
+      script: [
+        {
+          defer: true,
+          'data-domain': 'bathong.africa',
+          src: 'https://analytics.theazanianprepper.online/js/script.file-downloads.hash.outbound-links.js',
+        },
+        {
+          innerHTML: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",
+        },
+      ],
     },
   },
 })
