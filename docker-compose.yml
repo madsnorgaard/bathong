@@ -95,7 +95,7 @@ services:
       - traefik.http.routers.bathong_payload.rule=Host(`api.${SITE_DOMAIN}`)
       - traefik.http.routers.bathong_payload.tls=true
       - traefik.http.routers.bathong_payload.tls.certresolver=lets-encrypt
-      - traefik.http.routers.bathong_payload.middlewares=bathong-hsts,bathong-api-headers,bathong-api-ratelimit
+      - traefik.http.routers.bathong_payload.middlewares=bathong-hsts,bathong-api-headers,bathong-compress,bathong-api-ratelimit
       # Baseline headers for the API host - Payload sets none of its own.
       # DENY is safe for the admin panel (no livePreview configured; live
       # preview would iframe the frontend, not the other way around).
@@ -113,7 +113,7 @@ services:
       - traefik.http.routers.bathong_payload_strict.priority=100
       - traefik.http.routers.bathong_payload_strict.tls=true
       - traefik.http.routers.bathong_payload_strict.tls.certresolver=lets-encrypt
-      - traefik.http.routers.bathong_payload_strict.middlewares=bathong-hsts,bathong-api-headers,bathong-strict-ratelimit
+      - traefik.http.routers.bathong_payload_strict.middlewares=bathong-hsts,bathong-api-headers,bathong-compress,bathong-strict-ratelimit
       - traefik.http.routers.bathong_payload_strict.service=bathong_payload
 
   # The site. Primary host since the M3 cutover (#12); next.${SITE_DOMAIN}
@@ -183,7 +183,13 @@ services:
       - traefik.http.routers.bathong_site.rule=Host(`${SITE_DOMAIN}`)
       - traefik.http.routers.bathong_site.tls=true
       - traefik.http.routers.bathong_site.tls.certresolver=lets-encrypt
-      - traefik.http.routers.bathong_site.middlewares=bathong-hsts
+      - traefik.http.routers.bathong_site.middlewares=bathong-hsts,bathong-compress
+      # gzip/br for text responses (HTML/CSS/JS/JSON) - nitro and Payload send
+      # nothing compressed on their own, and 71KB of raw HTML costs South
+      # African visitors real round trips. Images are excluded (AVIF/WebP/JPEG
+      # are already compressed; re-gzipping wastes CPU), and the /_ipx router
+      # deliberately does not get this middleware.
+      - traefik.http.middlewares.bathong-compress.compress.excludedContentTypes=image/avif,image/webp,image/jpeg,image/png,image/tiff
       - traefik.http.services.bathong_nuxt.loadbalancer.server.port=3000
       # HSTS (#37) on every router of both hosts. Deliberately starting at one
       # day - raise stsSeconds to 31536000 after a clean week. All subdomains
@@ -204,7 +210,7 @@ services:
       - traefik.http.routers.bathong_next.rule=Host(`next.${SITE_DOMAIN}`)
       - traefik.http.routers.bathong_next.tls=true
       - traefik.http.routers.bathong_next.tls.certresolver=lets-encrypt
-      - traefik.http.routers.bathong_next.middlewares=bathong-hsts,bathong-next-auth
+      - traefik.http.routers.bathong_next.middlewares=bathong-hsts,bathong-compress,bathong-next-auth
       # htpasswd bcrypt user:hash from .env (STAGING_BASIC_AUTH). Generate with
       # `htpasswd -nB bathong`; double every $ as $$ inside .env so compose
       # does not try to interpolate the hash.
