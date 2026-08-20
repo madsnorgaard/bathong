@@ -25,8 +25,13 @@ export default defineNuxtConfig({
   // NITRO_IPX_ALIAS/NITRO_IPX_HTTP_DOMAINS (compose) point the alias at the
   // internal Payload hostname instead.
   image: {
-    domains: [new URL(cmsUrl).host],
-    alias: { '/api/media': `${cmsUrl}/api/media` },
+    // ipx fetches sources from here server-side. In production IPX_SOURCE_URL
+    // is the internal Payload hostname (baked via Docker build arg) - the
+    // public api URL is unreachable from inside the container (hairpin), so
+    // using it hangs every /_ipx request. The aliased host must ALSO be in
+    // domains: ipx validates the post-alias hostname against the allowlist.
+    domains: [...new Set([cmsUrl, process.env.IPX_SOURCE_URL || cmsUrl].map((u) => new URL(u).host))],
+    alias: { '/api/media': `${process.env.IPX_SOURCE_URL || cmsUrl}/api/media` },
     format: ['avif', 'webp'],
     // md 840 matches the real layout collapse (assets/css/app.css) - the
     // former 960 mis-switched sizes in the 841-959 band.
