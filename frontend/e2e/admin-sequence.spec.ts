@@ -250,9 +250,22 @@ test('full bleed toggles inline and the 2-bleed rule still guards publish', asyn
   const tile5 = page.locator('.seq-tile').nth(5)
   await setBleed(tile5, true)
   await expect(page.locator('.seq-tile--bleed')).toHaveCount(3)
-  await page.getByRole('button', { name: /save draft/i }).click()
+  // The authoritative contract is the hook rejecting the save with a 400 -
+  // synchronise on the response like saveDraft does (the toast alone proved
+  // timing-flaky on CI runners, #54). The toast then gets a realistic window.
+  const [rejected] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().includes('/api/essays') &&
+        ['PATCH', 'POST'].includes(r.request().method()) &&
+        r.request().url().includes('draft=true'),
+      { timeout: 20_000 },
+    ),
+    page.getByRole('button', { name: /save draft/i }).click(),
+  ])
+  expect(rejected.status(), 'the 2-bleed rule must reject the save').toBe(400)
   await expect(page.locator('.payload-toast-container')).toContainText(/full bleed/i, {
-    timeout: 15_000,
+    timeout: 30_000,
   })
 
   // Restore: back to the single original bleed, save clean.
