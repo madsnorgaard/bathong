@@ -17,12 +17,20 @@ export default defineNuxtConfig({
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://bathong.africa',
     },
   },
-  // Photographs: srcset at 480/960/1440/1920, AVIF then WebP, via ipx + sharp.
+  // Photographs: srcset at 480/840/1440/1920, AVIF then WebP, via ipx + sharp.
   // Spec: design-references/frontend-v2-direction.html section 06.
+  // Components pass RELATIVE /api/media paths (utils/media.ts mediaSrc): ipx
+  // resolves them through the alias below, so the domain allowlist can never
+  // silently fall back to serving full-res originals. In production
+  // NITRO_IPX_ALIAS/NITRO_IPX_HTTP_DOMAINS (compose) point the alias at the
+  // internal Payload hostname instead.
   image: {
     domains: [new URL(cmsUrl).host],
+    alias: { '/api/media': `${cmsUrl}/api/media` },
     format: ['avif', 'webp'],
-    screens: { xs: 480, sm: 480, md: 960, lg: 1440, xl: 1920, xxl: 1920, '2xl': 1920 },
+    // md 840 matches the real layout collapse (assets/css/app.css) - the
+    // former 960 mis-switched sizes in the 841-959 band.
+    screens: { xs: 480, md: 840, lg: 1440, xl: 1920 },
     quality: 75,
   },
   // Self-hosted at build time: no request to Google, one less origin on the

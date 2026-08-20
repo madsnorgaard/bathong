@@ -12,7 +12,6 @@ useShareMeta({
 })
 
 interface List<T> { docs: T[] }
-const { public: { cmsUrl } } = useRuntimeConfig()
 
 const { data } = await useCmsData<List<Person>>(
   'people-roster',
@@ -33,7 +32,7 @@ const people = computed(() => data.value?.docs ?? [])
         :class="{ dropped: i % 2 === 1 }"
       >
         <BFrame
-          :src="mediaUrl(person.portrait as never, cmsUrl)"
+          :src="mediaSrc(person.portrait as never)"
           :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
           ratio="tall"
           sizes="xs:50vw md:25vw"

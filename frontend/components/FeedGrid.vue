@@ -14,7 +14,6 @@ interface FrameDoc {
 }
 
 defineProps<{ frames: FrameDoc[] }>()
-const { public: { cmsUrl } } = useRuntimeConfig()
 </script>
 
 <template>
@@ -26,7 +25,7 @@ const { public: { cmsUrl } } = useRuntimeConfig()
       :class="[i % 4 === 0 || i % 4 === 3 ? 'wide' : 'narrow', { dropped: i % 2 === 1 }]"
     >
       <BFrame
-        :src="mediaUrl(frame.image as never, cmsUrl)"
+        :src="mediaSrc(frame.image as never)"
         :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : (frame.caption ?? '')"
         :credit="frameCredit(frame)"
         :place="frame.location ?? undefined"

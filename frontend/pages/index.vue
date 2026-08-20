@@ -7,7 +7,6 @@
  */
 import type { Frame, Walk, SiteSetting } from '~/types/payload-types'
 
-const { public: { cmsUrl } } = useRuntimeConfig()
 
 useShareMeta({
   description:
@@ -38,7 +37,7 @@ const tickerItems = computed(() =>
     <!-- one lead frame, full bleed, credited -->
     <section class="lead">
       <BFrame
-        :src="leadFrame ? mediaUrl(leadFrame.image as never, cmsUrl) : null"
+        :src="leadFrame ? mediaSrc(leadFrame.image as never) : null"
         :alt="leadFrame && typeof leadFrame.image === 'object' ? leadFrame.image?.alt ?? '' : ''"
         ratio="wide"
         :credit="leadFrame ? frameCredit(leadFrame) : 'Bathong. Collective'"

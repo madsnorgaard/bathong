@@ -29,7 +29,6 @@ interface SequenceBlock {
 const props = defineProps<{ sequence: SequenceBlock[] }>()
 const emit = defineEmits<{ progress: [current: number, total: number] }>()
 
-const { public: { cmsUrl } } = useRuntimeConfig()
 
 interface RenderFrame {
   frame: FrameDoc
@@ -66,7 +65,7 @@ const current = ref(1)
 watch([current, total], () => emit('progress', current.value, total.value), { immediate: true })
 
 function frameSrc(f: FrameDoc): string | null {
-  return mediaUrl(f.image as never, cmsUrl)
+  return mediaSrc(f.image as never)
 }
 function frameAlt(f: FrameDoc): string {
   return (typeof f.image === 'object' && f.image?.alt) || f.caption || ''

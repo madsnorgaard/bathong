@@ -70,7 +70,7 @@ useShareMeta({
 
 function essayLeadSrc(essay: Essay): string | null {
   const lead = essay.leadFrame
-  return lead && typeof lead === 'object' ? mediaUrl(lead.image as never, cmsUrl) : null
+  return lead && typeof lead === 'object' ? mediaSrc(lead.image as never) : null
 }
 const licensingLine = computed(() =>
   person.value?.showContact && person.value?.contactEmail
@@ -112,8 +112,8 @@ const licensingLine = computed(() =>
       <div class="sheet">
         <figure v-for="(frame, i) in singles" :key="frame.id" class="sheet-cell">
           <NuxtImg
-            v-if="mediaUrl(frame.image as never, cmsUrl)"
-            :src="mediaUrl(frame.image as never, cmsUrl)!"
+            v-if="mediaSrc(frame.image as never)"
+            :src="mediaSrc(frame.image as never)!"
             :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : ''"
             sizes="xs:33vw md:12vw"
             format="avif,webp"

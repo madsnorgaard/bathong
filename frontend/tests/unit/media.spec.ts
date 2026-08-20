@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mediaUrl, frameCredit } from '~/utils/media'
+import { mediaUrl, mediaSrc, frameCredit } from '~/utils/media'
 import { richTextParagraphs, richTextPlain } from '~/utils/richtext'
 
 describe('mediaUrl', () => {
@@ -19,6 +19,17 @@ describe('mediaUrl', () => {
     )
     expect(mediaUrl('42', 'http://x')).toBeNull()
     expect(mediaUrl(null, 'http://x')).toBeNull()
+  })
+})
+
+describe('mediaSrc (relative paths keep images on the ipx alias)', () => {
+  it('returns the relative CMS path untouched', () => {
+    expect(mediaSrc({ url: '/api/media/file/x.jpg' })).toBe('/api/media/file/x.jpg')
+  })
+  it('passes through absolute urls and rejects unpopulated relations', () => {
+    expect(mediaSrc({ url: 'https://cdn.example.org/m.jpg' })).toBe('https://cdn.example.org/m.jpg')
+    expect(mediaSrc('42')).toBeNull()
+    expect(mediaSrc(null)).toBeNull()
   })
 })
 

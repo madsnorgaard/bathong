@@ -65,6 +65,15 @@ export const Media: CollectionConfig = {
     ],
     adminThumbnail: 'thumbnail',
     focalPoint: true,
+    // The hook receives headers only (no doc), so per-visibility values are
+    // impossible. A global public TTL is safe while nothing shared caches in
+    // this stack (Traefik does not cache; browser caches are per-user and
+    // restricted files only ever 200 for their uploader/editors). Revisit
+    // before ever putting a CDN in front of the api host.
+    modifyResponseHeaders: ({ headers }) => {
+      headers.set('cache-control', 'public, max-age=86400')
+      return headers
+    },
   },
   fields: [
     { name: 'alt', type: 'text', admin: { description: 'Alt text for accessibility.' } },
