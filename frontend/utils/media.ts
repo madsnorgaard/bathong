@@ -21,14 +21,24 @@ export function mediaUrl(media: CmsMedia | string | null | undefined, cmsUrl: st
 
 /**
  * Relative CMS media path for NuxtImg/NuxtPicture. Relative srcs are resolved
- * by ipx through the '/api/media' alias (nuxt.config image.alias), which
- * bypasses the domain allowlist entirely - an absolute URL there can silently
- * fall back to the untransformed original when the host isn't allowlisted.
- * Keep mediaUrl for og/share images: crawlers need absolute URLs.
+ * by ipx through the '/api/media' alias (nuxt.config image.alias), so the
+ * server fetches sources over the internal network. CRITICAL: Payload
+ * prefixes media.url with its serverURL in production (absolute), and an
+ * absolute src bypasses the alias - ipx then fetches the public api host,
+ * which the container cannot reach (hairpin) and every image hangs. So any
+ * URL whose path is a Payload media path is reduced to that path; only
+ * genuinely external URLs pass through. mediaUrl stays for og/share images
+ * (crawlers need absolute URLs).
  */
 export function mediaSrc(media: CmsMedia | string | null | undefined): string | null {
   if (!media || typeof media === 'string' || !media.url) return null
-  if (/^https?:\/\//.test(media.url)) return media.url
+  if (/^https?:\/\//.test(media.url)) {
+    try {
+      const path = new URL(media.url).pathname
+      if (path.startsWith('/api/media/')) return path
+    } catch { /* fall through: not a parseable URL */ }
+    return media.url
+  }
   return media.url
 }
 
