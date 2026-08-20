@@ -93,7 +93,7 @@ export default defineNuxtConfig({
         {
           defer: true,
           'data-domain': 'bathong.africa',
-          src: 'https://analytics.theazanianprepper.online/js/script.file-downloads.hash.outbound-links.js',
+          src: 'https://analytics.theazanianprepper.online/js/script.file-downloads.outbound-links.js',
         },
         {
           innerHTML: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",
