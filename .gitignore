@@ -5,3 +5,7 @@ node_modules/
 # photocall e2e runs upload entries into media/; never commit them
 media/entry-*
 Untitled.jpg
+# photographer originals staged for CMS import; too heavy for git
+jacques-nelles-bathong/
+# local dev uploads of the same set (repo /media is the dev staticDir)
+media/jacques-nelles-bathong*
