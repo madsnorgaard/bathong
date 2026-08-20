@@ -118,6 +118,33 @@ services:
 
   # The site. Primary host since the M3 cutover (#12); next.${SITE_DOMAIN}
   # stays as a basic-auth preview router (#39) for reviewing future work.
+  # Micro-cache in front of /_ipx/ so each image variant is AVIF-encoded once,
+  # not once per visitor (nitro has no server-side result cache and encodes
+  # are CPU-expensive). Routes ONLY the /_ipx prefix; everything else still
+  # hits bathong_nuxt directly.
+  bathong_ipx_cache:
+    profiles: ["platform"]
+    image: nginx:alpine
+    container_name: ${SITE_DOMAIN}_ipx_cache
+    restart: always
+    volumes:
+      - ./ops/ipx-cache.conf:/etc/nginx/conf.d/default.conf:ro
+      - ipx_cache:/var/cache/nginx/ipx
+    depends_on:
+      - bathong_nuxt
+    networks:
+      - web
+      - internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.bathong_ipx.rule=Host(`${SITE_DOMAIN}`) && PathPrefix(`/_ipx/`)
+      - traefik.http.routers.bathong_ipx.priority=150
+      - traefik.http.routers.bathong_ipx.tls=true
+      - traefik.http.routers.bathong_ipx.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_ipx.middlewares=bathong-hsts
+      - traefik.http.services.bathong_ipx.loadbalancer.server.port=80
+
   bathong_nuxt:
     profiles: ["platform"]
     build:
@@ -126,6 +153,11 @@ services:
       args:
         # Baked into the ipx allowlist/alias at build time - see frontend/Dockerfile.
         NUXT_PUBLIC_CMS_URL: https://api.${SITE_DOMAIN}
+        # ipx source fetches go over the internal network: the container
+        # cannot reach its own host's public 443 (hairpin), and this also
+        # skips Traefik + the api rate limit while keeping Payload access
+        # control on every fetch.
+        IPX_SOURCE_URL: http://${SITE_DOMAIN}_payload:3001
     image: bathong-nuxt:latest
     container_name: ${SITE_DOMAIN}_nuxt
     restart: always
@@ -135,13 +167,10 @@ services:
       NUXT_CMS_INTERNAL_URL: http://${SITE_DOMAIN}_payload:3001
       # Canonical origin for og/canonical URLs.
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://${SITE_DOMAIN}}
-      # Belt and braces for the build-baked ipx config: nitro's applyEnv
-      # overrides runtimeConfig.ipx at boot. ALIAS must stay a JSON object
-      # (objects merge; a plain string clobbers the alias map). Sources are
-      # fetched over the internal network - Payload access control still runs,
-      # Traefik and the api rate limit are never touched.
-      NITRO_IPX_HTTP_DOMAINS: '["${SITE_DOMAIN}_payload","api.${SITE_DOMAIN}"]'
-      NITRO_IPX_ALIAS: '{"/api/media":"http://${SITE_DOMAIN}_payload:3001/api/media"}'
+      # NOTE: NITRO_IPX_* runtime overrides proved ineffective in production
+      # (the ipx handler kept the build-baked config) - the internal source
+      # URL is baked via the IPX_SOURCE_URL build arg instead. Do not rely on
+      # runtime env for ipx settings.
     depends_on:
       - bathong_payload
     networks:
@@ -183,3 +212,4 @@ services:
 
 volumes:
   db_data: {}
+  ipx_cache: {}
