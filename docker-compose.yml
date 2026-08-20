@@ -118,6 +118,33 @@ services:
 
   # The site. Primary host since the M3 cutover (#12); next.${SITE_DOMAIN}
   # stays as a basic-auth preview router (#39) for reviewing future work.
+  # Micro-cache in front of /_ipx/ so each image variant is AVIF-encoded once,
+  # not once per visitor (nitro has no server-side result cache and encodes
+  # are CPU-expensive). Routes ONLY the /_ipx prefix; everything else still
+  # hits bathong_nuxt directly.
+  bathong_ipx_cache:
+    profiles: ["platform"]
+    image: nginx:alpine
+    container_name: ${SITE_DOMAIN}_ipx_cache
+    restart: always
+    volumes:
+      - ./ops/ipx-cache.conf:/etc/nginx/conf.d/default.conf:ro
+      - ipx_cache:/var/cache/nginx/ipx
+    depends_on:
+      - bathong_nuxt
+    networks:
+      - web
+      - internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.bathong_ipx.rule=Host(`${SITE_DOMAIN}`) && PathPrefix(`/_ipx/`)
+      - traefik.http.routers.bathong_ipx.priority=150
+      - traefik.http.routers.bathong_ipx.tls=true
+      - traefik.http.routers.bathong_ipx.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_ipx.middlewares=bathong-hsts
+      - traefik.http.services.bathong_ipx.loadbalancer.server.port=80
+
   bathong_nuxt:
     profiles: ["platform"]
     build:
@@ -185,3 +212,4 @@ services:
 
 volumes:
   db_data: {}
+  ipx_cache: {}
