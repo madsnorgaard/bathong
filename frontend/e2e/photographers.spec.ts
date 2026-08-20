@@ -33,7 +33,7 @@ test('a photographer page: header, honest counts, copyright plate', async ({ pag
 })
 
 test('a person with no essays or frames shows no count row', async ({ page }) => {
-  await page.goto('/photographers/jacques-nel')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jacques Nel')
+  await page.goto('/photographers/jacques-nelles')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jacques Nelles')
   await expect(page.getByLabel('Body of work')).toHaveCount(0)
 })
