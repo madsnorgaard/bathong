@@ -87,7 +87,7 @@ function frameCount(essay: Essay): number {
         :src="leadSrc(hero)"
         :alt="hero.title"
         :credit="leadCredit(hero)"
-        sizes="xs:100vw md:60vw"
+        sizes="xs:100vw md:60vw lg:60vw xl:60vw"
         class="hero-frame"
       />
       <div class="hero-meta">
@@ -108,7 +108,7 @@ function frameCount(essay: Essay): number {
           :src="leadSrc(essay)"
           :alt="essay.title"
           :credit="leadCredit(essay)"
-          sizes="xs:100vw md:33vw"
+          sizes="xs:100vw md:33vw lg:33vw xl:33vw"
           class="card-frame"
         />
         <h3 class="b-display-2">{{ essay.title }}</h3>

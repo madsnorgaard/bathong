@@ -98,7 +98,7 @@ const licensingLine = computed(() =>
           <BFrame
             :src="essayLeadSrc(essay)"
             :alt="essay.title"
-            sizes="xs:100vw md:33vw"
+            sizes="xs:100vw md:33vw lg:33vw xl:33vw"
             class="card-frame"
           />
           <h3 class="b-display-2">{{ essay.title }}</h3>
@@ -111,14 +111,14 @@ const licensingLine = computed(() =>
       <!-- the contact sheet run: 8 up desktop, 3 up mobile -->
       <div class="sheet">
         <figure v-for="(frame, i) in singles" :key="frame.id" class="sheet-cell">
-          <NuxtImg
+          <NuxtPicture
             v-if="mediaSrc(frame.image as never)"
             :src="mediaSrc(frame.image as never)!"
             :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : ''"
-            sizes="xs:33vw md:12vw"
+            sizes="xs:33vw md:12vw lg:13vw xl:10vw"
             format="avif,webp"
             loading="lazy"
-            class="sheet-img"
+            :img-attrs="{ class: 'sheet-img' }"
           />
           <figcaption class="b-caption">{{ String(i + 1).padStart(2, '0') }}</figcaption>
         </figure>
@@ -170,14 +170,17 @@ const licensingLine = computed(() =>
   flex-direction: column;
   gap: 4px;
 }
-.sheet-img {
+.sheet-cell :deep(picture) {
+  display: contents;
+}
+.sheet-cell :deep(.sheet-img) {
   height: 120px;
   width: auto;
   display: block;
   border: 1px solid var(--grey-line);
 }
 @media (max-width: 840px) {
-  .sheet-img {
+  .sheet-cell :deep(.sheet-img) {
     height: 90px;
   }
 }
