@@ -26,7 +26,17 @@ describe('mediaSrc (relative paths keep images on the ipx alias)', () => {
   it('returns the relative CMS path untouched', () => {
     expect(mediaSrc({ url: '/api/media/file/x.jpg' })).toBe('/api/media/file/x.jpg')
   })
-  it('passes through absolute urls and rejects unpopulated relations', () => {
+  it('strips the origin from absolute Payload media urls (production shape)', () => {
+    // Payload prefixes media.url with serverURL in production; an absolute
+    // src bypasses the ipx alias and hangs on the unreachable public host.
+    expect(mediaSrc({ url: 'https://api.bathong.africa/api/media/file/x.jpg' })).toBe(
+      '/api/media/file/x.jpg',
+    )
+    expect(mediaSrc({ url: 'http://localhost:3001/api/media/file/x.jpg' })).toBe(
+      '/api/media/file/x.jpg',
+    )
+  })
+  it('passes through genuinely external urls and rejects unpopulated relations', () => {
     expect(mediaSrc({ url: 'https://cdn.example.org/m.jpg' })).toBe('https://cdn.example.org/m.jpg')
     expect(mediaSrc('42')).toBeNull()
     expect(mediaSrc(null)).toBeNull()

@@ -47,7 +47,15 @@ test.describe('home', () => {
     )
     const imageUrls = urls.filter((u) => u.includes('/api/media/') || u.includes('/_ipx/'))
     expect(imageUrls.length).toBeGreaterThan(0)
-    for (const u of imageUrls) expect(u).toMatch(/\/_ipx\//)
+    for (const u of imageUrls) {
+      expect(u).toMatch(/\/_ipx\//)
+      // The source inside the ipx path must be RELATIVE: an absolute URL
+      // bypasses the server-side alias and ipx fetches the public host,
+      // which is unreachable from inside the container (took the site down
+      // twice). CI allowlists localhost so absolute srcs "work" here - this
+      // assertion is what actually guards production.
+      expect(u).not.toMatch(/\/_ipx\/[^ ]*https?:\/\//)
+    }
   })
 
   test('first view stays under the 1 MB budget', async ({ page }) => {
