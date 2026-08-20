@@ -7,6 +7,7 @@
 #   SITE_DOMAIN=bathong.africa
 #   ALT_DOMAIN=bathong.org
 #   DB_PASSWORD, PAYLOAD_SECRET, CORS_ORIGINS, STAGING_BASIC_AUTH
+#   SMTP_PASS (the noreply@ mailbox password, from the mail repo's setup-bathong.sh)
 #
 # Since the M3 cutover (#12) the platform IS the site: start everything with
 # `docker compose --profile platform up -d`. bathong_nuxt carries
@@ -73,6 +74,15 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       COOKIE_DOMAIN: .${SITE_DOMAIN}
       MEDIA_DIR: /app/media
+      # Auth emails (password reset; verification once self-signup opens) go
+      # out through the collective's mail server as noreply@. Public hostname
+      # on purpose: the Let's Encrypt cert matches it, unlike the container
+      # aliases on the mail stack's own network.
+      SMTP_HOST: mail.madsnorgaard.net
+      SMTP_PORT: "465"
+      SMTP_USER: noreply@${SITE_DOMAIN}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: noreply@${SITE_DOMAIN}
     depends_on:
       bathong_db:
         condition: service_healthy
