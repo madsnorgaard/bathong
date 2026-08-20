@@ -67,6 +67,9 @@ jobs:
       NUXT_PUBLIC_CMS_URL: http://localhost:3001
       NUXT_PUBLIC_SITE_URL: https://bathong.africa
       SEED_DEMO: 'true'
+      # ci-only login for the admin-panel specs (admin-sequence.spec.ts)
+      SEED_ADMIN_EMAIL: admin@bathong.ci
+      SEED_ADMIN_PASSWORD: ci-only-admin-password
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

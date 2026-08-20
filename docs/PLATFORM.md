@@ -104,7 +104,7 @@ unit; everything else feeds it or shows it.
 | `people` | Public profiles | founding circle + members + guests; may exist without an account |
 | `media` (upload) | File library | `visibility` public/restricted + `uploadedBy`; member uploads stay restricted until published. Raster-only, sharp sizes, `./media` bind mount |
 | `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the future archive |
-| `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation |
+| `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation; sequence and lead frame edited visually (see below) |
 | `walks` | Photowalks/events | pricing display fields + external `bookingUrl` until payments land; `resultEssay` closes the walk -> group edit -> essay loop |
 | `exhibitions` | Walls | frames + venue + dates; NPC partnership line |
 | `photocalls` | Open calls | includes `terms` rich text (photographer keeps copyright, non-exclusive licence - the brief requires this in writing) |
@@ -117,6 +117,26 @@ TBC until the collective decides).
 
 Drafts/versions only on essays, walks, exhibitions, photocalls and the
 manifesto/membership globals.
+
+## Visual sequence editor (essays)
+
+Sequencing a photo essay is a visual judgement, so the essay's `sequence`
+and `leadFrame` fields replace the stock admin UI with custom components
+(`backend/src/fields/sequence/`). The strip shows every block as a
+thumbnail tile - full-bleed frames render wider so the rhythm reads at a
+glance, pairs as a double tile, text interludes as an excerpt tile - with
+drag or arrow-button reorder, an inline full-bleed toggle, a remove
+control, a lightbox on click, and a live count against the 12-20 guidance.
+"Add frames" opens a picker drawer (searchable, filterable by
+photographer, multi-select appends in click order); frames already used
+are marked but stay selectable. Thumbnails come from `GET
+/api/frames-index`, an editor-gated endpoint returning the whole archive
+in one flat response. Pairs, text bodies and caption overrides are edited
+in the collapsible "Structural editor" under the strip - the stock blocks
+UI bound to the same form state, so both views always agree and the saved
+data is byte-identical with the default UI (asserted by
+`frontend/e2e/admin-sequence.spec.ts`; run those specs alone against a dev
+backend with `npx playwright test --config=playwright.admin.config.ts`).
 
 ## Access matrix
 

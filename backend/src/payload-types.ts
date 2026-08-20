@@ -552,7 +552,7 @@ export interface Walk {
     [k: string]: unknown;
   } | null;
   /**
-   * GeoJSON FeatureCollection: one LineString (the route, [lng, lat] pairs) plus optional Point features with a "name" property for landmark markers. Drives the interactive map on /walks.
+   * GeoJSON FeatureCollection: one LineString (the route, [lng, lat] pairs) plus optional Point features with a "name" property for landmark markers. Drives the interactive map on /walks. Workflow for producing one precisely: docs/ROUTES.md.
    */
   routeGeo?:
     | {

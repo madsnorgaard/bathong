@@ -16,7 +16,14 @@ export const Essays: CollectionConfig = {
     { name: 'slug', type: 'text', unique: true, index: true },
     { name: 'deck', type: 'textarea', admin: { description: 'Short standfirst under the title.' } },
     { name: 'body', type: 'richText' },
-    { name: 'leadFrame', type: 'relationship', relationTo: 'frames' },
+    {
+      name: 'leadFrame',
+      type: 'relationship',
+      relationTo: 'frames',
+      admin: {
+        components: { Field: '@/fields/sequence/LeadFrameField#LeadFrameField' },
+      },
+    },
     {
       // The edit decides the layout (W2): single frames, paired frames where
       // the edit pairs them, text interleaved where the sequence needs it.
@@ -25,6 +32,9 @@ export const Essays: CollectionConfig = {
       admin: {
         description:
           'The photo sequence. Editorial range is 12-20 frames - shorter or longer is allowed but should be deliberate. Full bleed is a device: the opening frame and at most one turn in the middle.',
+        // Visual editor: thumbnail strip + picker drawer; the stock blocks UI
+        // stays embedded inside it as the structural escape hatch.
+        components: { Field: '@/fields/sequence/SequenceEditor#SequenceEditor' },
       },
       blocks: [
         {
