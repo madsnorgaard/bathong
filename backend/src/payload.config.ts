@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
@@ -81,11 +82,25 @@ export default buildConfig({
     // Street photography stills only - 50 MB is plenty for a full-res scan.
     limits: { fileSize: 52_428_800 }, // 50 MB
   },
-  // Email adapter - SMTP gets wired later. When it does:
-  // import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
-  // email: nodemailerAdapter({
-  //   defaultFromAddress: process.env.SMTP_FROM || '',
-  //   defaultFromName: 'Bathong.',
-  //   transportOptions: { host: process.env.SMTP_HOST, port: 465, secure: true, auth: { ... } },
-  // }),
+  // Email: real SMTP when configured (production talks to the collective's
+  // mail server as noreply@), console logging otherwise - in local-only dev
+  // Payload prints would-be emails instead of sending them.
+  ...(process.env.SMTP_HOST
+    ? {
+        email: nodemailerAdapter({
+          defaultFromAddress: process.env.SMTP_FROM || 'noreply@bathong.africa',
+          defaultFromName: 'BATHONG.',
+          transportOptions: {
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 465),
+            // implicit TLS on 465; STARTTLS upgrade on 587
+            secure: Number(process.env.SMTP_PORT || 465) === 465,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          },
+        }),
+      }
+    : {}),
 })

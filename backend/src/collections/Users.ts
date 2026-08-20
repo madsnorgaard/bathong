@@ -6,6 +6,9 @@ export const Users: CollectionConfig = {
   auth: {
     maxLoginAttempts: 5,
     lockTime: 10 * 60 * 1000, // 10 minutes
+    // The email adapter (#15) is wired, so forgotPassword emails work today.
+    // Add `verify: true` here when self-signup opens (#13) - until then
+    // editors create accounts and a verification gate would only add friction.
     // Cross-subdomain cookies: the frontend and API live on sibling subdomains,
     // so in production the cookie must be scoped to the parent domain and sent
     // cross-site. Leave COOKIE_DOMAIN unset in dev (plain http, same origin).

@@ -36,13 +36,20 @@ export default defineNuxtConfig({
   },
   routeRules: {
     // Baseline security headers. CSP is a follow-up (issue #37): a real one
-    // needs nonces for SSR inline scripts, not unsafe-inline.
+    // needs nonces for SSR inline scripts, not unsafe-inline. COEP is
+    // deliberately absent - nothing needs cross-origin isolation, and it
+    // would force crossorigin attributes everywhere for zero gain.
     '/**': {
       headers: {
         'x-frame-options': 'DENY',
         'x-content-type-options': 'nosniff',
         'referrer-policy': 'strict-origin-when-cross-origin',
         'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+        // Safe as same-origin: no cross-origin popups, and every subresource
+        // is same-origin (ipx proxies api images, map tiles live in /map).
+        'cross-origin-opener-policy': 'same-origin',
+        'cross-origin-resource-policy': 'same-origin',
+        'x-dns-prefetch-control': 'off',
       },
     },
     '/_ipx/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },

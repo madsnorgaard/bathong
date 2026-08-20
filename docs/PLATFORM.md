@@ -47,6 +47,11 @@ git):
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
 | `NUXT_PUBLIC_SITE_URL` | optional override; defaults to `https://$SITE_DOMAIN` |
+| `SMTP_PASS` | platform - the noreply@ mailbox password (mail repo's `setup-bathong.sh`) |
+
+The rest of the SMTP settings (`SMTP_HOST`/`PORT`/`USER`/`FROM`) are fixed in
+the compose file. With `SMTP_HOST` unset (local dev, e2e) Payload logs
+would-be emails to the console instead of sending.
 
 ## Preview router (#39): next.SITE_DOMAIN behind basic auth
 

@@ -84,7 +84,7 @@ async function run() {
   // ---- people: the founding circle (role proposal; titles editable in CMS) ----
   const directors = [
     { name: 'Emmanuel Munano', slug: 'emmanuel-munano', roleTitle: 'Founder and CEO', order: 1, memberNumber: 1 },
-    { name: 'Jacques Nel', slug: 'jacques-nel', roleTitle: 'Chief Operating Officer', order: 2, memberNumber: 2 },
+    { name: 'Jacques Nelles', slug: 'jacques-nelles', roleTitle: 'Chief Operating Officer', order: 2, memberNumber: 2 },
     {
       name: 'Alet Pretorius',
       slug: 'alet-pretorius',
