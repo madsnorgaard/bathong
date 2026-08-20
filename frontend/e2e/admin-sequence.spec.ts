@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
 /**
  * The visual sequence editor in the Payload admin (backend, port 3001).
@@ -86,6 +86,29 @@ async function saveDraft(page: Page) {
   expect(resp.ok(), `draft save responded ${resp.status()}`).toBeTruthy()
   // Let the form-state merge settle before further row edits.
   await page.waitForTimeout(400)
+}
+
+/**
+ * Toggle a tile's full-bleed to a target state. The bleed button lives in a
+ * hover-revealed toolbar and the click can land before the toggle handler is
+ * wired (admin hydration) - the source of repeated CI flakes (#54). Assert
+ * the per-tile class after every click and retry until the target state
+ * holds; checking the TARGET state each attempt makes the loop convergent
+ * even if a slow render made us double-click.
+ */
+async function setBleed(tile: Locator, on: boolean) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await tile.hover()
+    await tile.getByRole('button', { name: 'bleed', exact: true }).click()
+    try {
+      if (on) await expect(tile).toHaveClass(/seq-tile--bleed/, { timeout: 4000 })
+      else await expect(tile).not.toHaveClass(/seq-tile--bleed/, { timeout: 4000 })
+      return
+    } catch {
+      // toggle didn't land (or landed opposite) - loop retries toward target
+    }
+  }
+  throw new Error(`bleed toggle never reached ${on ? 'on' : 'off'} after 3 attempts`)
 }
 
 // 90s: in CI the backend is `next dev`, and the essay edit view compiles
@@ -214,8 +237,7 @@ test('full bleed toggles inline and the 2-bleed rule still guards publish', asyn
 
   // A second bleed is allowed and persists.
   const tile4 = page.locator('.seq-tile').nth(4)
-  await tile4.hover()
-  await tile4.getByRole('button', { name: 'bleed', exact: true }).click()
+  await setBleed(tile4, true)
   await expect(page.locator('.seq-tile--bleed')).toHaveCount(2)
   await page.screenshot({ path: `${SHOTS}/3-bleed.png`, fullPage: true })
   await saveDraft(page)
@@ -226,8 +248,7 @@ test('full bleed toggles inline and the 2-bleed rule still guards publish', asyn
   // A third bleed trips the collection hook on save - the editor surfaces
   // the error toast instead of crashing or silently dropping the toggle.
   const tile5 = page.locator('.seq-tile').nth(5)
-  await tile5.hover()
-  await tile5.getByRole('button', { name: 'bleed', exact: true }).click()
+  await setBleed(tile5, true)
   await expect(page.locator('.seq-tile--bleed')).toHaveCount(3)
   await page.getByRole('button', { name: /save draft/i }).click()
   await expect(page.locator('.payload-toast-container')).toContainText(/full bleed/i, {
@@ -236,9 +257,7 @@ test('full bleed toggles inline and the 2-bleed rule still guards publish', asyn
 
   // Restore: back to the single original bleed, save clean.
   for (const n of [5, 4]) {
-    const tile = page.locator('.seq-tile').nth(n)
-    await tile.hover()
-    await tile.getByRole('button', { name: 'bleed', exact: true }).click()
+    await setBleed(page.locator('.seq-tile').nth(n), false)
   }
   await saveDraft(page)
 })
@@ -277,11 +296,15 @@ test('picker multi-select appends in click order', async ({ page, request }) => 
   expect(after[after.length - 2].frame).toBe(index.frames[0].id)
   expect(after[after.length - 1].frame).toBe(index.frames[1].id)
 
-  // Remove them again via the tile control.
+  // Remove them again via the tile control. Same hover-toolbar race as the
+  // bleed toggle (#54): assert the count actually dropped after each click
+  // so a missed click can't leave a stray block behind.
   for (let i = 0; i < 2; i++) {
+    const count = await page.locator('.seq-tile').count()
     const last = page.locator('.seq-tile').last()
     await last.hover()
     await last.getByRole('button', { name: /remove position/i }).click()
+    await expect(page.locator('.seq-tile')).toHaveCount(count - 1)
   }
   await saveDraft(page)
   expect((await getEssay(request)).sequence).toHaveLength(beforeLen)
