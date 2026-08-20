@@ -7,7 +7,6 @@
 import type { Person } from '~/types/payload-types'
 
 const props = defineProps<{ person: Person; fallbackEmail?: string | null }>()
-const { public: { cmsUrl } } = useRuntimeConfig()
 
 const bio = computed(() => richTextParagraphs(props.person.bio as never))
 const email = computed(() =>
@@ -20,7 +19,7 @@ const email = computed(() =>
 <template>
   <header class="ph-head">
     <BFrame
-      :src="mediaUrl(person.portrait as never, cmsUrl)"
+      :src="mediaSrc(person.portrait as never)"
       :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
       ratio="tall"
       sizes="xs:100vw md:30vw"

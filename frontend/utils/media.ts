@@ -20,6 +20,19 @@ export function mediaUrl(media: CmsMedia | string | null | undefined, cmsUrl: st
 }
 
 /**
+ * Relative CMS media path for NuxtImg/NuxtPicture. Relative srcs are resolved
+ * by ipx through the '/api/media' alias (nuxt.config image.alias), which
+ * bypasses the domain allowlist entirely - an absolute URL there can silently
+ * fall back to the untransformed original when the host isn't allowlisted.
+ * Keep mediaUrl for og/share images: crawlers need absolute URLs.
+ */
+export function mediaSrc(media: CmsMedia | string | null | undefined): string | null {
+  if (!media || typeof media === 'string' || !media.url) return null
+  if (/^https?:\/\//.test(media.url)) return media.url
+  return media.url
+}
+
+/**
  * Credit line for a frame. Every photograph is credited, everywhere it
  * appears; the backend refuses frames with neither photographer nor override.
  */

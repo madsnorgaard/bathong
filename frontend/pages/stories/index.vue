@@ -14,7 +14,6 @@ useShareMeta({
 })
 
 interface List<T> { docs: T[] }
-const { public: { cmsUrl } } = useRuntimeConfig()
 const route = useRoute()
 
 const { data } = await useCmsData<List<Essay>>(
@@ -45,7 +44,7 @@ const rest = computed(() => essays.value.slice(1))
 
 function leadSrc(essay: Essay): string | null {
   const lead = essay.leadFrame
-  if (lead && typeof lead === 'object') return mediaUrl(lead.image as never, cmsUrl)
+  if (lead && typeof lead === 'object') return mediaSrc(lead.image as never)
   return null
 }
 function leadCredit(essay: Essay): string {

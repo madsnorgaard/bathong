@@ -123,6 +123,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Baked into the ipx allowlist/alias at build time - see frontend/Dockerfile.
+        NUXT_PUBLIC_CMS_URL: https://api.${SITE_DOMAIN}
     image: bathong-nuxt:latest
     container_name: ${SITE_DOMAIN}_nuxt
     restart: always
@@ -132,6 +135,13 @@ services:
       NUXT_CMS_INTERNAL_URL: http://${SITE_DOMAIN}_payload:3001
       # Canonical origin for og/canonical URLs.
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://${SITE_DOMAIN}}
+      # Belt and braces for the build-baked ipx config: nitro's applyEnv
+      # overrides runtimeConfig.ipx at boot. ALIAS must stay a JSON object
+      # (objects merge; a plain string clobbers the alias map). Sources are
+      # fetched over the internal network - Payload access control still runs,
+      # Traefik and the api rate limit are never touched.
+      NITRO_IPX_HTTP_DOMAINS: '["${SITE_DOMAIN}_payload","api.${SITE_DOMAIN}"]'
+      NITRO_IPX_ALIAS: '{"/api/media":"http://${SITE_DOMAIN}_payload:3001/api/media"}'
     depends_on:
       - bathong_payload
     networks:

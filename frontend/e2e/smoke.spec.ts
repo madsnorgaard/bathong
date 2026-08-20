@@ -36,6 +36,20 @@ test.describe('home', () => {
     }
   })
 
+  test('every rendered image is served through ipx', async ({ page }) => {
+    // Regression guard: when the ipx domain allowlist/alias breaks,
+    // @nuxt/image silently falls back to full-res originals. Relative
+    // /api/media srcs make that structurally impossible - but only if
+    // every surface actually rides /_ipx/.
+    await page.goto('/')
+    const urls = await page.$$eval('img[src], picture source[srcset]', (els) =>
+      els.flatMap((el) => [el.getAttribute('src') ?? '', el.getAttribute('srcset') ?? '']),
+    )
+    const imageUrls = urls.filter((u) => u.includes('/api/media/') || u.includes('/_ipx/'))
+    expect(imageUrls.length).toBeGreaterThan(0)
+    for (const u of imageUrls) expect(u).toMatch(/\/_ipx\//)
+  })
+
   test('first view stays under the 1 MB budget', async ({ page }) => {
     let transferred = 0
     page.on('response', async (response) => {
