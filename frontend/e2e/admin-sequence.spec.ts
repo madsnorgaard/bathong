@@ -88,7 +88,9 @@ async function saveDraft(page: Page) {
   await page.waitForTimeout(400)
 }
 
-test.describe.configure({ mode: 'serial' })
+// 90s: in CI the backend is `next dev`, and the essay edit view compiles
+// on the first hit - that alone can consume most of the default 30s.
+test.describe.configure({ mode: 'serial', timeout: 90_000 })
 
 test.beforeAll(async ({ request }) => {
   token = await login(request)

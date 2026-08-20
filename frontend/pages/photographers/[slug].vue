@@ -8,7 +8,6 @@
 import type { Person, Essay, Frame, SiteSetting } from '~/types/payload-types'
 
 const route = useRoute()
-const { public: { cmsUrl } } = useRuntimeConfig()
 const slug = route.params.slug as string
 
 interface List<T> { docs: T[]; totalDocs: number }
@@ -53,18 +52,24 @@ const counts = computed(() =>
   ].filter((c) => c.n > 0),
 )
 
-const portraitShare = computed(() => {
+// og:image is the generated C3 share card (server route).
+const shareImage = computed(() => {
+  const p = person.value
+  if (!p?.slug) return undefined
+  return `/share/photographer/${p.slug}.jpg?v=${p.updatedAt ? new Date(p.updatedAt).getTime() : 0}`
+})
+const portraitAlt = computed(() => {
   const p = person.value?.portrait
-  if (p && typeof p === 'object' && p.sizes?.og?.url) {
-    return `${cmsUrl.replace(/\/$/, '')}${p.sizes.og.url}`
-  }
-  return undefined
+  return p && typeof p === 'object' ? (p.alt ?? undefined) : undefined
 })
 
 useShareMeta({
   title: person.value?.name ?? 'Photographer',
   description: `${person.value?.name} is a photographer with the Bathong. collective, Pretoria.`,
-  image: portraitShare.value,
+  image: shareImage.value,
+  imageAlt:
+    portraitAlt.value ??
+    `Share card for ${person.value?.name ?? 'a photographer'} of the Bathong. collective.`,
   type: 'website',
 })
 

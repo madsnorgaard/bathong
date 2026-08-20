@@ -6,12 +6,6 @@
  */
 import type { Photocall } from '~/types/payload-types'
 
-useShareMeta({
-  title: 'Photocalls',
-  description:
-    'Open calls from the Bathong. collective. Anyone can enter, it costs nothing, you keep everything.',
-})
-
 interface List<T> { docs: T[] }
 
 const { data } = await useCmsData<List<Photocall>>(
@@ -24,6 +18,20 @@ const terms = computed(() => richTextParagraphs(call.value?.terms as never))
 const closesLine = computed(() => {
   if (!call.value?.closesAt) return 'closing date TBC'
   return `closes ${formatWalkDate(call.value.closesAt)}`
+})
+
+// og:image is the generated C5 signal card only while a call is open - the
+// spec retires the card the day the call closes.
+useShareMeta({
+  title: 'Photocalls',
+  description:
+    'Open calls from the Bathong. collective. Anyone can enter, it costs nothing, you keep everything.',
+  image: call.value
+    ? `/share/photocalls.jpg?v=${call.value.updatedAt ? new Date(call.value.updatedAt).getTime() : 0}`
+    : undefined,
+  imageAlt: call.value
+    ? `Open photocall announcement: ${call.value.title}, ${closesLine.value}.`
+    : undefined,
 })
 </script>
 

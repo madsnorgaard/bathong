@@ -138,6 +138,22 @@ data is byte-identical with the default UI (asserted by
 `frontend/e2e/admin-sequence.spec.ts`; run those specs alone against a dev
 backend with `npx playwright test --config=playwright.admin.config.ts`).
 
+## Share cards (og:image per entity)
+
+Sharing a URL shows a card generated for that entity, per the share-cards
+spec (design-system/design_handoff_frontend_v2/design-references/
+share-cards.html): C2 essay (lead frame + index/frame count in the bar),
+C3 photographer (portrait, member number, body of work), C4 walk (jacaranda
+plate, the date enormous - the launch-only state), C5 photocall (signal
+plate while a call is open). Rendered on request by Nitro server routes
+(`frontend/server/routes/share/`) with satori + resvg + sharp - fonts are
+vendored TTF buffers in `frontend/server/assets/fonts/` (OFL), so no
+system fonts are needed in the container. JPEG q82, quality steps down to
+stay under the 300 KB WhatsApp ceiling; any missing entity or failed
+render serves the static C1 default (`frontend/public/share/default.jpg`),
+never an error. Pages append `?v=<updatedAt>` so crawler caches bust on
+republish. Covered by `frontend/e2e/share-cards.spec.ts`.
+
 ## Access matrix
 
 | Collection | Public | Member | Editor | Admin |

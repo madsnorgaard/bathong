@@ -35,9 +35,17 @@ export function useShareMeta(input: ShareMetaInput) {
   const ogTitle = input.title ?? SITE_NAME
   const url = `${siteUrl}${route.path === '/' ? '/' : route.path}`
   const image = absolute(input.image ?? DEFAULT_IMAGE)
-  const imageAlt = input.imageAlt ?? (input.image ? undefined : DEFAULT_IMAGE_ALT)
+  // Alt always travels with the card (spec section 04) - a page-specific
+  // description when given, the site card's description otherwise.
+  const imageAlt = input.imageAlt ?? DEFAULT_IMAGE_ALT
+  const copyright = input.author
+    ? `© ${input.author} / Bathong. Collective`
+    : '© Bathong. Collective'
 
-  useHead({ link: [{ rel: 'canonical', href: url }] })
+  useHead({
+    link: [{ rel: 'canonical', href: url }],
+    meta: [{ content: copyright, name: 'copyright' }],
+  })
   useSeoMeta({
     title,
     description: input.description,
@@ -51,7 +59,7 @@ export function useShareMeta(input: ShareMetaInput) {
     ogImageWidth: 1200,
     ogImageHeight: 630,
     ogImageType: 'image/jpeg',
-    ...(imageAlt ? { ogImageAlt: imageAlt } : {}),
+    ogImageAlt: imageAlt,
     twitterCard: 'summary_large_image',
     twitterTitle: ogTitle,
     twitterDescription: input.description,
