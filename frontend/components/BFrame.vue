@@ -16,8 +16,10 @@ const props = withDefaults(
     /** Lead frames load eagerly; everything else is lazy. */
     eager?: boolean
     /**
-     * Nuxt Image screen-keyed sizes ("xs:100vw md:33vw"). Screens are pinned
-     * to the spec widths 480/960/1440/1920 in nuxt.config.
+     * Nuxt Image screen-keyed sizes ("xs:100vw md:33vw lg:33vw xl:33vw").
+     * Screens are pinned to 480/840/1440/1920 in nuxt.config (840 = the CSS
+     * collapse). The largest key becomes the default for wider viewports, so
+     * always carry lg/xl keys or desktop under-requests.
      */
     sizes?: string
   }>(),

@@ -29,7 +29,7 @@ defineProps<{ frames: FrameDoc[] }>()
         :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : (frame.caption ?? '')"
         :credit="frameCredit(frame)"
         :place="frame.location ?? undefined"
-        sizes="xs:100vw md:60vw"
+        sizes="xs:100vw md:60vw lg:60vw xl:60vw"
         class="feed-frame"
       />
     </div>

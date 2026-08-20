@@ -8,7 +8,12 @@
  */
 interface FrameDoc {
   id: number
-  image?: { url?: string | null; alt?: string | null } | number | null
+  image?: {
+    url?: string | null
+    alt?: string | null
+    width?: number | null
+    height?: number | null
+  } | number | null
   photographer?: { name?: string | null } | number | null
   creditOverride?: string | null
   caption?: string | null
@@ -69,6 +74,11 @@ function frameSrc(f: FrameDoc): string | null {
 }
 function frameAlt(f: FrameDoc): string {
   return (typeof f.image === 'object' && f.image?.alt) || f.caption || ''
+}
+/** Intrinsic dimensions: the browser reserves the box before the frame loads. */
+function frameDims(f: FrameDoc): { width?: number; height?: number } {
+  if (typeof f.image !== 'object' || !f.image?.width || !f.image?.height) return {}
+  return { width: f.image.width, height: f.image.height }
 }
 function capsule(rf: RenderFrame) {
   return {
@@ -142,7 +152,7 @@ function onKeydown(e: KeyboardEvent) {
         :data-frame-index="block.single.index"
         @click="advance(1)"
       >
-        <NuxtImg
+        <NuxtPicture
           v-if="frameSrc(block.single.frame)"
           :src="frameSrc(block.single.frame)!"
           :alt="frameAlt(block.single.frame)"
@@ -150,7 +160,8 @@ function onKeydown(e: KeyboardEvent) {
           format="avif,webp"
           :loading="block.single.index === 1 ? 'eager' : 'lazy'"
           :preload="block.single.index === 1"
-          class="frame-img"
+          v-bind="frameDims(block.single.frame)"
+          :img-attrs="{ class: 'frame-img' }"
         />
         <FrameCaption
           standalone
@@ -170,14 +181,15 @@ function onKeydown(e: KeyboardEvent) {
           :data-frame-index="rf?.index"
           @click="advance(1)"
         >
-          <NuxtImg
+          <NuxtPicture
             v-if="rf && frameSrc(rf.frame)"
             :src="frameSrc(rf.frame)!"
             :alt="frameAlt(rf.frame)"
-            sizes="xs:100vw md:50vw"
+            sizes="xs:100vw md:50vw lg:50vw xl:50vw"
             format="avif,webp"
             loading="lazy"
-            class="frame-img"
+            v-bind="frameDims(rf.frame)"
+            :img-attrs="{ class: 'frame-img' }"
           />
           <FrameCaption
             v-if="rf"
@@ -213,7 +225,12 @@ function onKeydown(e: KeyboardEvent) {
   align-items: center;
   cursor: pointer;
 }
-.frame-unit .frame-img {
+/* NuxtPicture's <picture> wrapper must be layout-transparent - the img is the unit */
+.frame-unit :deep(picture),
+.pair-half :deep(picture) {
+  display: contents;
+}
+.frame-unit :deep(.frame-img) {
   max-height: 82vh;
   max-width: min(100% - 2 * var(--space-4), 1440px);
   width: auto;
@@ -225,7 +242,7 @@ function onKeydown(e: KeyboardEvent) {
   min-width: min(60ch, 90%);
 }
 /* full bleed is a device: edge to edge, caption below in the standard capsule */
-.frame-unit.bleed .frame-img {
+.frame-unit.bleed :deep(.frame-img) {
   max-height: none;
   max-width: 100%;
   width: 100vw;
@@ -241,7 +258,7 @@ function onKeydown(e: KeyboardEvent) {
   margin: 0;
   cursor: pointer;
 }
-.pair-half .frame-img {
+.pair-half :deep(.frame-img) {
   max-height: 82vh;
   max-width: 100%;
   width: auto;
@@ -262,7 +279,7 @@ function onKeydown(e: KeyboardEvent) {
   .pair-unit {
     grid-template-columns: 1fr;
   }
-  .frame-unit .frame-img {
+  .frame-unit :deep(.frame-img) {
     max-width: 100%;
   }
 }
