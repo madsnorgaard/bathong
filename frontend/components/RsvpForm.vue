@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Inline RSVP form (W5). Posts to the public rsvps endpoint; the backend
- * enforces honeypot, duplicates and capacity (waitlist overflow). No email
- * confirmation until SMTP lands (#15), so the success copy stays honest.
+ * enforces honeypot, duplicates and capacity (waitlist overflow) and sends
+ * the confirmation/waitlist email from its afterChange hook.
  */
 const props = defineProps<{ walkId: number | string }>()
 
@@ -45,10 +45,11 @@ async function submit() {
 <template>
   <div class="rsvp">
     <p v-if="result === 'confirmed'" class="state b-lede">
-      You're on the list. Bring one lens. Written confirmation lands once our mail is wired: TBC.
+      You're on the list. Bring one lens. A written confirmation is on its way to your inbox.
     </p>
     <p v-else-if="result === 'waitlist'" class="state b-lede">
-      The walk is full, and you're on the waitlist. We'll be in touch if a place opens.
+      The walk is full, and you're on the waitlist. We've emailed you a note, and we'll write
+      again if a place opens.
     </p>
     <form v-else novalidate @submit.prevent="submit">
       <div class="fields">

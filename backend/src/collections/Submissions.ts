@@ -1,6 +1,9 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 import { APIError } from 'payload'
 import { hasEditorRole, isAdmin, isEditorField, isMember } from '../access'
+import { richTextParagraphs } from '../email/lexical'
+import { getContactEmail, sendSafe } from '../email/send'
+import { editorNewEntry, entryReceipt, entryVerdict } from '../email/templates'
 
 /** Submitters see their own submissions; editors see everything. */
 const canReadSubmission: Access = ({ req: { user } }) => {
@@ -177,6 +180,72 @@ export const Submissions: CollectionConfig = {
               context: { fromSubmissionSync: true },
             })
           }
+        }
+      },
+      // Submitter-facing mail: a receipt on entry, the written verdict when an
+      // editor moves the status. Sends are fire-and-forget - a dead SMTP hop
+      // must never fail a committed entry or an editorial save.
+      async ({ doc, previousDoc, req, operation, context }) => {
+        if (context?.fromSubmissionSync || context?.skipEmails) return
+
+        const verdictStatuses = ['shortlisted', 'published', 'rejected'] as const
+        type Verdict = (typeof verdictStatuses)[number]
+        const isVerdict =
+          operation === 'update' &&
+          doc.status !== previousDoc?.status &&
+          verdictStatuses.includes(doc.status as Verdict)
+        if (operation !== 'create' && !isVerdict) return
+
+        // Anonymous entries carry submitterEmail; member entries only a user
+        // relation (the local API bypasses the editor-only field gate here).
+        let email: string | undefined = doc.submitterEmail
+        let name: string = doc.submitterName || 'there'
+        try {
+          const submitterId = relationId(doc.submitter)
+          if (!email && submitterId) {
+            const user = await req.payload.findByID({
+              collection: 'users',
+              id: submitterId,
+              depth: 0,
+              req,
+            })
+            email = user?.email
+            name = doc.submitterName || user?.name || name
+          }
+          if (!email) {
+            req.payload.logger.warn({ submission: doc.id }, 'submission email skipped: no recipient')
+            return
+          }
+          const photocallId = relationId(doc.photocall)
+          const photocall = await req.payload.findByID({
+            collection: 'photocalls',
+            id: photocallId as number | string,
+            depth: 0,
+            req,
+          })
+
+          const contactEmail = await getContactEmail(req)
+          if (operation === 'create') {
+            sendSafe(req, {
+              ...entryReceipt(doc, photocall, name),
+              to: email,
+              replyTo: contactEmail,
+            })
+            sendSafe(req, {
+              ...editorNewEntry(doc, photocall, req.payload.config.serverURL),
+              to: contactEmail,
+              replyTo: email,
+            })
+          } else {
+            const notes = richTextParagraphs(doc.reviewNotes)
+            sendSafe(req, {
+              ...entryVerdict(doc.status as Verdict, photocall, notes, name),
+              to: email,
+              replyTo: contactEmail,
+            })
+          }
+        } catch (err) {
+          req.payload.logger.error({ err, submission: doc.id }, 'submission email skipped')
         }
       },
     ],
