@@ -33,7 +33,9 @@ test('a photographer page: header, honest counts, copyright plate', async ({ pag
 })
 
 test('a person with no essays or frames shows no count row', async ({ page }) => {
-  await page.goto('/photographers/jacques-nelles')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jacques Nelles')
+  // Alet on purpose: the seed never credits frames to her, so this holds
+  // against real content too (Jacques has a body of work now).
+  await page.goto('/photographers/alet-pretorius')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Alet Pretorius')
   await expect(page.getByLabel('Body of work')).toHaveCount(0)
 })
