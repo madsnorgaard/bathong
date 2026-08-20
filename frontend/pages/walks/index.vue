@@ -6,12 +6,6 @@
  */
 import type { Walk } from '~/types/payload-types'
 
-useShareMeta({
-  title: 'Walks & sessions',
-  description:
-    'Photowalks in Pretoria: meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.',
-})
-
 interface List<T> { docs: T[] }
 type WalkDoc = Walk & { spotsTaken?: number }
 
@@ -34,6 +28,19 @@ const pastWalks = computed(() => past.value?.docs ?? [])
 const rsvpOpen = computed(
   () => nextWalk.value && !nextWalk.value.bookingUrl && nextWalk.value.bookingStatus !== 'closed',
 )
+
+// og:image is the generated C4 walk card while a walk is upcoming.
+useShareMeta({
+  title: 'Walks & sessions',
+  description:
+    'Photowalks in Pretoria: meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.',
+  image: nextWalk.value
+    ? `/share/walks.jpg?v=${nextWalk.value.updatedAt ? new Date(nextWalk.value.updatedAt).getTime() : 0}`
+    : undefined,
+  imageAlt: nextWalk.value
+    ? `Announcement card for the next Bathong. photowalk, ${formatWalkDate(nextWalk.value.date)}.`
+    : undefined,
+})
 </script>
 
 <template>

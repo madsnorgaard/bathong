@@ -10,7 +10,6 @@ import type { Essay } from '~/types/payload-types'
 definePageMeta({ layout: 'reader' })
 
 const route = useRoute()
-const { public: { cmsUrl, siteUrl } } = useRuntimeConfig()
 
 interface List<T> { docs: T[] }
 
@@ -36,16 +35,19 @@ const author = computed(() => {
   return c && typeof c === 'object' ? c : null
 })
 
-// og:image from the lead frame's 1200x630 JPEG rendition when it exists
+// og:image is the generated C2 share card (server route); ?v busts the
+// crawlers' per-URL caches when the essay is republished.
 const shareImage = computed(() => {
-  const lead = essay.value?.leadFrame
-  if (lead && typeof lead === 'object' && typeof lead.image === 'object' && lead.image) {
-    const og = lead.image.sizes?.og?.url
-    if (og) return `${cmsUrl.replace(/\/$/, '')}${og}`
-  }
-  return undefined
+  const e = essay.value
+  if (!e?.slug) return undefined
+  return `/share/essay/${e.slug}.jpg?v=${e.updatedAt ? new Date(e.updatedAt).getTime() : 0}`
 })
-void siteUrl
+const leadAlt = computed(() => {
+  const lead = essay.value?.leadFrame
+  return lead && typeof lead === 'object' && typeof lead.image === 'object'
+    ? (lead.image?.alt ?? undefined)
+    : undefined
+})
 
 useShareMeta({
   title: essay.value?.title ?? 'Essay',
@@ -54,7 +56,7 @@ useShareMeta({
     `A photo essay by the Bathong. collective${author.value?.name ? `, photographs by ${author.value.name}` : ''}.`,
   type: 'article',
   image: shareImage.value,
-  imageAlt: essay.value?.deck ?? undefined,
+  imageAlt: leadAlt.value ?? essay.value?.deck ?? undefined,
   author: author.value?.name ?? undefined,
 })
 
