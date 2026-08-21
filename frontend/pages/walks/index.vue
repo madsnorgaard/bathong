@@ -9,15 +9,17 @@ import type { Walk } from '~/types/payload-types'
 interface List<T> { docs: T[] }
 type WalkDoc = Walk & { spotsTaken?: number }
 
+// A walk is current until it wraps (endTime), not until it starts - while
+// the collective is on the street the walk stays the page.
 const now = new Date().toISOString()
 const [{ data: upcoming }, { data: past }] = await Promise.all([
   useCmsData<List<WalkDoc>>(
     'walks-upcoming',
-    `/api/walks?where[date][greater_than_equal]=${now}&sort=date&limit=10&depth=0`,
+    `/api/walks?where[or][0][date][greater_than_equal]=${now}&where[or][1][endTime][greater_than_equal]=${now}&sort=date&limit=10&depth=0`,
   ),
   useCmsData<List<WalkDoc>>(
     'walks-past',
-    `/api/walks?where[date][less_than]=${now}&sort=-date&limit=10&depth=0`,
+    `/api/walks?where[and][0][date][less_than]=${now}&where[and][1][or][0][endTime][exists]=false&where[and][1][or][1][endTime][less_than]=${now}&sort=-date&limit=10&depth=0`,
   ),
 ])
 

@@ -310,14 +310,23 @@ test('picker multi-select appends in click order', async ({ page, request }) => 
   expect(after[after.length - 1].frame).toBe(index.frames[1].id)
 
   // Remove them again via the tile control. Same hover-toolbar race as the
-  // bleed toggle (#54): assert the count actually dropped after each click
-  // so a missed click can't leave a stray block behind.
+  // bleed toggle (#54): a click can miss when the toolbar re-renders under
+  // it, so retry toward the target count like setBleed does.
   for (let i = 0; i < 2; i++) {
     const count = await page.locator('.seq-tile').count()
-    const last = page.locator('.seq-tile').last()
-    await last.hover()
-    await last.getByRole('button', { name: /remove position/i }).click()
-    await expect(page.locator('.seq-tile')).toHaveCount(count - 1)
+    let removed = false
+    for (let attempt = 0; attempt < 3 && !removed; attempt++) {
+      const last = page.locator('.seq-tile').last()
+      await last.hover()
+      await last.getByRole('button', { name: /remove position/i }).click()
+      try {
+        await expect(page.locator('.seq-tile')).toHaveCount(count - 1, { timeout: 4000 })
+        removed = true
+      } catch {
+        // click didn't land - loop retries
+      }
+    }
+    if (!removed) throw new Error(`remove never dropped the count below ${count} after 3 attempts`)
   }
   await saveDraft(page)
   expect((await getEssay(request)).sequence).toHaveLength(beforeLen)

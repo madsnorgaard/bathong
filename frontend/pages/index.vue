@@ -24,7 +24,8 @@ const [{ data: frames }, { data: topPicks }, { data: nextWalk }, { data: setting
     ),
     useCmsData<List<Walk & { spotsTaken?: number }>>(
       'walks-next',
-      `/api/walks?where[date][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
+      // current until it wraps: a walk in progress stays on the homepage
+      `/api/walks?where[or][0][date][greater_than_equal]=${new Date().toISOString()}&where[or][1][endTime][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
     ),
     useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
   ])
