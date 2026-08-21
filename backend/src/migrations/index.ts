@@ -6,6 +6,7 @@ import * as migration_20260809_102630_phase2_member_number from './20260809_1026
 import * as migration_20260809_134609_phase2_anonymous_submissions from './20260809_134609_phase2_anonymous_submissions';
 import * as migration_20260809_140000_phase2_photocall_status_values from './20260809_140000_phase2_photocall_status_values';
 import * as migration_20260814_090000_phase3_walk_route_geo from './20260814_090000_phase3_walk_route_geo';
+import * as migration_20260821_090000_phase4_frame_top_pick from './20260821_090000_phase4_frame_top_pick';
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     up: migration_20260814_090000_phase3_walk_route_geo.up,
     down: migration_20260814_090000_phase3_walk_route_geo.down,
     name: '20260814_090000_phase3_walk_route_geo'
+  },
+  {
+    up: migration_20260821_090000_phase4_frame_top_pick.up,
+    down: migration_20260821_090000_phase4_frame_top_pick.down,
+    name: '20260821_090000_phase4_frame_top_pick'
   },
 ];

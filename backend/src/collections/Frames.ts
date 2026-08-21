@@ -6,7 +6,7 @@ export const Frames: CollectionConfig = {
   slug: 'frames',
   admin: {
     useAsTitle: 'caption',
-    defaultColumns: ['image', 'photographer', 'location', 'year'],
+    defaultColumns: ['image', 'photographer', 'location', 'year', 'topPick'],
     group: 'Work',
   },
   access: { read: anyone, create: isEditor, update: isEditor, delete: isAdmin },
@@ -25,6 +25,15 @@ export const Frames: CollectionConfig = {
     { name: 'location', type: 'text' },
     { name: 'year', type: 'number' },
     { name: 'tags', type: 'text', hasMany: true },
+    {
+      name: 'topPick',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'Top picks rotate as the homepage lead frame. With none ticked, the newest frame leads.',
+      },
+    },
     {
       name: 'sourceSubmission',
       type: 'relationship',

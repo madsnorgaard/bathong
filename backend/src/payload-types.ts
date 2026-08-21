@@ -317,6 +317,10 @@ export interface Frame {
   year?: number | null;
   tags?: string[] | null;
   /**
+   * Top picks rotate as the homepage lead frame. With none ticked, the newest frame leads.
+   */
+  topPick?: boolean | null;
+  /**
    * Set when this frame was promoted from a photocall submission.
    */
   sourceSubmission?: (number | null) | Submission;
@@ -903,6 +907,7 @@ export interface FramesSelect<T extends boolean = true> {
   location?: T;
   year?: T;
   tags?: T;
+  topPick?: T;
   sourceSubmission?: T;
   updatedAt?: T;
   createdAt?: T;
