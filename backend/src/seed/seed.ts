@@ -229,8 +229,8 @@ async function run() {
       data: {
         title: 'First light, three layers of the capital',
         slug: 'walk-001-first-light',
-        date: '2026-08-29T05:30:00+02:00',
-        endTime: '2026-08-29T09:30:00+02:00',
+        date: '2026-08-29T06:00:00+02:00',
+        endTime: '2026-08-29T10:00:00+02:00',
         meetingPoint: 'Church Square, Pretoria',
         route: walk001Route,
         routeGeo: walk001RouteGeo,

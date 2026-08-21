@@ -31,8 +31,24 @@ export const Walks: CollectionConfig = {
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text', unique: true, index: true },
-    { name: 'date', type: 'date', required: true },
-    { name: 'endTime', type: 'date' },
+    {
+      name: 'date',
+      type: 'date',
+      required: true,
+      admin: {
+        date: { pickerAppearance: 'dayAndTime', displayFormat: 'd MMM yyyy HH:mm' },
+        description: 'Start of the walk. Enter times in SAST (the picker uses your local time).',
+      },
+    },
+    {
+      name: 'endTime',
+      type: 'date',
+      admin: {
+        date: { pickerAppearance: 'dayAndTime', displayFormat: 'd MMM yyyy HH:mm' },
+        description:
+          'When the walk wraps. Until then the walk stays on the site as the current walk.',
+      },
+    },
     { name: 'meetingPoint', type: 'text' },
     { name: 'route', type: 'richText' },
     {
