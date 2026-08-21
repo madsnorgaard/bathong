@@ -15,17 +15,31 @@ useShareMeta({
 
 interface List<T> { docs: T[] }
 
-const [{ data: frames }, { data: nextWalk }, { data: settings }] = await Promise.all([
-  useCmsData<List<Frame>>('frames-latest', '/api/frames?limit=7&sort=-createdAt&depth=1'),
-  useCmsData<List<Walk & { spotsTaken?: number }>>(
-    'walks-next',
-    `/api/walks?where[date][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
-  ),
-  useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
-])
+const [{ data: frames }, { data: topPicks }, { data: nextWalk }, { data: settings }] =
+  await Promise.all([
+    useCmsData<List<Frame>>('frames-latest', '/api/frames?limit=7&sort=-createdAt&depth=1'),
+    useCmsData<List<Frame>>(
+      'frames-top-picks',
+      '/api/frames?where[topPick][equals]=true&limit=24&sort=-createdAt&depth=1',
+    ),
+    useCmsData<List<Walk & { spotsTaken?: number }>>(
+      'walks-next',
+      `/api/walks?where[date][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
+    ),
+    useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
+  ])
 
-const leadFrame = computed(() => frames.value?.docs?.[0] ?? null)
-const feedFrames = computed(() => frames.value?.docs?.slice(1, 7) ?? [])
+// The lead rotates among editors' top picks, one per visit. The random seed
+// lives in useState so the server's choice survives hydration unchanged.
+const leadSeed = useState('lead-pick-seed', () => Math.random())
+const leadFrame = computed(() => {
+  const picks = topPicks.value?.docs ?? []
+  if (picks.length) return picks[Math.floor(leadSeed.value * picks.length)] ?? picks[0]
+  return frames.value?.docs?.[0] ?? null
+})
+const feedFrames = computed(() =>
+  (frames.value?.docs ?? []).filter((f) => f.id !== leadFrame.value?.id).slice(0, 6),
+)
 const walk = computed(() => nextWalk.value?.docs?.[0] ?? null)
 const tickerItems = computed(() =>
   (settings.value?.ticker ?? []).map((t) => t.text).filter((t): t is string => Boolean(t)),

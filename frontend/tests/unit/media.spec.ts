@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mediaUrl, mediaSrc, frameCredit } from '~/utils/media'
-import { richTextParagraphs, richTextPlain } from '~/utils/richtext'
+import { richTextBlocks, richTextParagraphs, richTextPlain } from '~/utils/richtext'
 
 describe('mediaUrl', () => {
   it('prefixes relative CMS urls', () => {
@@ -74,5 +74,37 @@ describe('richText helpers', () => {
   })
   it('handles null docs', () => {
     expect(richTextParagraphs(null)).toEqual([])
+  })
+  it('keeps lists as blocks with separated items', () => {
+    const listDoc = {
+      root: {
+        type: 'root',
+        children: [
+          { type: 'paragraph', children: [{ text: 'Essential information:' }] },
+          {
+            type: 'list',
+            listType: 'bullet',
+            children: [
+              { type: 'listitem', children: [{ text: 'Bring whatever you shoot with.' }] },
+              { type: 'listitem', children: [{ text: 'R250 per person.' }] },
+            ],
+          },
+        ],
+      },
+    }
+    expect(richTextBlocks(listDoc)).toEqual([
+      { type: 'p', text: 'Essential information:' },
+      {
+        type: 'list',
+        ordered: false,
+        items: ['Bring whatever you shoot with.', 'R250 per person.'],
+      },
+    ])
+    // list items never run together in the flat views
+    expect(richTextParagraphs(listDoc)).toEqual([
+      'Essential information:',
+      'Bring whatever you shoot with.',
+      'R250 per person.',
+    ])
   })
 })
