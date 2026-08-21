@@ -40,7 +40,7 @@ const priceLine = computed(() => {
   return `${memberPart} · ${formatPrice(props.walk.priceNonMember)} for guests`
 })
 
-const routeParagraphs = computed(() => richTextParagraphs(props.walk.route as never))
+const routeBlocks = computed(() => richTextBlocks(props.walk.route as never))
 </script>
 
 <template>
@@ -50,7 +50,19 @@ const routeParagraphs = computed(() => richTextParagraphs(props.walk.route as ne
       {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>
     <p v-if="walk.meetingPoint" class="b-caption meet">{{ walk.meetingPoint }}</p>
-    <p v-for="(para, i) in routeParagraphs" :key="i" class="route">{{ para }}</p>
+    <!-- the description reads as a print stacked on the plate: ink on paper -->
+    <div v-if="routeBlocks.length" class="route-card">
+      <template v-for="(block, i) in routeBlocks" :key="i">
+        <component
+          :is="block.type === 'list' && block.ordered ? 'ol' : 'ul'"
+          v-if="block.type === 'list'"
+          class="route route-list"
+        >
+          <li v-for="(item, j) in block.items" :key="j">{{ item }}</li>
+        </component>
+        <p v-else-if="block.type === 'p'" class="route">{{ block.text }}</p>
+      </template>
+    </div>
     <p class="b-caption meta-line">
       <template v-if="spotsLine">{{ spotsLine }} · </template>{{ priceLine }}
     </p>
@@ -82,8 +94,30 @@ const routeParagraphs = computed(() => richTextParagraphs(props.walk.route as ne
   color: var(--paper);
   max-width: 14ch;
 }
+/* Ink on paper (16:1) for the long copy; the jacaranda plate carries the
+   date, furniture and CTA. Hard print shadow per the structure rules. */
+.route-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border-frame);
+  box-shadow: var(--shadow-print);
+  padding: var(--space-4);
+  max-width: 62ch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* keep the 10px offset shadow clear of the meta line below */
+  margin: 0 10px 10px 0;
+}
 .route {
   max-width: 62ch;
+}
+.route-list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 .cta {
   margin-top: var(--space-3);
