@@ -34,18 +34,39 @@ const spotsLine = computed(() => {
   return `${left} of ${capacity} places left`
 })
 
+// Only prices that are actually set appear; 0 is a real price ("free").
 const priceLine = computed(() => {
+  const parts: string[] = []
   const member = props.walk.priceMember
-  const memberPart = member === 0 ? 'free for members' : `${formatPrice(member)} for members`
-  return `${memberPart} · ${formatPrice(props.walk.priceNonMember)} for guests`
+  if (member != null) {
+    parts.push(member === 0 ? 'free for members' : `${formatPrice(member)} for members`)
+  }
+  const guest = props.walk.priceNonMember
+  if (guest != null) {
+    parts.push(guest === 0 ? 'free for guests' : `${formatPrice(guest)} for guests`)
+  }
+  return parts.join(' · ') || null
 })
 
+const metaLine = computed(() =>
+  [spotsLine.value, priceLine.value].filter(Boolean).join(' · '),
+)
+
 const routeBlocks = computed(() => richTextBlocks(props.walk.route as never))
+
+// Between start and wrap the kicker says so; needs a real endTime, we never
+// invent a duration.
+const inProgress = computed(() => {
+  const { date, endTime } = props.walk
+  if (!date || !endTime) return false
+  const now = Date.now()
+  return new Date(date).getTime() <= now && now <= new Date(endTime).getTime()
+})
 </script>
 
 <template>
   <section class="event on-jacaranda" :aria-label="`Walk ${walkIndex}`">
-    <p class="b-kicker">Next walk · {{ walkNumber(walkIndex) }}</p>
+    <p class="b-kicker">{{ inProgress ? 'Walking now' : 'Next walk' }} · {{ walkNumber(walkIndex) }}</p>
     <p class="when b-display-1">
       {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>
@@ -63,9 +84,7 @@ const routeBlocks = computed(() => richTextBlocks(props.walk.route as never))
         <p v-else-if="block.type === 'p'" class="route">{{ block.text }}</p>
       </template>
     </div>
-    <p class="b-caption meta-line">
-      <template v-if="spotsLine">{{ spotsLine }} · </template>{{ priceLine }}
-    </p>
+    <p v-if="metaLine" class="b-caption meta-line">{{ metaLine }}</p>
     <div class="cta">
       <slot>
         <BButton v-if="walk.bookingUrl" :href="walk.bookingUrl" variant="ghost">
