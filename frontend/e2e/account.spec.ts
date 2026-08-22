@@ -1,0 +1,53 @@
+import { test, expect } from '@playwright/test'
+
+/**
+ * Member sign-in from the site (#13). Runs against the SEED_DEMO member
+ * (backend/src/seed/seed.ts); the password matches the local seed default
+ * unless SEED_MEMBER_PASSWORD says otherwise (ci.yml sets its own).
+ */
+const EMAIL = 'member@bathong.local'
+const PASSWORD = process.env.SEED_MEMBER_PASSWORD ?? 'bathong-member-dev'
+
+test('the account page sends anonymous visitors to sign in, and back again', async ({ page }) => {
+  await page.goto('/account')
+  await expect(page).toHaveURL(/\/account\/sign-in\?next=%2Faccount/)
+  await expect(page.getByRole('heading', { name: /Sign in/ })).toBeVisible()
+})
+
+test('a member signs in, lands on the account page, and can sign out', async ({ page }) => {
+  await page.goto('/account/sign-in')
+  await page.getByLabel(/^Email/).fill(EMAIL)
+  await page.getByLabel(/^Password/).fill(PASSWORD)
+  await page.getByRole('button', { name: /Sign in/ }).click()
+
+  await expect(page).toHaveURL(/\/account$/)
+  await expect(page.getByRole('heading', { name: /Member/ })).toBeVisible()
+  await expect(page.getByText('Demo Member')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('link', { name: /Sign in/ }).first()).toBeVisible()
+
+  await page.goto('/account')
+  await expect(page).toHaveURL(/\/account\/sign-in/)
+})
+
+test('a wrong password shows an error and stays on the page', async ({ page }) => {
+  await page.goto('/account/sign-in')
+  await page.getByLabel(/^Email/).fill(EMAIL)
+  await page.getByLabel(/^Password/).fill('not-the-password')
+  await page.getByRole('button', { name: /Sign in/ }).click()
+  await expect(page.getByRole('alert')).toContainText(/do not match/)
+  await expect(page).toHaveURL(/\/account\/sign-in/)
+})
+
+test('the session survives a full reload (SSR reads the cookie)', async ({ page }) => {
+  await page.goto('/account/sign-in')
+  await page.getByLabel(/^Email/).fill(EMAIL)
+  await page.getByLabel(/^Password/).fill(PASSWORD)
+  await page.getByRole('button', { name: /Sign in/ }).click()
+  await expect(page).toHaveURL(/\/account$/)
+  await page.reload()
+  await expect(page.getByText('Demo Member')).toBeVisible()
+})
