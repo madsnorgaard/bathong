@@ -23,8 +23,17 @@ export function useAuth() {
   // Captured while the composable is created (inside setup/middleware, where
   // the request context is guaranteed), not inside a later handler where the
   // Nuxt instance may be gone after an await.
+  //
+  // Payload's extractJWT only reads the cookie when the request carries an
+  // Origin on its csrf allowlist (or, with no Origin, a same-site
+  // Sec-Fetch-Site). A server-side $fetch sends neither, so the cookie
+  // alone is silently dropped and /me answers anonymous. The visitor's real
+  // origin (localhost:3000 in CI, bathong.africa / next. in production) is
+  // on CORS_ORIGINS in every environment. Browsers set Origin themselves.
   const cookie = import.meta.server ? useRequestHeaders(['cookie']).cookie : undefined
-  const withCookie = () => (cookie ? { headers: { cookie } } : {})
+  const origin = import.meta.server ? useRequestURL().origin : undefined
+  const withCookie = () =>
+    cookie ? { headers: { cookie, ...(origin ? { origin } : {}) } } : {}
 
   /** An authenticated CMS call: credentials on, cookie forwarded during SSR. */
   const authed = <T = unknown>(path: string, opts: Record<string, unknown> = {}) =>
