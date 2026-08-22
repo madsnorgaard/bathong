@@ -154,6 +154,33 @@ render serves the static C1 default (`frontend/public/share/default.jpg`),
 never an error. Pages append `?v=<updatedAt>` so crawler caches bust on
 republish. Covered by `frontend/e2e/share-cards.spec.ts`.
 
+## The archive (#19)
+
+`/archive` is the public, credited index of every frame whose media is
+public - restricted media (photocall entries under judging) never appears.
+It is served by one public endpoint, `GET /api/archive`
+(`backend/src/endpoints/archive.ts`):
+
+| Param | Meaning |
+|---|---|
+| `q` | free text, trimmed to 80 chars, matched with `like` (ILIKE on postgres) against caption, location and tags |
+| `photographer` | a People slug; an unknown slug returns an empty result, not a 400 |
+| `year` | exact year |
+| `tag` | exact tag |
+| `page` | 1-based; the page size is fixed at 48 |
+
+Response: `{ docs, page, totalPages, totalDocs, facets }`. `docs` is the
+compact frame shape (thumb/full urls, alt, credit, photographer slug).
+`facets` (photographers, years, tags with counts) are computed over the
+whole public archive, not the filtered set, so the filter rows never
+disappear as you narrow down. Every parameter is clamped; bad input degrades
+to defaults rather than erroring.
+
+Search is plain Postgres by decision: at a few hundred frames ILIKE is
+instant. If it outgrows that, the upgrade path is a generated `tsvector`
+column with a GIN index behind the same endpoint contract; the frontend
+keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
+
 ## Access matrix
 
 | Collection | Public | Member | Editor | Admin |
@@ -209,4 +236,4 @@ ticketing). The `orders` collection, membership fields on `users` and
 - **M3 v1 site headless** - Nuxt + content, cutover from holding page
 - **M4 Members** - sign-in from the frontend, photocall submissions, SMTP
 - **M5 Payments** - blocked on pricing + provider decision
-- **M6 Archive** - the searchable open archive over frames
+- **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)
