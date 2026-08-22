@@ -66,7 +66,7 @@ async function signOut() {
 
     <section v-if="user" class="card">
       <p class="b-kicker">{{ memberNumber ?? 'Member' }}</p>
-      <h2 class="b-display-2">{{ user.name }}</h2>
+      <p class="b-display-2 name">{{ user.name }}</p>
       <p class="b-caption">{{ user.email }}</p>
       <dl class="facts b-caption">
         <div><dt>Tier</dt><dd>{{ tier }}</dd></div>

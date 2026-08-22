@@ -14,6 +14,8 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     // Use the installed Chrome locally; CI installs chromium explicitly.
     channel: process.env.CI ? undefined : 'chrome',
+    // A failing CI run keeps its trace; ci.yml uploads test-results as an artifact.
+    trace: 'retain-on-failure',
   },
   webServer: {
     // Production build: the 1 MB budget is only honest against minified

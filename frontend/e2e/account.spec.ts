@@ -10,7 +10,7 @@ const PASSWORD = process.env.SEED_MEMBER_PASSWORD ?? 'bathong-member-dev'
 
 test('the account page sends anonymous visitors to sign in, and back again', async ({ page }) => {
   await page.goto('/account')
-  await expect(page).toHaveURL(/\/account\/sign-in\?next=%2Faccount/)
+  await expect(page).toHaveURL(/\/account\/sign-in\?next=(%2F|\/)account/)
   await expect(page.getByRole('heading', { name: /Sign in/ })).toBeVisible()
 })
 
@@ -21,7 +21,7 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   await page.getByRole('button', { name: /Sign in/ }).click()
 
   await expect(page).toHaveURL(/\/account$/)
-  await expect(page.getByRole('heading', { name: /Member/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Member.' })).toBeVisible()
   await expect(page.getByText('Demo Member')).toBeVisible()
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
 

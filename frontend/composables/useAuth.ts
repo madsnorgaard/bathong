@@ -20,11 +20,11 @@ export function useAuth() {
   const user = useState<User | null>('auth-user', () => null)
   const { cms } = useCms()
 
-  const withCookie = () => {
-    if (!import.meta.server) return {}
-    const headers = useRequestHeaders(['cookie'])
-    return headers.cookie ? { headers: { cookie: headers.cookie } } : {}
-  }
+  // Captured while the composable is created (inside setup/middleware, where
+  // the request context is guaranteed), not inside a later handler where the
+  // Nuxt instance may be gone after an await.
+  const cookie = import.meta.server ? useRequestHeaders(['cookie']).cookie : undefined
+  const withCookie = () => (cookie ? { headers: { cookie } } : {})
 
   /** An authenticated CMS call: credentials on, cookie forwarded during SSR. */
   const authed = <T = unknown>(path: string, opts: Record<string, unknown> = {}) =>
