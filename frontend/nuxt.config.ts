@@ -1,10 +1,31 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const cmsUrl = process.env.NUXT_PUBLIC_CMS_URL || 'http://localhost:3001'
+const cmsOrigin = new URL(cmsUrl).origin
+const analyticsOrigin = 'https://analytics.theazanianprepper.online'
+const isProd = process.env.NODE_ENV === 'production'
+
+// Baseline security headers (#37), declared once: routeRules puts them on
+// every response (images, share cards, map tiles), nuxt-security re-applies
+// the same values on HTML renders alongside the CSP. COEP is deliberately
+// absent - nothing needs cross-origin isolation, and it would force
+// crossorigin attributes everywhere for zero gain. HSTS is Traefik's
+// (docker-compose labels) - a second copy here would only drift.
+const baseHeaders = {
+  'x-frame-options': 'DENY',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+  // Safe as same-origin: no cross-origin popups, and every subresource
+  // is same-origin (ipx proxies api images, map tiles live in /map).
+  'cross-origin-opener-policy': 'same-origin',
+  'cross-origin-resource-policy': 'same-origin',
+  'x-dns-prefetch-control': 'off',
+} as const
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
   devtools: { enabled: false },
-  modules: ['@nuxt/image', '@nuxt/fonts', '@nuxt/eslint'],
+  modules: ['@nuxt/image', '@nuxt/fonts', '@nuxt/eslint', 'nuxt-security'],
   css: ['~/assets/css/main.css', '~/assets/css/app.css'],
   runtimeConfig: {
     // Server-only: internal container URL for SSR fetches (NUXT_CMS_INTERNAL_URL).
@@ -48,28 +69,68 @@ export default defineNuxtConfig({
     ],
   },
   routeRules: {
-    // Baseline security headers. CSP is a follow-up (issue #37): a real one
-    // needs nonces for SSR inline scripts, not unsafe-inline. COEP is
-    // deliberately absent - nothing needs cross-origin isolation, and it
-    // would force crossorigin attributes everywhere for zero gain.
-    '/**': {
-      headers: {
-        'x-frame-options': 'DENY',
-        'x-content-type-options': 'nosniff',
-        'referrer-policy': 'strict-origin-when-cross-origin',
-        'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-        // Safe as same-origin: no cross-origin popups, and every subresource
-        // is same-origin (ipx proxies api images, map tiles live in /map).
-        'cross-origin-opener-policy': 'same-origin',
-        'cross-origin-resource-policy': 'same-origin',
-        'x-dns-prefetch-control': 'off',
-      },
-    },
+    '/**': { headers: { ...baseHeaders } },
     '/_ipx/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     // Self-hosted basemap extract; the filename is versioned (pta-inner-v1),
     // so it can cache forever. Route data itself rides on the walk document.
     '/map/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     '/share/**': { headers: { 'cache-control': 'public, max-age=86400' } },
+  },
+  // Content-Security-Policy (#37) via nuxt-security: every SSR <script> (the
+  // Nuxt payload, the plausible stub, the bundle entry) gets a per-request
+  // nonce, and 'strict-dynamic' lets the nonced entry load the chunks it
+  // imports. No 'unsafe-inline' for scripts. Styles keep 'unsafe-inline'
+  // because Vue SSR emits style attributes and nonces cannot cover those.
+  // Everything else the module offers is off: Traefik owns rate limiting and
+  // HSTS, uploads go straight to the API, and the xss validator rewrites
+  // legitimate query strings (the archive's ?q=).
+  security: {
+    nonce: true,
+    removeLoggers: false,
+    rateLimiter: false,
+    requestSizeLimiter: false,
+    xssValidator: false,
+    corsHandler: false,
+    allowedMethodsRestricter: false,
+    basicAuth: false,
+    headers: {
+      contentSecurityPolicy: {
+        'default-src': ["'self'"],
+        'script-src': ["'self'", "'nonce-{{nonce}}'", "'strict-dynamic'", analyticsOrigin],
+        'script-src-attr': ["'none'"],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        // data:/blob: for maplibre's generated sprites and canvases
+        'img-src': ["'self'", 'data:', 'blob:'],
+        // the RSVP/photocall forms and member sign-in talk to the API host;
+        // plausible beacons go to analytics
+        'connect-src': ["'self'", cmsOrigin, analyticsOrigin],
+        // maplibre runs its tile worker from a blob
+        'worker-src': ["'self'", 'blob:'],
+        // @nuxt/fonts self-hosts every face
+        'font-src': ["'self'"],
+        'frame-ancestors': ["'none'"],
+        'frame-src': ["'none'"],
+        'object-src': ["'none'"],
+        'base-uri': ["'self'"],
+        'form-action': ["'self'"],
+        // dev is plain http; upgrading there would break every asset
+        'upgrade-insecure-requests': isProd,
+      },
+      xFrameOptions: baseHeaders['x-frame-options'],
+      xContentTypeOptions: baseHeaders['x-content-type-options'],
+      referrerPolicy: baseHeaders['referrer-policy'],
+      permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+      crossOriginOpenerPolicy: baseHeaders['cross-origin-opener-policy'],
+      crossOriginResourcePolicy: baseHeaders['cross-origin-resource-policy'],
+      xDNSPrefetchControl: baseHeaders['x-dns-prefetch-control'],
+      crossOriginEmbedderPolicy: false,
+      strictTransportSecurity: false,
+      // legacy/IE-era headers, nothing here needs them
+      xDownloadOptions: false,
+      xPermittedCrossDomainPolicies: false,
+      xXSSProtection: false,
+      originAgentCluster: false,
+    },
   },
   app: {
     head: {
@@ -93,7 +154,7 @@ export default defineNuxtConfig({
         {
           defer: true,
           'data-domain': 'bathong.africa',
-          src: 'https://analytics.theazanianprepper.online/js/script.file-downloads.outbound-links.js',
+          src: `${analyticsOrigin}/js/script.file-downloads.outbound-links.js`,
         },
         {
           innerHTML: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",

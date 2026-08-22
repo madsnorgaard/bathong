@@ -53,6 +53,24 @@ The rest of the SMTP settings (`SMTP_HOST`/`PORT`/`USER`/`FROM`) are fixed in
 the compose file. With `SMTP_HOST` unset (local dev, e2e) Payload logs
 would-be emails to the console instead of sending.
 
+## Security headers (#37)
+
+Two layers, no overlap. Traefik (compose labels) owns HSTS on every router
+of both hosts and the baseline headers on the API host, plus rate limits.
+The Nuxt app (`frontend/nuxt.config.ts`) owns everything on the site host:
+the baseline headers (X-Frame-Options DENY, nosniff, Referrer-Policy,
+Permissions-Policy, COOP/CORP same-origin) on every response via routeRules,
+and a nonce-based Content-Security-Policy on HTML renders via the
+`nuxt-security` module. Each SSR `<script>` gets a per-request nonce and
+`'strict-dynamic'` lets the nonced entry load its chunks, so script-src
+carries no `unsafe-inline`. Styles keep `unsafe-inline` (Vue SSR emits style
+attributes, which nonces cannot cover). `connect-src` allows the API host
+(forms, member sign-in) and the analytics origin; `worker-src` allows `blob:`
+for the maplibre tile worker. The module's rate limiter, request size limit,
+XSS validator and CORS handler are all off: Traefik and Payload do those
+jobs. `frontend/e2e/security-headers.spec.ts` asserts the header set and
+that the main pages render with a clean console.
+
 ## Preview router (#39): next.SITE_DOMAIN behind basic auth
 
 Alongside the primary host, `bathong_nuxt` also answers at
@@ -89,8 +107,8 @@ placeholders, issue #11). The seed is idempotent - rerunning updates rather
 than duplicates.
 
 Verify after a deploy: `https://bathong.africa` serves the site (walks page
-shows the route map, an RSVP submits, admin reachable at
-`api.bathong.africa/admin`), `www.` and `bathong.org` 301 to the primary
+shows the route map, an RSVP submits, the devtools console shows no CSP
+violations, admin reachable at `api.bathong.africa/admin`), `www.` and `bathong.org` 301 to the primary
 host, and `next.bathong.africa` (if DNS exists) challenges for the password.
 
 ## Data model (Payload collections)
