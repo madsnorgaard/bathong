@@ -47,9 +47,13 @@ const singles = computed(() => framesData.value?.docs ?? [])
 const counts = computed(() =>
   [
     { label: 'Essays', n: essaysData.value?.totalDocs ?? 0 },
-    { label: 'Frames in archive', n: framesData.value?.totalDocs ?? 0 },
+    {
+      label: 'Frames in archive',
+      n: framesData.value?.totalDocs ?? 0,
+      to: `/archive?photographer=${encodeURIComponent(slug)}`,
+    },
     { label: 'Walks led', n: walksData.value?.totalDocs ?? 0 },
-  ].filter((c) => c.n > 0),
+  ].filter((c) => c.n > 0) as { label: string; n: number; to?: string }[],
 )
 
 // og:image is the generated C3 share card (server route).
@@ -92,7 +96,9 @@ const licensingLine = computed(() =>
 
     <section v-if="counts.length" class="counts b-caption" aria-label="Body of work">
       <span v-for="(c, i) in counts" :key="c.label">
-        {{ c.label }} {{ c.n }}<template v-if="i < counts.length - 1"> · </template>
+        <NuxtLink v-if="c.to" :to="c.to">{{ c.label }} {{ c.n }}</NuxtLink>
+        <template v-else>{{ c.label }} {{ c.n }}</template>
+        <template v-if="i < counts.length - 1"> · </template>
       </span>
     </section>
 
@@ -138,6 +144,12 @@ const licensingLine = computed(() =>
 </template>
 
 <style scoped>
+.counts a {
+  color: inherit;
+}
+.counts a:hover {
+  color: var(--signal);
+}
 .counts {
   padding: 0 var(--space-4);
   border-top: 1px solid var(--grey-line);
