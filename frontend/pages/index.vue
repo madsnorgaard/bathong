@@ -5,7 +5,7 @@
  * as a paper chapter. Structure is carried by scale and plate changes, not
  * furniture; the only numbering is the walk's real №.
  */
-import type { Frame, Walk, SiteSetting } from '~/types/payload-types'
+import type { Frame, Essay, Walk, SiteSetting } from '~/types/payload-types'
 
 
 useShareMeta({
@@ -15,9 +15,10 @@ useShareMeta({
 
 interface List<T> { docs: T[] }
 
-const [{ data: frames }, { data: topPicks }, { data: nextWalk }, { data: settings }] =
+const [{ data: frames }, { data: essays }, { data: topPicks }, { data: nextWalk }, { data: settings }] =
   await Promise.all([
     useCmsData<List<Frame>>('frames-latest', '/api/frames?limit=7&sort=-createdAt&depth=1'),
+    useCmsData<List<Essay>>('essays-feed', '/api/essays?sort=-publishedDate&limit=12&depth=2'),
     useCmsData<List<Frame>>(
       'frames-top-picks',
       '/api/frames?where[topPick][equals]=true&limit=24&sort=-createdAt&depth=1',
@@ -38,9 +39,46 @@ const leadFrame = computed(() => {
   if (picks.length) return picks[Math.floor(leadSeed.value * picks.length)] ?? picks[0]
   return frames.value?.docs?.[0] ?? null
 })
-const feedFrames = computed(() =>
-  (frames.value?.docs ?? []).filter((f) => f.id !== leadFrame.value?.id).slice(0, 6),
-)
+// The feed draws one frame per essay in turn, so a fresh upload of a dozen
+// frames for one story can't crowd the others out. Each essay's run starts
+// at a seeded offset so the mix shifts per visit; a frame that appears in
+// several essays is shown once. Single frames outside any essay fill in.
+const essayFrames = (essay: Essay): Frame[] => {
+  const out: Frame[] = []
+  for (const block of essay.sequence ?? []) {
+    if (block.blockType === 'frame') out.push(block.frame as Frame)
+    else if (block.blockType === 'pair') out.push(block.left as Frame, block.right as Frame)
+  }
+  return out.filter((f) => f && typeof f === 'object')
+}
+const feedFrames = computed(() => {
+  const seen = new Set<string | number>()
+  if (leadFrame.value) seen.add(leadFrame.value.id)
+  const runs = (essays.value?.docs ?? [])
+    .map(essayFrames)
+    .filter((run) => run.length)
+    .map((run) => {
+      const start = Math.floor(leadSeed.value * run.length)
+      return [...run.slice(start), ...run.slice(0, start)]
+    })
+  const picked: Frame[] = []
+  for (let i = 0; picked.length < 6 && runs.some((run) => i < run.length); i++) {
+    for (const run of runs) {
+      const frame = run[i]
+      if (!frame || seen.has(frame.id)) continue
+      seen.add(frame.id)
+      picked.push(frame)
+      if (picked.length === 6) break
+    }
+  }
+  for (const frame of frames.value?.docs ?? []) {
+    if (picked.length === 6) break
+    if (seen.has(frame.id)) continue
+    seen.add(frame.id)
+    picked.push(frame)
+  }
+  return picked
+})
 const walk = computed(() => nextWalk.value?.docs?.[0] ?? null)
 const tickerItems = computed(() =>
   (settings.value?.ticker ?? []).map((t) => t.text).filter((t): t is string => Boolean(t)),
@@ -72,7 +110,7 @@ const tickerItems = computed(() =>
     <section v-if="feedFrames.length" v-reveal class="chapter">
       <ChapterHead title="The feed" />
       <p class="b-caption feed-note">
-        Single frames from the collective · Essay 001 follows the first walk
+        Frames from across the collective's essays · <NuxtLink to="/stories">Read the stories</NuxtLink>
       </p>
       <FeedGrid :frames="feedFrames" />
     </section>

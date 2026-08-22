@@ -40,7 +40,7 @@ test.describe('mobile, the majority case', () => {
 
   test('sheet menu: opens, traps focus, closes on Escape, targets are 44px', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' })
-    const toggle = page.getByRole('button', { name: /menu/ })
+    const toggle = page.getByRole('button', { name: /menu/i })
     const toggleBox = await toggle.boundingBox()
     expect(toggleBox!.width, 'menu toggle hit target').toBeGreaterThanOrEqual(44)
     expect(toggleBox!.height, 'menu toggle hit target').toBeGreaterThanOrEqual(44)

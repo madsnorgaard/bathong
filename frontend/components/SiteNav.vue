@@ -59,12 +59,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <BButton to="/about#membership" variant="ghost" size="sm" class="join">Join →</BButton>
       <button
         ref="toggleEl"
-        class="sheet-toggle b-kicker"
+        class="sheet-toggle b-btn b-btn--ghost b-btn--sm"
         :aria-expanded="sheetOpen"
         aria-controls="sheet-menu"
         @click="sheetOpen = !sheetOpen"
       >
-        {{ sheetOpen ? '✕' : '≡' }}<span class="sr-only"> menu</span>
+        {{ sheetOpen ? 'Close ✕' : 'Menu ≡' }}
       </button>
     </div>
     <div v-if="sheetOpen" id="sheet-menu" ref="sheetEl" class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
@@ -109,15 +109,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .links a.router-link-active {
   color: var(--signal);
 }
+/* same plate as Join: signal label, paper border, on ink */
 .sheet-toggle {
   display: none;
-  background: none;
-  border: 1px solid var(--grey-line);
-  color: var(--paper);
-  padding: 8px 14px;
-  min-width: 44px;
-  min-height: 44px;
-  cursor: pointer;
+  color: var(--signal);
+  border-color: var(--paper);
+}
+.sheet-toggle:hover {
+  background: var(--paper);
+  color: var(--ink);
 }
 .sheet {
   display: none;
@@ -131,7 +131,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     justify-content: space-between;
   }
   .sheet-toggle {
-    display: block;
+    display: inline-flex;
   }
   .sheet {
     display: flex;
@@ -150,12 +150,5 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     display: flex;
     align-items: center;
   }
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
 }
 </style>
