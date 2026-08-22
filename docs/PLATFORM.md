@@ -45,6 +45,7 @@ git):
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | holding (now) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
+| `SITE_URL` | optional; where password-reset links point (defaults to the first CORS origin) |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
 | `NUXT_PUBLIC_SITE_URL` | optional override; defaults to `https://$SITE_DOMAIN` |
 | `SMTP_PASS` | platform - the noreply@ mailbox password (mail repo's `setup-bathong.sh`) |
@@ -118,7 +119,7 @@ unit; everything else feeds it or shows it.
 
 | Collection | Purpose | Notes |
 |---|---|---|
-| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend. Membership fields (`tier`, `status`, `expires`) exist now, admin-only, filled by future payments. |
+| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`tier`, `status`, `expires`) exist now, admin-only, filled by future payments. |
 | `people` | Public profiles | founding circle + members + guests; may exist without an account |
 | `media` (upload) | File library | `visibility` public/restricted + `uploadedBy`; member uploads stay restricted until published. Raster-only, sharp sizes, `./media` bind mount |
 | `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the future archive |
@@ -155,6 +156,44 @@ UI bound to the same form state, so both views always agree and the saved
 data is byte-identical with the default UI (asserted by
 `frontend/e2e/admin-sequence.spec.ts`; run those specs alone against a dev
 backend with `npx playwright test --config=playwright.admin.config.ts`).
+
+## Member sign-in (#13)
+
+Members sign in on the site, never in `/admin`. The frontend talks to
+Payload's stock REST auth (`/api/users/login`, `/me`, `/logout`,
+`/forgot-password`, `/reset-password`) from `composables/useAuth.ts`; pages
+under `/account` use the `auth` route middleware and bounce anonymous
+visitors to `/account/sign-in?next=...` (same-site paths only,
+`utils/auth.ts`). The session is read once per request in `app.vue`
+(`callOnce`), with the incoming cookie forwarded during SSR, so the nav's
+Sign in / Account link is right before hydration.
+
+The cookie model:
+
+- Production: site on `bathong.africa`, API on `api.bathong.africa`. The
+  compose file sets `COOKIE_DOMAIN=.${SITE_DOMAIN}`, which makes Payload
+  issue the `payload-token` cookie for the parent domain with
+  `SameSite=None; Secure` (sibling subdomains count as cross-site for
+  fetch). `CORS_ORIGINS` must list every site origin that signs in
+  (`https://bathong.africa`, plus `https://next.bathong.africa` for the
+  preview router); the same list feeds Payload's CSRF allowlist, which is
+  what lets a cookie-bearing cross-origin request through.
+- Local dev and CI: `localhost:3000` and `localhost:3001` are the same site
+  (ports do not split a site), so `COOKIE_DOMAIN` stays unset and the
+  default `SameSite=Lax` cookie rides along with `credentials: 'include'`.
+- Public content fetches (`useCms`) never send credentials; only
+  `useAuth().authed` does.
+
+Password-reset emails link to `/account/reset?token=...` on the site
+(`SITE_URL`, falling back to the first `CORS_ORIGINS` entry), not to the
+admin panel. The strict Traefik rate limit covers login, forgot-password
+and reset-password alongside the public POST endpoints.
+
+`SEED_DEMO=true` seeds a member login for the e2e suite:
+`member@bathong.local` / `SEED_MEMBER_PASSWORD` (default
+`bathong-member-dev`), tier individual, status active, linked to the
+Mads Nørgaard profile. `frontend/e2e/account.spec.ts` covers the redirect,
+sign-in, a wrong password and sign-out.
 
 ## Share cards (og:image per entity)
 
@@ -252,6 +291,6 @@ ticketing). The `orders` collection, membership fields on `users` and
 - **M1 Holding live** - holding page on bathong.africa (done)
 - **M2 Platform scaffold** - backend boots, admin gated, initial migration
 - **M3 v1 site headless** - Nuxt + content, cutover from holding page
-- **M4 Members** - sign-in from the frontend, photocall submissions, SMTP
+- **M4 Members** - sign-in from the frontend (done, #13), photocall submissions, SMTP (done)
 - **M5 Payments** - blocked on pricing + provider decision
 - **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)

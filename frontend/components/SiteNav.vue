@@ -12,6 +12,13 @@ const links = [
   { to: '/about', label: 'About' },
 ]
 
+// Sign in / Account sits beside Join: read from the shared session state
+// (fetched once in app.vue), so SSR and client render the same link.
+const { isSignedIn } = useAuth()
+const accountLink = computed(() =>
+  isSignedIn.value ? { to: '/account', label: 'Account →' } : { to: '/account/sign-in', label: 'Sign in →' },
+)
+
 const sheetOpen = ref(false)
 const sheetEl = ref<HTMLElement | null>(null)
 const toggleEl = ref<HTMLElement | null>(null)
@@ -58,6 +65,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
       </nav>
       <BButton to="/about#membership" variant="ghost" size="sm" class="join">Join →</BButton>
+      <NuxtLink :to="accountLink.to" class="account b-kicker">{{ accountLink.label }}</NuxtLink>
       <button
         ref="toggleEl"
         class="sheet-toggle b-btn b-btn--ghost b-btn--sm"
@@ -74,6 +82,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           {{ link.label }}
         </NuxtLink>
         <NuxtLink to="/about#membership" class="b-display-2">Join →</NuxtLink>
+        <NuxtLink :to="accountLink.to" class="b-display-2">{{ accountLink.label }}</NuxtLink>
       </nav>
     </div>
   </header>
@@ -110,6 +119,13 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .links a.router-link-active {
   color: var(--signal);
 }
+.account {
+  color: var(--grey-fog);
+}
+.account:hover,
+.account.router-link-active {
+  color: var(--signal);
+}
 /* same plate as Join: signal label, paper border, on ink */
 .sheet-toggle {
   display: none;
@@ -125,7 +141,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 }
 @media (max-width: 840px) {
   .links,
-  .join {
+  .join,
+  .account {
     display: none;
   }
   .nav-inner {

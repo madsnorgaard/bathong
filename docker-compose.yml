@@ -104,12 +104,13 @@ services:
       - traefik.http.middlewares.bathong-api-headers.headers.customResponseHeaders.Referrer-Policy=strict-origin-when-cross-origin
       - traefik.http.services.bathong_payload.loadbalancer.server.port=3001
       # Rate limits: a modest ceiling on the whole API, a strict one on the
-      # endpoints an anonymous visitor can write to (login, RSVP create).
+      # endpoints an anonymous visitor can write to (login, password reset,
+      # RSVP create, photocall entries).
       - traefik.http.middlewares.bathong-api-ratelimit.ratelimit.average=30
       - traefik.http.middlewares.bathong-api-ratelimit.ratelimit.burst=60
       - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.average=1
       - traefik.http.middlewares.bathong-strict-ratelimit.ratelimit.burst=5
-      - traefik.http.routers.bathong_payload_strict.rule=Host(`api.${SITE_DOMAIN}`) && (PathPrefix(`/api/users/login`) || ((Path(`/api/rsvps`) || Path(`/api/photocall-entries`)) && Method(`POST`)))
+      - traefik.http.routers.bathong_payload_strict.rule=Host(`api.${SITE_DOMAIN}`) && (PathPrefix(`/api/users/login`) || ((Path(`/api/rsvps`) || Path(`/api/photocall-entries`) || Path(`/api/users/forgot-password`) || PathPrefix(`/api/users/reset-password`)) && Method(`POST`)))
       - traefik.http.routers.bathong_payload_strict.priority=100
       - traefik.http.routers.bathong_payload_strict.tls=true
       - traefik.http.routers.bathong_payload_strict.tls.certresolver=lets-encrypt

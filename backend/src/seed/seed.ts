@@ -119,6 +119,33 @@ async function run() {
     console.log(`  person: ${person.name}`)
   }
 
+  // ---- demo member (SEED_DEMO): the account the sign-in e2e uses (#13) ----
+  if (process.env.SEED_DEMO === 'true') {
+    const memberEmail = 'member@bathong.local'
+    const memberPassword = process.env.SEED_MEMBER_PASSWORD || 'bathong-member-dev'
+    const existing = await payload.find({
+      collection: 'users',
+      where: { email: { equals: memberEmail } },
+      limit: 1,
+    })
+    if (!existing.docs.length) {
+      await payload.create({
+        collection: 'users',
+        data: {
+          name: 'Demo Member',
+          email: memberEmail,
+          password: memberPassword,
+          roles: ['member' as const],
+          membershipTier: 'individual',
+          membershipStatus: 'active',
+          profile: peopleBySlug['mads-norgaard'] ?? null,
+        },
+        overrideAccess: true,
+      })
+      console.log(`  user: ${memberEmail} (member)`)
+    }
+  }
+
   // ---- media + frames: demo frames, credited, marked as placeholders ----
   const demoFrames = [
     { file: 'street-0001.jpg', location: 'Johannesburg' },

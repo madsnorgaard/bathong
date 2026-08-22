@@ -70,6 +70,8 @@ jobs:
       # ci-only login for the admin-panel specs (admin-sequence.spec.ts)
       SEED_ADMIN_EMAIL: admin@bathong.ci
       SEED_ADMIN_PASSWORD: ci-only-admin-password
+      # ci-only member login for the account specs (account.spec.ts)
+      SEED_MEMBER_PASSWORD: ci-only-member-password
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -97,3 +99,10 @@ jobs:
       - name: Playwright smoke
         working-directory: frontend
         run: npm run test:e2e
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: frontend/test-results
+          retention-days: 7
