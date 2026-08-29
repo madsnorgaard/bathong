@@ -43,6 +43,16 @@ function personContact(person: Person): string | null {
   if (person.showContact && person.contactEmail) return person.contactEmail
   return contactEmail.value
 }
+
+/**
+ * The address in two pieces so a narrow column breaks it after the @ and
+ * never mid-word: mono is wide, a phone is not.
+ */
+function contactParts(person: Person): [string, string] {
+  const email = personContact(person) ?? ''
+  const at = email.indexOf('@')
+  return at === -1 ? [email, ''] : [email.slice(0, at + 1), email.slice(at + 1)]
+}
 </script>
 
 <template>
@@ -80,9 +90,11 @@ function personContact(person: Person): string | null {
             <h3 class="b-display-2">{{ person.name }}</h3>
           </NuxtLink>
           <p v-if="person.roleTitle" class="b-caption">{{ person.roleTitle }}</p>
-          <a v-if="personContact(person)" :href="`mailto:${personContact(person)}`" class="b-caption contact">
-            {{ personContact(person) }}
-          </a>
+          <a
+            v-if="personContact(person)"
+            :href="`mailto:${personContact(person)}`"
+            class="b-caption contact"
+          >{{ contactParts(person)[0] }}<wbr>{{ contactParts(person)[1] }}</a>
         </article>
       </div>
       <p v-if="!directors.length" class="b-lede">The founding circle is being confirmed. TBC.</p>
@@ -178,15 +190,33 @@ function personContact(person: Person): string | null {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* the mono address never widens its column past its share of the grid */
+  min-width: 0;
 }
 .person.dropped {
   margin-top: var(--space-5);
+}
+.person .b-display-2 {
+  overflow-wrap: break-word;
 }
 .portrait {
   border: 1px solid var(--grey-line);
 }
 .contact {
   color: var(--signal);
+  overflow-wrap: anywhere; /* the backstop: a long domain wraps, never overflows */
+}
+/* on a phone the two columns are narrow: the furniture tightens to fit them */
+@media (max-width: 560px) {
+  .people {
+    gap: var(--space-3);
+  }
+  .person.dropped {
+    margin-top: var(--space-4);
+  }
+  .contact {
+    letter-spacing: 0.06em;
+  }
 }
 .name-link {
   color: inherit;
