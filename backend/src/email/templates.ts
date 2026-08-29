@@ -111,6 +111,46 @@ export const accountExists = (forgotLink: string) => ({
     SIGNATURE,
 })
 
+export const emailChangeVerify = (name: string, link: string) => ({
+  subject: 'Confirm your new Bathong. email',
+  text:
+    `Hi ${name},\n\n` +
+    `You asked to move your Bathong. account to this address. Confirm it within the hour:\n\n` +
+    `${link}\n\n` +
+    `Confirming signs you out everywhere; sign in again with this address. ` +
+    `If you did not ask for this, ignore this email and nothing changes.` +
+    SIGNATURE,
+})
+
+export const emailChangeNotice = (name: string, newEmail: string, contact: string) => ({
+  subject: 'Your Bathong. email is changing',
+  text:
+    `Hi ${name},\n\n` +
+    `Someone signed in to your account asked to move it to ${newEmail}. ` +
+    `Nothing changes until that address confirms it.\n\n` +
+    `If this was not you, change your password now from your security page and write to ${contact}.` +
+    SIGNATURE,
+})
+
+export const passwordChanged = (name: string, contact: string) => ({
+  subject: 'Your Bathong. password was changed',
+  text:
+    `Hi ${name},\n\n` +
+    `The password on your account was changed just now, and every other device was signed out.\n\n` +
+    `If this was not you, set a new password from the sign-in page straight away and write to ${contact}.` +
+    SIGNATURE,
+})
+
+export const accountDeleted = (name: string) => ({
+  subject: 'Your Bathong. account is closed',
+  text:
+    `Hi ${name},\n\n` +
+    `Your account and personal details are deleted. RSVPs and entries you made now name nobody. ` +
+    `Work you published stays on the site with your name on it, as agreed when you published.\n\n` +
+    `Thank you for walking with us. The door stays open.` +
+    SIGNATURE,
+})
+
 const longDate = (iso: string) =>
   new Intl.DateTimeFormat('en-ZA', { dateStyle: 'long', timeZone: 'Africa/Johannesburg' }).format(new Date(iso))
 
