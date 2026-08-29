@@ -313,6 +313,41 @@ owner, and publicly only when `showContact` is on. The bio is capped at
 2000 characters of text on the API. Without a profile (no membership yet)
 the page is the door to joining.
 
+## The security page
+
+`/account/security` (`backend/src/endpoints/accountSecurity.ts`, all under
+the rate-limited `POST /api/account/*`):
+
+- **Password.** `POST /api/account/change-password { current, password }`
+  checks the current password (`lib/sessions.ts` mirrors Payload's pbkdf2
+  check, which the package does not export), applies the policy, updates
+  through the local API with `context.passwordChange` (the only way past
+  the Users hook that refuses a stock self `PATCH { password }`), keeps only
+  the session making the change (`req.user._sid`) and mails
+  `passwordChanged`.
+- **Email.** `POST /api/account/change-email { password, email }` checks the
+  password, refuses the current address, answers 200 with an
+  `accountExists` mail to a taken address (no hint to the asker), else
+  stores `pendingEmail`, a token and a one-hour expiry (those fields are not
+  writable through the collection) and mails `emailChangeVerify` to the new
+  address and `emailChangeNotice` to the old. `POST /api/account/confirm-email
+  { token }` (anonymous, from `/account/verify?kind=email`) moves the
+  address, clears the pending fields and revokes every session.
+- **Devices.** `GET /api/account/sessions` lists live sessions with the
+  current id; `POST /api/account/sessions/revoke { id }` drops one; the stock
+  `POST /api/users/logout?allSessions=true` drops all. Payload's JWT
+  strategy checks the session id on every request, so a dropped session
+  is out at once.
+- **Close account.** `POST /api/account/delete { password }`: editors and
+  admins are refused (an admin removes them); in one transaction RSVPs by
+  the account or its address become `Former member` at
+  `deleted-{id}@example.invalid` (`lib/anonymise.ts`), entries lose the
+  account link and email but keep the credit name, restricted media by the
+  account is deleted, the People profile keeps its number and work but loses
+  its owner, roster place and contact, pending orders are cancelled, and the
+  user row goes. The response clears the session cookie; `accountDeleted`
+  is mailed.
+
 ## Member sign-in (#13)
 
 Members sign in on the site, never in `/admin`. The frontend talks to
