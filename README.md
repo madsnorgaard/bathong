@@ -1,6 +1,6 @@
 # Bathong.
 
-Street & documentary photography collective - Pretoria (Pitori), South Africa.
+Street & documentary photography collective, from Pretoria (Pitori) outward. South Africa.
 This repo is the brand and design system, and the home of the website.
 
 > **ba·thong** *excl. / loc.* - Sepedi / Setswana, from *batho*: people.

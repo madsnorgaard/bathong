@@ -5,6 +5,7 @@
  * default when there is no photograph at all.
  */
 interface PersonDoc {
+  basedIn?: string | null
   id: number
   memberNumber?: number | null
   name: string
@@ -40,11 +41,14 @@ export default defineEventHandler(async (event) => {
     if (essays.totalDocs) counts.push(`${essays.totalDocs} ESSAY${essays.totalDocs === 1 ? '' : 'S'}`)
     if (frames.totalDocs) counts.push(`${frames.totalDocs} FRAME${frames.totalDocs === 1 ? '' : 'S'}`)
 
+    // The city only when the photographer names one; never a guess.
+    const metaTop =
+      [person.memberNumber ? `MEMBER № ${pad4(person.memberNumber)}` : null, person.basedIn?.toUpperCase()]
+        .filter(Boolean)
+        .join(' · ') || 'PHOTOGRAPHER'
     const overlay = await renderOverlay(
       photographerOverlay({
-        metaTop: person.memberNumber
-          ? `MEMBER № ${pad4(person.memberNumber)} · PRETORIA`
-          : 'PRETORIA',
+        metaTop,
         nameLines: person.name.toUpperCase().split(' '),
         metaBottom: [counts.join(' · ') || 'PHOTOGRAPHER', 'BATHONG. COLLECTIVE'],
       }) as never,

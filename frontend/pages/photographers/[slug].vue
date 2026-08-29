@@ -69,7 +69,7 @@ const portraitAlt = computed(() => {
 
 useShareMeta({
   title: person.value?.name ?? 'Photographer',
-  description: `${person.value?.name} is a photographer with the Bathong. collective, Pretoria.`,
+  description: `${person.value?.name} is a photographer with the Bathong. collective${person.value?.basedIn ? `, based in ${person.value.basedIn}` : ''}.`,
   image: shareImage.value,
   imageAlt:
     portraitAlt.value ??

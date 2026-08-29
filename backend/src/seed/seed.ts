@@ -48,10 +48,15 @@ const daysFromNow = (days: number, hour: number) => {
   ).toISOString()
 }
 
+/**
+ * Idempotent on the alt text, not the filename: Payload renames an upload
+ * whose file already sits in MEDIA_DIR (a reset database over the tracked
+ * demo originals), so the stored filename cannot be trusted to match.
+ */
 async function ensureMedia(payload: Payload, filename: string, alt: string) {
   const existing = await payload.find({
     collection: 'media',
-    where: { filename: { equals: filename } },
+    where: { or: [{ alt: { equals: alt } }, { filename: { equals: filename } }] },
     limit: 1,
   })
   if (existing.docs[0]) return existing.docs[0]
@@ -147,13 +152,22 @@ async function run() {
           email: memberEmail,
           password: memberPassword,
           roles: ['member' as const],
-          membershipTier: 'individual',
+          membershipPlan: 'monthly',
           membershipStatus: 'active',
           profile: peopleBySlug['mads-norgaard'] ?? null,
         },
         overrideAccess: true,
       })
       console.log(`  user: ${memberEmail} (member)`)
+    } else if (existing.docs[0].membershipPlan !== 'monthly') {
+      // The plan column arrived after this account did on older stacks.
+      await payload.update({
+        collection: 'users',
+        id: existing.docs[0].id,
+        data: { membershipPlan: 'monthly', membershipStatus: 'active' },
+        overrideAccess: true,
+      })
+      console.log(`  user: ${memberEmail} (plan set)`)
     }
   }
 
@@ -171,10 +185,11 @@ async function run() {
   // rather than trusting the filename twice.
   const mediaByFile: Record<string, { id: number }> = {}
   for (const frame of demoFrames) {
+    // One alt per file: the seed's idempotency key, and honest demo copy.
     const media = await ensureMedia(
       payload,
       frame.file,
-      `Street photograph, ${frame.location}, 2018.`,
+      `Street photograph, ${frame.location}, 2018. Demo ${frame.file.replace(/\.jpg$/, '')}.`,
     )
     mediaByFile[frame.file] = media
     const existing = await payload.find({
@@ -550,7 +565,7 @@ async function run() {
         { text: 'Bathong!' },
         { text: 'among the people' },
         { text: 'Pitori · 012' },
-        { text: 'Walk № 001 · Sat 29 Aug · 05:30 · Church Square' },
+        { text: 'from Pretoria outward' },
       ],
     },
   })
@@ -565,7 +580,10 @@ async function run() {
         { text: 'among the people - where this work is made.' },
       ],
       body: lex([
-        'We build photographers who are there when it happens.',
+        'Bathong. is a street and documentary photography collective. It starts in Pretoria, among the people, and walks outward from there: across the city, and in time across South Africa.',
+        'A collective, not a club. We walk together and we edit together. The founding circle looks at your frames and tells you what they see, frame by frame, online or in person. That is the teaching.',
+        'We photograph people as they are. Not always a happy story. Always a true one, at face value.',
+        'The people around the collective are part of it: photographers, editors, printers and friends who come to talk, to look at work, and to open doors.',
         'A walk produces frames. A group edit turns frames into an essay. An essay earns a wall. A wall makes a photographer.',
         'You keep your copyright. Always.',
       ]),
@@ -579,13 +597,26 @@ async function run() {
     data: {
       benefits: [
         { title: 'Photowalks', description: 'Every walk, free for members.' },
-        { title: 'The group edit', description: 'Your frames on the table, edited together.' },
+        {
+          title: 'The edit',
+          description: 'Your frames on the table with the founding circle. Online or in person.',
+        },
+        { title: 'Feedback', description: 'Frame by frame. Honest, at face value.' },
+        {
+          title: 'Talks',
+          description: 'Sessions with the photographers, editors and friends around the collective.',
+        },
+        { title: 'Publication', description: 'Photocalls, essays and the archive, always credited.' },
         { title: 'The wall', description: 'Member work is first in line for exhibitions.' },
+        { title: 'The card', description: 'A membership card and your member number.' },
         { title: 'Copyright', description: 'You keep your copyright. Always.' },
       ],
-      priceIndividual: null,
-      priceStudent: null,
-      priceNote: 'Launch pricing announced soon',
+      // Decided 29 Aug 2026: one membership, one price, no tiers.
+      joiningFee: 250,
+      priceMonthly: 100,
+      priceAnnual: 1000,
+      priceNote: 'The card and your member number are included. Monthly can stop any time.',
+      openDoorNote: 'If the fee is what stands between you and the collective, write to us anyway.',
       _status: 'published',
     },
   })

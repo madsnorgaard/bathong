@@ -25,6 +25,9 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   await expect(page).toHaveURL(/\/account$/, { timeout: 15_000 })
   await expect(page.getByRole('heading', { name: 'Member.' })).toBeVisible()
   await expect(page.getByText('Demo Member')).toBeVisible()
+  // one membership, no tiers: the desk shows the plan the member pays by
+  await expect(page.locator('.facts')).toContainText('Plan')
+  await expect(page.locator('.facts')).toContainText('Monthly')
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
 
   await page.getByRole('button', { name: /Sign out/ }).click()

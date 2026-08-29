@@ -27,8 +27,11 @@ const email = computed(() =>
       eager
     />
     <div class="meta">
-      <p class="b-kicker line">
-        <template v-if="person.memberNumber">Member № {{ String(person.memberNumber).padStart(4, '0') }} · </template>Pretoria
+      <!-- the member number, and the city only when the photographer names one -->
+      <p v-if="person.memberNumber || person.basedIn" class="b-kicker line">
+        <template v-if="person.memberNumber">Member № {{ String(person.memberNumber).padStart(4, '0') }}</template>
+        <template v-if="person.memberNumber && person.basedIn"> · </template>
+        <template v-if="person.basedIn">{{ person.basedIn }}</template>
       </p>
       <h1 class="b-display-1">{{ person.name }}</h1>
       <p v-if="person.roleTitle" class="b-caption">{{ person.roleTitle }}</p>

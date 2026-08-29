@@ -163,7 +163,7 @@ export interface User {
    * Link to a public People profile, if this user has one.
    */
   profile?: (number | null) | Person;
-  membershipTier?: ('none' | 'individual' | 'student') | null;
+  membershipPlan?: ('none' | 'monthly' | 'annual') | null;
   membershipStatus?: ('none' | 'active' | 'lapsed') | null;
   membershipExpires?: string | null;
   updatedAt: string;
@@ -214,6 +214,10 @@ export interface Person {
     [k: string]: unknown;
   } | null;
   roleTitle?: string | null;
+  /**
+   * City, as the photographer wants it shown (Pretoria, Cape Town...). Optional; the site claims no city when empty.
+   */
+  basedIn?: string | null;
   /**
    * Part of the founding circle of the collective.
    */
@@ -854,7 +858,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
   profile?: T;
-  membershipTier?: T;
+  membershipPlan?: T;
   membershipStatus?: T;
   membershipExpires?: T;
   updatedAt?: T;
@@ -885,6 +889,7 @@ export interface PeopleSelect<T extends boolean = true> {
   portrait?: T;
   bio?: T;
   roleTitle?: T;
+  basedIn?: T;
   foundingCircle?: T;
   instagram?: T;
   website?: T;
@@ -1290,10 +1295,27 @@ export interface Membership {
         id?: string | null;
       }[]
     | null;
-  priceIndividual?: number | null;
-  priceStudent?: number | null;
+  /**
+   * Once, in rand. Includes the card and the member number.
+   */
+  joiningFee?: number | null;
+  /**
+   * Per month, in rand.
+   */
+  priceMonthly?: number | null;
+  /**
+   * Per year, in rand.
+   */
+  priceAnnual?: number | null;
   priceNote?: string | null;
+  /**
+   * The open door, kept without a tier. Clear it to hide the line.
+   */
+  openDoorNote?: string | null;
   cardImage?: (number | null) | Media;
+  /**
+   * Where "Join" goes. Empty falls back to the contact mailbox.
+   */
   joinUrl?: string | null;
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
@@ -1353,9 +1375,11 @@ export interface MembershipSelect<T extends boolean = true> {
         description?: T;
         id?: T;
       };
-  priceIndividual?: T;
-  priceStudent?: T;
+  joiningFee?: T;
+  priceMonthly?: T;
+  priceAnnual?: T;
   priceNote?: T;
+  openDoorNote?: T;
   cardImage?: T;
   joinUrl?: T;
   _status?: T;

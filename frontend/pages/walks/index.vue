@@ -44,7 +44,7 @@ function produced(walk: Walk): string | null {
 useShareMeta({
   title: 'Walks & sessions',
   description:
-    'Photowalks in Pretoria: meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.',
+    'Photowalks from Pretoria outward: meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.',
   image: nextWalk.value
     ? `/share/walks.jpg?v=${nextWalk.value.updatedAt ? new Date(nextWalk.value.updatedAt).getTime() : 0}`
     : undefined,

@@ -8,6 +8,7 @@ import * as migration_20260809_140000_phase2_photocall_status_values from './202
 import * as migration_20260814_090000_phase3_walk_route_geo from './20260814_090000_phase3_walk_route_geo';
 import * as migration_20260821_090000_phase4_frame_top_pick from './20260821_090000_phase4_frame_top_pick';
 import * as migration_20260829_121228_phase5_walk_links_albums from './20260829_121228_phase5_walk_links_albums';
+import * as migration_20260829_124727_phase5_membership_plan from './20260829_124727_phase5_membership_plan';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260829_121228_phase5_walk_links_albums.up,
     down: migration_20260829_121228_phase5_walk_links_albums.down,
-    name: '20260829_121228_phase5_walk_links_albums'
+    name: '20260829_121228_phase5_walk_links_albums',
+  },
+  {
+    up: migration_20260829_124727_phase5_membership_plan.up,
+    down: migration_20260829_124727_phase5_membership_plan.down,
+    name: '20260829_124727_phase5_membership_plan'
   },
 ];
