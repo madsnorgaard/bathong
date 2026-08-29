@@ -200,6 +200,40 @@ data is byte-identical with the default UI (asserted by
 `frontend/e2e/admin-sequence.spec.ts`; run those specs alone against a dev
 backend with `npx playwright test --config=playwright.admin.config.ts`).
 
+## Member accounts (#13, #40)
+
+Anyone can make an account; an account is free, and membership (a plan, the
+card, the number) comes after. `POST /api/account/sign-up`
+(`backend/src/endpoints/accountSignUp.ts`) is the one door: it takes name,
+email, password and the newsletter preference behind a honeypot, creates the
+user with `roles: ['member']`, and sends the plain-text confirmation mail
+itself (`templates.verifyEmail`, link to `/account/verify?token=`). A known
+address gets the same `200 { ok: true }` and an "you already have an account"
+email instead, so the form never says who is a member. `users.access.create`
+stays admin-only. `POST /api/account/resend-verification` regenerates the
+token; `POST /api/users/verify/:token` (stock) confirms; an unconfirmed
+account cannot sign in (403) and the JWT strategy refuses it too.
+
+Hardening that comes with an open door (`backend/src/collections/Users.ts`):
+`email` and `_verified` are redeclared over Payload's base fields so a member
+cannot change or self-verify them; `roles`, `profile` and the membership
+fields are admin-only on create and update; `access.unlock` is admin-only
+(Payload's default lets any signed-in user unlock any account by email);
+the password rule (`backend/src/lib/password.ts`, mirrored in
+`frontend/utils/password.ts`: ten characters, no spaces at the ends, not
+the email) runs in `beforeValidate`; a member's stock `PATCH { password }`
+is refused (403) because it checks nothing and revokes nothing, the security
+page (PR4) is the path. `afterRead` shows an expired membership as lapsed
+without a write. Every existing account was marked verified by the
+`phase6_accounts_verify` migration, so nobody was locked out by the gate.
+
+Test door: with `E2E_HOOKS=true` (ci.yml and a dev backend, never the
+production compose) the admin-only `GET /api/e2e/verification-token?email=`
+returns the tokens that otherwise travel by email; `frontend/e2e/sign-up.spec.ts`
+walks sign-up, the refused sign-in, confirmation and the hardening cases.
+Traefik's strict rate limit covers `/api/account/*` POSTs and
+`/api/users/verify`. `/privacy` is the notice the sign-up form points at.
+
 ## Member sign-in (#13)
 
 Members sign in on the site, never in `/admin`. The frontend talks to
@@ -300,7 +334,7 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 
 | Collection | Public | Member | Editor | Admin |
 |---|---|---|---|---|
-| users | - | R/U self | R | CRUD |
+| users | C via /api/account/sign-up | R/U self (name, newsletter, password via the security page) | R | CRUD |
 | people | R | R | CRU | CRUD |
 | media | R public | R pub+own, C, U/D own restricted | CRU all | CRUD |
 | frames | R | R | CRU | CRUD |

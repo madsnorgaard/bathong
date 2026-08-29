@@ -15,7 +15,8 @@ test('the account page sends anonymous visitors to sign in, and back again', asy
 })
 
 test('a member signs in, lands on the account page, and can sign out', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -39,7 +40,8 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
 })
 
 test('a wrong password shows an error and stays on the page', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill('not-the-password')
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -48,7 +50,8 @@ test('a wrong password shows an error and stays on the page', async ({ page }) =
 })
 
 test('the session survives a full reload (SSR reads the cookie)', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
