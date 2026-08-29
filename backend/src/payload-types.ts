@@ -215,7 +215,7 @@ export interface Person {
    */
   owner?: (number | null) | User;
   /**
-   * The member chose to appear on the public roster. Needs a portrait.
+   * Appears on the public roster. A member needs a portrait first; editors can list a founder while the portrait is on its way.
    */
   onRoster?: boolean | null;
   portrait?: (number | null) | Media;
@@ -243,7 +243,13 @@ export interface Person {
    * Part of the founding circle of the collective.
    */
   foundingCircle?: boolean | null;
+  /**
+   * The profile link, or just the handle.
+   */
   instagram?: string | null;
+  /**
+   * A full link, starting with https://
+   */
   website?: string | null;
   /**
    * Shown on the public page only when "Show contact" is on.
