@@ -175,6 +175,35 @@ async function run() {
       })
       console.log(`  user: ${memberEmail} (plan set)`)
     }
+    // The demo member owns the Mads profile, so profile self-service is testable.
+    const demoMember = await payload.find({
+      collection: 'users',
+      where: { email: { equals: memberEmail } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const madsId = peopleBySlug['mads-norgaard']
+    if (demoMember.docs[0] && madsId) {
+      const mads = await payload.findByID({ collection: 'people', id: madsId, depth: 0 })
+      if (!mads.owner) {
+        await payload.update({
+          collection: 'people',
+          id: madsId,
+          data: { owner: demoMember.docs[0].id, onRoster: true },
+          overrideAccess: true,
+          context: { syncingOwner: true },
+        })
+        await payload.update({
+          collection: 'users',
+          id: demoMember.docs[0].id,
+          data: { profile: madsId },
+          overrideAccess: true,
+          context: { syncingOwner: true },
+        })
+        console.log('  person: mads-norgaard owned by the demo member')
+      }
+    }
   }
 
   // ---- media + frames: demo frames, credited, marked as placeholders ----
@@ -644,6 +673,20 @@ async function run() {
       priceNote:
         'The card and your member number come with a monthly or annual membership. Monthly can stop any time.',
       openDoorNote: 'If the fee is what stands between you and the collective, write to us anyway.',
+      // Bank details are real content: the seed sets honest placeholders
+      // only for demo stacks, never on production.
+      ...(process.env.SEED_DEMO === 'true'
+        ? {
+            referencePrefix: 'BTG',
+            bank: {
+              accountName: 'Bathong. Collective (demo) TBC',
+              bankName: 'Bank TBC',
+              accountNumber: 'TBC',
+              branchCode: 'TBC',
+              accountType: 'Cheque',
+            },
+          }
+        : {}),
       _status: 'published',
     },
   })

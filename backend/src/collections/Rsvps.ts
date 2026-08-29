@@ -1,5 +1,5 @@
 import { APIError, type CollectionConfig } from 'payload'
-import { anyone, isAdmin, isEditor } from '../access'
+import { anyone, hasEditorRole, isAdmin, isEditor } from '../access'
 import { getContactEmail, sendSafe } from '../email/send'
 import { editorNewRsvp, rsvpConfirmed, rsvpPromoted, rsvpWaitlisted } from '../email/templates'
 
@@ -19,10 +19,29 @@ export const Rsvps: CollectionConfig = {
     defaultColumns: ['walk', 'name', 'email', 'status', 'createdAt'],
     group: 'Programme',
   },
-  access: { read: isEditor, create: anyone, update: isEditor, delete: isAdmin },
+  access: {
+    // A signed-in member sees their own RSVPs on their desk; the list stays editorial.
+    read: ({ req: { user } }) => {
+      if (!user) return false
+      if (hasEditorRole(user)) return true
+      return { user: { equals: user.id } }
+    },
+    create: anyone,
+    update: isEditor,
+    delete: isAdmin,
+  },
   defaultSort: '-createdAt',
   fields: [
     { name: 'walk', type: 'relationship', relationTo: 'walks', required: true, index: true },
+    {
+      name: 'user',
+      type: 'relationship',
+      relationTo: 'users',
+      index: true,
+      // never populate: the account (sessions and all) has no business in an RSVP response
+      maxDepth: 0,
+      admin: { readOnly: true, description: 'Set when a signed-in member reserves.' },
+    },
     { name: 'name', type: 'text', required: true },
     { name: 'email', type: 'email', required: true },
     { name: 'note', type: 'textarea' },
@@ -53,6 +72,8 @@ export const Rsvps: CollectionConfig = {
         if (data.website) {
           throw new APIError('Could not process this RSVP.', 400)
         }
+        // The account, never the form, says who reserved.
+        data.user = req.user?.id ?? null
 
         const walkId = typeof data.walk === 'object' ? data.walk?.id : data.walk
         const walk = await req.payload.findByID({

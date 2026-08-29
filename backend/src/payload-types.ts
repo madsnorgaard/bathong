@@ -207,9 +207,17 @@ export interface Person {
   name: string;
   slug?: string | null;
   /**
-   * The member register number, rendered as № 0001. Real numbers only.
+   * The member register number, rendered as № 0001. Assigned on activation from a sequence; a number typed by hand moves the sequence past it, so numbers are never reused.
    */
   memberNumber?: number | null;
+  /**
+   * The account that edits this profile. Set on activation; editors can link by hand.
+   */
+  owner?: (number | null) | User;
+  /**
+   * The member chose to appear on the public roster. Needs a portrait.
+   */
+  onRoster?: boolean | null;
   portrait?: (number | null) | Media;
   bio?: {
     root: {
@@ -716,12 +724,37 @@ export interface Order {
   id: number;
   user?: (number | null) | User;
   type?: ('membership' | 'walk') | null;
+  plan?: ('monthly' | 'annual') | null;
   item?: (number | null) | Walk;
+  /**
+   * Total in rand, frozen at order time.
+   */
   amount?: number | null;
+  /**
+   * The part of the amount that is the once-off joining fee.
+   */
+  joiningFee?: number | null;
   currency?: string | null;
+  /**
+   * What the member types as the EFT reference.
+   */
+  reference?: string | null;
+  /**
+   * Set to Paid when the EFT shows. That activates the membership.
+   */
   status?: ('pending' | 'paid' | 'failed' | 'cancelled' | 'refunded') | null;
+  /**
+   * Left empty, it is set when the status becomes paid.
+   */
+  paidAt?: string | null;
+  coveredFrom?: string | null;
+  coveredUntil?: string | null;
   provider?: ('payfast' | 'manual') | null;
   providerRef?: string | null;
+  /**
+   * Who confirmed the EFT, and when.
+   */
+  note?: string | null;
   /**
    * Raw provider payload for auditing.
    */
@@ -744,6 +777,10 @@ export interface Order {
 export interface Rsvp {
   id: number;
   walk: number | Walk;
+  /**
+   * Set when a signed-in member reserves.
+   */
+  user?: (number | null) | User;
   name: string;
   email: string;
   note?: string | null;
@@ -909,6 +946,8 @@ export interface PeopleSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   memberNumber?: T;
+  owner?: T;
+  onRoster?: T;
   portrait?: T;
   bio?: T;
   roleTitle?: T;
@@ -1176,12 +1215,19 @@ export interface SubmissionsSelect<T extends boolean = true> {
 export interface OrdersSelect<T extends boolean = true> {
   user?: T;
   type?: T;
+  plan?: T;
   item?: T;
   amount?: T;
+  joiningFee?: T;
   currency?: T;
+  reference?: T;
   status?: T;
+  paidAt?: T;
+  coveredFrom?: T;
+  coveredUntil?: T;
   provider?: T;
   providerRef?: T;
+  note?: T;
   raw?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1192,6 +1238,7 @@ export interface OrdersSelect<T extends boolean = true> {
  */
 export interface RsvpsSelect<T extends boolean = true> {
   walk?: T;
+  user?: T;
   name?: T;
   email?: T;
   note?: T;
@@ -1340,9 +1387,24 @@ export interface Membership {
   openDoorNote?: string | null;
   cardImage?: (number | null) | Media;
   /**
-   * Where "Join" goes. Empty falls back to the contact mailbox.
+   * Leave empty: Join goes to sign-up on the site. Set only to send joining elsewhere.
    */
   joinUrl?: string | null;
+  /**
+   * EFT references read PREFIX-XXXXXX. Letters and digits only.
+   */
+  referencePrefix?: string | null;
+  bank?: {
+    accountName?: string | null;
+    bankName?: string | null;
+    accountNumber?: string | null;
+    branchCode?: string | null;
+    /**
+     * Cheque, savings...
+     */
+    accountType?: string | null;
+    paymentNote?: string | null;
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1408,6 +1470,17 @@ export interface MembershipSelect<T extends boolean = true> {
   openDoorNote?: T;
   cardImage?: T;
   joinUrl?: T;
+  referencePrefix?: T;
+  bank?:
+    | T
+    | {
+        accountName?: T;
+        bankName?: T;
+        accountNumber?: T;
+        branchCode?: T;
+        accountType?: T;
+        paymentNote?: T;
+      };
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

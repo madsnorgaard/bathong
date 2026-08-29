@@ -215,6 +215,24 @@ export const Users: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      // An admin pointing an account at a profile makes the account its owner.
+      async ({ doc, previousDoc, operation, req, context }) => {
+        if (operation !== 'update' || context?.syncingOwner) return
+        const rel = (v: unknown) =>
+          typeof v === 'number' ? v : v && typeof v === 'object' && 'id' in v ? (v as { id: number }).id : null
+        const now = rel(doc.profile)
+        const before = rel(previousDoc?.profile)
+        if (now === before) return
+        const sync = { overrideAccess: true as const, req, context: { syncingOwner: true } }
+        if (before) {
+          await req.payload.update({ collection: 'people', id: before, data: { owner: null }, ...sync })
+        }
+        if (now) {
+          await req.payload.update({ collection: 'people', id: now, data: { owner: doc.id }, ...sync })
+        }
+      },
+    ],
     afterRead: [
       // A membership past its date reads as lapsed without a write; a job
       // that writes it and emails the member comes later.
