@@ -172,14 +172,19 @@ async function run() {
   }
 
   // ---- media + frames: demo frames, credited, marked as placeholders ----
-  const demoFrames = [
-    { file: 'street-0001.jpg', location: 'Johannesburg' },
-    { file: 'street-0002.jpg', location: 'Johannesburg' },
-    { file: 'street-0003.jpg', location: 'Johannesburg' },
-    { file: 'doc-0009.jpg', location: 'Johannesburg' },
-    { file: 'doc-0016.jpg', location: 'Johannesburg' },
-    { file: 'doc-0024.jpg', location: 'Johannesburg' },
-  ]
+  // SEED_DEMO only: production holds real frames, and a rerun of the seed
+  // there (to refresh the globals) must never put placeholders back.
+  const demoFrames =
+    process.env.SEED_DEMO === 'true'
+      ? [
+          { file: 'street-0001.jpg', location: 'Johannesburg' },
+          { file: 'street-0002.jpg', location: 'Johannesburg' },
+          { file: 'street-0003.jpg', location: 'Johannesburg' },
+          { file: 'doc-0009.jpg', location: 'Johannesburg' },
+          { file: 'doc-0016.jpg', location: 'Johannesburg' },
+          { file: 'doc-0024.jpg', location: 'Johannesburg' },
+        ]
+      : []
   // Payload renames an upload whose file already sits in MEDIA_DIR (a reset
   // database with leftover files), so later steps take media from this map
   // rather than trusting the filename twice.
