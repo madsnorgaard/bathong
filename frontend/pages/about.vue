@@ -106,7 +106,7 @@ function personContact(person: Person): string | null {
       <p v-if="membership?.priceNote" class="b-caption note">{{ membership.priceNote }}</p>
       <p class="apply">
         Anyone can join.
-        <template v-if="joinHref">Write to us, we send the details and your member number.</template>
+        <template v-if="joinHref">Write to us and we send the details.</template>
         <template v-else>Joining opens with our mailbox. TBC.</template>
         <template v-if="membership?.openDoorNote"> {{ membership.openDoorNote }}</template>
       </p>

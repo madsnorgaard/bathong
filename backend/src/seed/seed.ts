@@ -608,14 +608,18 @@ async function run() {
         },
         { title: 'Publication', description: 'Photocalls, essays and the archive, always credited.' },
         { title: 'The wall', description: 'Member work is first in line for exhibitions.' },
-        { title: 'The card', description: 'A membership card and your member number.' },
+        {
+          title: 'The card',
+          description: 'A membership card and your member number, for monthly and annual members.',
+        },
         { title: 'Copyright', description: 'You keep your copyright. Always.' },
       ],
       // Decided 29 Aug 2026: one membership, one price, no tiers.
       joiningFee: 250,
       priceMonthly: 100,
       priceAnnual: 1000,
-      priceNote: 'The card and your member number are included. Monthly can stop any time.',
+      priceNote:
+        'The card and your member number come with a monthly or annual membership. Monthly can stop any time.',
       openDoorNote: 'If the fee is what stands between you and the collective, write to us anyway.',
       _status: 'published',
     },

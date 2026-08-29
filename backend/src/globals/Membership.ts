@@ -2,9 +2,10 @@ import type { GlobalConfig } from 'payload'
 import { anyone, isEditor } from '../access'
 
 /**
- * One membership, one price (decided 29 Aug 2026): a joining fee that buys
- * the card and the member number, then monthly or annual. No tiers. Prices
- * left empty render the honest placeholder on the site.
+ * One membership, one price (decided 29 Aug 2026): a joining fee once, then
+ * monthly or annual. No tiers. The card and the member number are the
+ * kicker, and they belong to subscribing members only. Prices left empty
+ * render the honest placeholder on the site.
  */
 export const Membership: GlobalConfig = {
   slug: 'membership',
@@ -24,14 +25,16 @@ export const Membership: GlobalConfig = {
     {
       name: 'joiningFee',
       type: 'number',
-      admin: { description: 'Once, in rand. Includes the card and the member number.' },
+      admin: { description: 'Once, in rand, for everyone who joins.' },
     },
     { name: 'priceMonthly', type: 'number', admin: { description: 'Per month, in rand.' } },
     { name: 'priceAnnual', type: 'number', admin: { description: 'Per year, in rand.' } },
     {
       name: 'priceNote',
       type: 'text',
-      defaultValue: 'The card and your member number are included. Monthly can stop any time.',
+      defaultValue:
+        'The card and your member number come with a monthly or annual membership. Monthly can stop any time.',
+      admin: { description: 'The kicker under the prices: what subscribing gets you.' },
     },
     {
       name: 'openDoorNote',
