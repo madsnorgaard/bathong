@@ -303,10 +303,15 @@ member number, role, founding circle, order) carry `access.update:
 isEditorField`, so a member's PATCH of them is silently dropped. The
 portrait is uploaded as a public media file (`POST /api/media`, XHR for
 progress, `_payload` carrying alt and visibility) and then set on the
-profile; a member may only set a portrait they uploaded themselves. The
-roster switch stays disabled on the page, and refused by the API, until a
-portrait exists. Without a profile (no membership yet) the page is the door
-to joining.
+profile; a member may only set a public portrait they uploaded themselves,
+and a replaced portrait that was their own upload is deleted when nothing
+else (a frame, another profile) shows it, since members cannot delete
+public media. The roster switch stays disabled on the page (and out of the
+patch, so an editor's listing survives a save), and refused by the API,
+until a portrait exists. `contactEmail` is readable by editors, by the
+owner, and publicly only when `showContact` is on. The bio is capped at
+2000 characters of text on the API. Without a profile (no membership yet)
+the page is the door to joining.
 
 ## Member sign-in (#13)
 
