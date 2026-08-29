@@ -10,6 +10,10 @@ import sharp from 'sharp'
 
 const SIZE_CEILING = 300 * 1024
 
+// The first render of a card loads fonts, fetches the photo from the CMS and
+// runs satori + resvg; under a full parallel run that can pass 30s.
+test.describe.configure({ timeout: 60_000 })
+
 async function expectCard(request: APIRequestContext, path: string) {
   const res = await request.get(path)
   expect(res.status()).toBe(200)
@@ -45,6 +49,18 @@ test('walks page shares the C4 card while a walk is upcoming', async ({ page, re
   if (content?.includes('walks.jpg')) await expectCard(request, '/share/walks.jpg')
 })
 
+test('a walk page shares its own C4 card', async ({ page, request }) => {
+  const content = await ogImage(page, '/walks/demo-past-walk')
+  expect(content).toMatch(/\/share\/walk\/demo-past-walk\.jpg\?v=\d+$/)
+  await expectCard(request, '/share/walk/demo-past-walk.jpg')
+})
+
+test('an album page shares its generated C6 card', async ({ page, request }) => {
+  const content = await ogImage(page, '/albums/demo-behind-the-walk')
+  expect(content).toMatch(/\/share\/album\/demo-behind-the-walk\.jpg\?v=\d+$/)
+  await expectCard(request, '/share/album/demo-behind-the-walk.jpg')
+})
+
 test('photocalls page shares the C5 card only while a call is open', async ({ page }) => {
   const content = await ogImage(page, '/photocalls')
   expect(content).toMatch(/\/share\/(photocalls\.jpg\?v=\d+|default\.jpg)$/)
@@ -53,9 +69,15 @@ test('photocalls page shares the C5 card only while a call is open', async ({ pa
 test('unknown entities and failures serve the default card, never an error', async ({
   request,
 }) => {
-  const fallback = await expectCard(request, '/share/essay/does-not-exist.jpg')
   const defaultCard = await (await request.get('/share/default.jpg')).body()
-  expect(fallback.equals(defaultCard)).toBe(true)
+  for (const path of [
+    '/share/essay/does-not-exist.jpg',
+    '/share/walk/does-not-exist.jpg',
+    '/share/album/does-not-exist.jpg',
+  ]) {
+    const fallback = await expectCard(request, path)
+    expect(fallback.equals(defaultCard), path).toBe(true)
+  }
 })
 
 test('home and about keep the C1 default card', async ({ page }) => {

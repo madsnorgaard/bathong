@@ -74,7 +74,7 @@ test.describe('walks', () => {
   test('shows the next walk and accepts an RSVP', async ({ page }) => {
     await page.goto('/walks', { waitUntil: 'networkidle' })
     await expectShareMeta(page)
-    await expect(page.getByText('№ 001')).toBeVisible()
+    await expect(page.getByText(/№ \d{3}/).first()).toBeVisible()
 
     await page.getByLabel(/^Name/).fill('Playwright Visitor')
     await page.getByLabel(/^Email/).fill(`pw-${Date.now()}@example.org`)

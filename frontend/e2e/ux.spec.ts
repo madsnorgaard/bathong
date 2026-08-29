@@ -132,7 +132,7 @@ test.describe('the data-budget worst case', () => {
 
   test('the page reads without JavaScript', async ({ page }) => {
     await page.goto('/walks')
-    await expect(page.getByText('№ 001')).toBeVisible()
+    await expect(page.getByText(/№ \d{3}/).first()).toBeVisible()
     await expect(page.getByText(/Church Square/).first()).toBeVisible()
     // reveal sections must be visible in plain SSR HTML (no .reveal class server-side)
     const hidden = await page.evaluate(() =>

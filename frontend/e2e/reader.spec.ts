@@ -70,8 +70,20 @@ test('the end is a door, never a grid: credit and one onward link', async ({ pag
   const onward = door.getByRole('link')
   const count = await onward.count()
   expect(count).toBeGreaterThanOrEqual(1)
-  expect(count, 'a door, not a grid').toBeLessThanOrEqual(2)
+  // photographer, the walk it came from, the next essay: still a door
+  expect(count, 'a door, not a grid').toBeLessThanOrEqual(3)
   await expect(door.locator('img')).toHaveCount(0)
+  await expect(door.getByRole('link', { name: /From walk № \d{3}, .+ →/ })).toHaveAttribute(
+    'href',
+    '/walks/demo-past-walk',
+  )
+})
+
+test('the share row sits on ink before the door, in the voice', async ({ page }) => {
+  await page.goto(READER, { waitUntil: 'networkidle' })
+  const row = page.getByRole('navigation', { name: 'Share' })
+  await expect(row).toBeVisible()
+  await expect(page.locator('.door').getByRole('navigation', { name: 'Share' })).toHaveCount(0)
 })
 
 test('every frame in the reader carries its credit capsule', async ({ page }) => {

@@ -20,7 +20,9 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
 
-  await expect(page).toHaveURL(/\/account$/)
+  // Generous: under a full parallel run the dev backend answers the login
+  // and the account page's SSR read well after the default 5s.
+  await expect(page).toHaveURL(/\/account$/, { timeout: 15_000 })
   await expect(page.getByRole('heading', { name: 'Member.' })).toBeVisible()
   await expect(page.getByText('Demo Member')).toBeVisible()
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
@@ -47,7 +49,7 @@ test('the session survives a full reload (SSR reads the cookie)', async ({ page 
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
-  await expect(page).toHaveURL(/\/account$/)
+  await expect(page).toHaveURL(/\/account$/, { timeout: 15_000 })
   await page.reload()
   await expect(page.getByText('Demo Member')).toBeVisible()
 })
