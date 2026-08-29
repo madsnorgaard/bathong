@@ -342,8 +342,9 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 ## Membership and payments
 
 Pricing was decided on 29 August 2026 (#17): one membership, no tiers.
-R250 to join (the card and the member number), then R100 a month or
-R1000 a year. The numbers live in the `membership` global and render on
+R250 to join, then R100 a month or R1000 a year. The card and the member
+number are the kicker and belong to subscribing (monthly or annual)
+members only, not to a once-off joiner. The numbers live in the `membership` global and render on
 `/` and `/about`; `Join` goes to `joinUrl` or the contact mailbox. The open
 door stays without a tier: `openDoorNote` invites anyone the fee would keep
 out to write anyway.
