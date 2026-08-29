@@ -132,7 +132,7 @@ async function run() {
     }
     const created = await payload.create({
       collection: 'people',
-      data: { ...person, foundingCircle: true },
+      data: { ...person, foundingCircle: true, onRoster: true },
     })
     peopleBySlug[person.slug] = created.id
     console.log(`  person: ${person.name}`)

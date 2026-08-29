@@ -21,10 +21,16 @@ test('a photographer filter narrows the shelf and lands in the URL', async ({ pa
   await filter.click()
   await expect(page).toHaveURL(/photographer=/)
   await expect(filter).toHaveClass(/active/)
+  // The narrowed shelf arrives after the URL changes: poll until every
+  // credit on the page is the chosen photographer, rather than counting
+  // the unfiltered shelf and asserting on a list that shrinks underneath.
   const credits = page.locator('.credit')
-  const n = await credits.count()
-  expect(n).toBeGreaterThan(0)
-  for (let i = 0; i < n; i += 1) await expect(credits.nth(i)).toContainText(name)
+  await expect
+    .poll(async () => {
+      const texts = await credits.allTextContents()
+      return texts.length > 0 && texts.every((t) => t.includes(name))
+    })
+    .toBe(true)
 })
 
 test('a walk filter narrows the shelf to the frames made on that walk', async ({ page }) => {

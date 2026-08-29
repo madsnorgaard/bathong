@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
-import { API, adminHeaders, deleteUserByEmail, freshEmail, signUpAndVerify } from './helpers/account'
+import { API, adminHeaders, deleteUserByEmail, freshEmail, gotoHydrated, signUpAndVerify } from './helpers/account'
 
 /**
  * Joining by EFT: a fresh member picks a plan and gets a reference; an
@@ -31,6 +31,7 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   page,
   request,
 }) => {
+  test.slow() // sign-up, verify, join, mark paid, desk: tight at 30 s under load
   const email = freshEmail('join')
   made.push(email)
   await signUpAndVerify(page, request, email, 'Joining Member')
@@ -53,6 +54,16 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   // one open order: the page shows the same reference again
   await page.reload({ waitUntil: 'networkidle' })
   await expect(page.locator('.reference')).toHaveText(reference)
+
+  // changing plan moves the open order: same reference, new amount
+  const origin = { Origin: new URL(page.url()).origin }
+  const moved = await page.request.post(`${API}/api/account/join`, { data: { plan: 'monthly' }, headers: origin })
+  expect(moved.status()).toBe(200)
+  expect(await moved.json()).toMatchObject({ reference, plan: 'monthly', amount: 350, joiningFee: 250 })
+  await page.reload({ waitUntil: 'networkidle' })
+  await expect(page.locator('.amount')).toHaveText('R 350')
+  const back = await page.request.post(`${API}/api/account/join`, { data: { plan: 'annual' }, headers: origin })
+  expect(await back.json()).toMatchObject({ reference, plan: 'annual', amount: 1250 })
   await page.goto('/account')
   await expect(page.locator('.b-card--member')).toContainText(`Payment pending · ${reference}`)
 
@@ -79,19 +90,37 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
 
   // the account itself
   const login = await request.post(`${API}/api/users/login`, { data: { email, password: 'a long enough e2e password' } })
-  const me = (await login.json()).user as { membershipStatus: string; membershipPlan: string; memberSince: string; profile: { memberNumber: number; onRoster: boolean; owner: number } }
+  const { token, user: me } = (await login.json()) as {
+    token: string
+    user: { membershipStatus: string; membershipPlan: string; memberSince: string; profile: { id: number; memberNumber: number; onRoster: boolean; owner: number } }
+  }
   expect(me.membershipStatus).toBe('active')
   expect(me.membershipPlan).toBe('annual')
   expect(me.memberSince).toBeTruthy()
   expect(me.profile.memberNumber).toBeGreaterThan(4)
   expect(me.profile.onRoster).toBe(false)
+
+  // the member edits their own profile, within the rules: links are
+  // http(s) only, the roster needs a portrait, the number is not theirs to set
+  const own = (data: Record<string, unknown>) =>
+    request.patch(`${API}/api/people/${me.profile.id}`, { headers: { Authorization: `JWT ${token}` }, data })
+  expect((await own({ website: 'javascript:alert(1)' })).status()).toBe(400)
+  expect((await own({ website: 'https://example.org/work', instagram: '@joining.member' })).status()).toBe(200)
+  expect((await own({ onRoster: true })).status()).toBe(400)
+  const numbered = await own({ memberNumber: 1 })
+  expect(numbered.status()).toBe(200)
+  const after = (await numbered.json()).doc as { memberNumber: number; instagram: string }
+  expect(after.memberNumber).toBe(me.profile.memberNumber)
+  expect(after.instagram).toBe('https://www.instagram.com/joining.member/')
 })
 
 test('a signed-in RSVP lands on the desk', async ({ page, request }) => {
+  test.slow() // sign-up, verify, sign-in, RSVP, desk: tight at 30 s under load
   const email = freshEmail('rsvp')
   made.push(email)
   await signUpAndVerify(page, request, email, 'Walking Member')
-  await page.goto('/walks/demo-next-walk', { waitUntil: 'networkidle' })
+  // hydration, not networkidle: the walk map keeps fetching tiles
+  await gotoHydrated(page, '/walks/demo-next-walk')
   await expect(page.getByLabel(/^Name/)).toHaveValue('Walking Member')
   await expect(page.getByLabel(/^Email/)).toHaveValue(email)
   await page.getByRole('button', { name: /Reserve a place/ }).click()

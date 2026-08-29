@@ -1,4 +1,5 @@
 import type { Endpoint, PayloadRequest } from 'payload'
+import type { Order } from '../payload-types'
 import { getContactEmail, sendSafe } from '../email/send'
 import { editorNewJoin, joinInstructions } from '../email/templates'
 import { PLANS, RENEWAL_WINDOW_DAYS, daysUntil, makeReference, orderAmount, type Plan } from '../lib/membership'
@@ -43,23 +44,49 @@ export const accountJoin: Endpoint = {
       }
     }
 
-    const pending = await payload.find({
-      collection: 'orders',
-      where: {
-        and: [{ user: { equals: user.id } }, { type: { equals: 'membership' } }, { status: { equals: 'pending' } }],
-      },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-      req,
-    })
-    if (pending.docs[0]) return ok(shape(pending.docs[0]))
-
+    const findPending = () =>
+      payload.find({
+        collection: 'orders',
+        where: {
+          and: [{ user: { equals: user.id } }, { type: { equals: 'membership' } }, { status: { equals: 'pending' } }],
+        },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
     const membership = await payload.findGlobal({ slug: 'membership', depth: 0, overrideAccess: true, req })
     const price = orderAmount(membership, Boolean(user.memberSince), plan)
     if (!price) return bad('Membership prices are not set yet. Write to us and we sort it by hand.')
 
-    let order: (typeof pending.docs)[number] | null = null
+    const bank = membership.bank ?? {}
+    const contact = await getContactEmail(req)
+    const instructions = (reference: string) =>
+      sendSafe(req, {
+        to: user.email,
+        replyTo: contact,
+        ...joinInstructions(user.name, { plan, amount: price.amount, joiningFee: price.joiningFee, reference }, bank),
+      })
+
+    // One open order per account. Asking again with the same plan returns
+    // it; a different plan moves the open order over (nothing is paid yet,
+    // the reference stays) and the instructions go out again.
+    const open = (await findPending()).docs[0]
+    if (open) {
+      if (open.plan === plan) return ok(shape(open))
+      const moved = await payload.update({
+        collection: 'orders',
+        id: open.id,
+        data: { plan, amount: price.amount, joiningFee: price.joiningFee },
+        overrideAccess: true,
+        req,
+      })
+      instructions(moved.reference ?? '')
+      payload.logger.info({ userId: user.id, orderId: moved.id, plan }, 'join: open order moved to another plan')
+      return ok(shape(moved))
+    }
+
+    let order: Order | null = null
     for (let attempt = 0; attempt < 3 && !order; attempt += 1) {
       const reference = makeReference(membership.referencePrefix ?? 'BTG')
       try {
@@ -80,19 +107,17 @@ export const accountJoin: Endpoint = {
           req,
         })
       } catch (err) {
+        // Two joins in the same instant: the one-open-order index refuses
+        // the second, which then answers with the first.
+        const raced = (await findPending()).docs[0]
+        if (raced) return ok(shape(raced))
         if (attempt === 2) throw err
         payload.logger.info({ err }, 'join: reference clash, retrying')
       }
     }
     if (!order) return bad('Could not make the order. Try again.', 500)
 
-    const bank = membership.bank ?? {}
-    const contact = await getContactEmail(req)
-    sendSafe(req, {
-      to: user.email,
-      replyTo: contact,
-      ...joinInstructions(user.name, { plan, amount: price.amount, joiningFee: price.joiningFee, reference: order.reference ?? '' }, bank),
-    })
+    instructions(order.reference ?? '')
     sendSafe(req, {
       to: contact,
       ...editorNewJoin(user.name, user.email, plan, price.amount, order.reference ?? '', `${payload.config.serverURL}/admin/collections/orders/${order.id}`),

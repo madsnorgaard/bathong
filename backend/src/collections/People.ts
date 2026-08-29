@@ -2,6 +2,9 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
 import { anyone, hasEditorRole, isAdmin, isEditor, isEditorField } from '../access'
+import { instagramUrl, webLinkProblem } from '../lib/links'
+
+const webLink = (value: unknown) => webLinkProblem(value) ?? true
 
 const rel = (v: unknown): number | null =>
   typeof v === 'number' ? v : v && typeof v === 'object' && 'id' in v ? (v as { id: number }).id : null
@@ -49,6 +52,8 @@ export const People: CollectionConfig = {
       relationTo: 'users',
       unique: true,
       index: true,
+      // never populate: profiles are public, accounts are not
+      maxDepth: 0,
       access: { update: isEditorField },
       admin: { description: 'The account that edits this profile. Set on activation; editors can link by hand.' },
     },
@@ -56,7 +61,10 @@ export const People: CollectionConfig = {
       name: 'onRoster',
       type: 'checkbox',
       defaultValue: false,
-      admin: { description: 'The member chose to appear on the public roster. Needs a portrait.' },
+      admin: {
+        description:
+          'Appears on the public roster. A member needs a portrait first; editors can list a founder while the portrait is on its way.',
+      },
     },
     { name: 'portrait', type: 'upload', relationTo: 'media' },
     { name: 'bio', type: 'richText' },
@@ -76,8 +84,14 @@ export const People: CollectionConfig = {
       access: { update: isEditorField },
       admin: { description: 'Part of the founding circle of the collective.' },
     },
-    { name: 'instagram', type: 'text' },
-    { name: 'website', type: 'text' },
+    // Rendered as plain hrefs on the public page: parsed http(s) links only.
+    {
+      name: 'instagram',
+      type: 'text',
+      validate: webLink,
+      admin: { description: 'The profile link, or just the handle.' },
+    },
+    { name: 'website', type: 'text', validate: webLink, admin: { description: 'A full link, starting with https://' } },
     {
       name: 'contactEmail',
       type: 'email',
@@ -105,10 +119,18 @@ export const People: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
-      // The roster needs a face.
-      ({ data, originalDoc }) => {
-        const on = data?.onRoster ?? originalDoc?.onRoster
-        const portrait = data?.portrait ?? originalDoc?.portrait
+      // A handle typed in the Instagram field becomes the profile link.
+      ({ data }) => {
+        if (typeof data?.instagram === 'string' && data.instagram.trim()) data.instagram = instagramUrl(data.instagram)
+        return data
+      },
+      // The roster needs a face. The rule is for members editing their own
+      // page; an editor (or the seed, with no user) may list a founder
+      // before the portrait arrives. An explicit null counts as no portrait.
+      ({ data, originalDoc, req }) => {
+        if (!req.user || hasEditorRole(req.user)) return data
+        const on = data && 'onRoster' in data ? data.onRoster : originalDoc?.onRoster
+        const portrait = data && 'portrait' in data ? data.portrait : originalDoc?.portrait
         if (on && !portrait) throw new APIError('Add a portrait before joining the roster.', 400)
         return data
       },

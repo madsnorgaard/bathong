@@ -6,8 +6,9 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
  * gain an owner (the account that edits the profile) and the roster switch;
  * RSVPs remember the signed-in member. Member numbers come from a Postgres
  * sequence started past the founders (1 to 4) and past anything typed by
- * hand. Data: profiles already numbered or founding go on the roster, and
- * each account's `profile` becomes that profile's `owner`.
+ * hand. One open membership order per account is a partial unique index.
+ * Data: profiles already numbered or founding go on the roster, and each
+ * account's `profile` becomes that profile's `owner`.
  */
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -42,6 +43,7 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
   CREATE UNIQUE INDEX "people_owner_idx" ON "people" USING btree ("owner_id");
   CREATE UNIQUE INDEX "orders_reference_idx" ON "orders" USING btree ("reference");
   CREATE INDEX "rsvps_user_idx" ON "rsvps" USING btree ("user_id");
+  CREATE UNIQUE INDEX "orders_one_pending_idx" ON "orders" USING btree ("user_id") WHERE "type" = 'membership' AND "status" = 'pending';
   CREATE SEQUENCE IF NOT EXISTS "people_member_number_seq";
   SELECT setval('people_member_number_seq', GREATEST(COALESCE((SELECT max("member_number") FROM "people"), 0), 4)::bigint);
   UPDATE "people" SET "on_roster" = true WHERE "founding_circle" = true OR "member_number" IS NOT NULL;
@@ -58,6 +60,7 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
   DROP INDEX "people_owner_idx";
   DROP INDEX "orders_reference_idx";
   DROP INDEX "rsvps_user_idx";
+  DROP INDEX "orders_one_pending_idx";
   ALTER TABLE "orders" ALTER COLUMN "status" DROP DEFAULT;
   ALTER TABLE "people" DROP COLUMN "owner_id";
   ALTER TABLE "people" DROP COLUMN "on_roster";

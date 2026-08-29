@@ -128,7 +128,7 @@ export const Orders: CollectionConfig = {
     {
       name: 'raw',
       type: 'json',
-      access: { read: isAdminField },
+      access: { read: isAdminField, update: isAdminField },
       admin: { description: 'Raw provider payload for auditing.' },
     },
   ],
@@ -240,6 +240,10 @@ export const Orders: CollectionConfig = {
           context: sync,
         })
 
+        // Sent inside the request transaction (Payload 3.84 has no
+        // post-commit hook): a commit failure after this point would leave
+        // a welcome mail for a rolled-back activation. Accepted at
+        // collective scale; the log line below is the audit trail.
         sendSafe(req, {
           to: user.email,
           ...membershipActivated(user.name, memberNumber, act.plan, act.until, `${siteUrl()}/account`),
