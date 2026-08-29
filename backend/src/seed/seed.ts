@@ -4,8 +4,11 @@
  *
  * Content rules apply to fixtures too: no invented prices or dates. The only
  * real programme item is Walk № 001 (Saturday 29 August 2026, Church Square).
- * State-testing fixtures (a full walk, a bookingUrl walk) are clearly marked
- * demo content and only created with SEED_DEMO=true.
+ * State-testing fixtures (a past walk to link work to, a next walk with a
+ * route, a full walk, a bookingUrl walk, an album) are clearly marked demo
+ * content and only created with SEED_DEMO=true. Their dates are relative to
+ * the seed run by design, so the e2e suite never ages out; rerunning the
+ * seed moves them forward.
  *
  * Admin user: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD, otherwise the
  * admin panel's first-user flow applies.
@@ -36,6 +39,14 @@ const lex = (paragraphs: string[]) => ({
     })),
   },
 })
+
+/** An ISO timestamp `days` from today at `hour` o'clock SAST (UTC+2). */
+const daysFromNow = (days: number, hour: number) => {
+  const now = new Date()
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days, hour - 2, 0, 0),
+  ).toISOString()
+}
 
 async function ensureMedia(payload: Payload, filename: string, alt: string) {
   const existing = await payload.find({
@@ -155,12 +166,17 @@ async function run() {
     { file: 'doc-0016.jpg', location: 'Johannesburg' },
     { file: 'doc-0024.jpg', location: 'Johannesburg' },
   ]
+  // Payload renames an upload whose file already sits in MEDIA_DIR (a reset
+  // database with leftover files), so later steps take media from this map
+  // rather than trusting the filename twice.
+  const mediaByFile: Record<string, { id: number }> = {}
   for (const frame of demoFrames) {
     const media = await ensureMedia(
       payload,
       frame.file,
       `Street photograph, ${frame.location}, 2018.`,
     )
+    mediaByFile[frame.file] = media
     const existing = await payload.find({
       collection: 'frames',
       where: { image: { equals: media.id } },
@@ -306,13 +322,97 @@ async function run() {
 
   // ---- demo state fixtures (e2e): SEED_DEMO=true only ----
   if (process.env.SEED_DEMO === 'true') {
+    // Demo walks carry relative dates. The past walk is the deterministic
+    // link target for essays, frames and albums; the next walk keeps a route
+    // on /walks so the map and RSVP specs stay honest after Walk 001 wraps.
+    const demoWalks = [
+      {
+        title: 'Demo: the walk that was',
+        slug: 'demo-past-walk',
+        date: daysFromNow(-21, 6),
+        endTime: daysFromNow(-21, 10),
+        meetingPoint: 'Church Square, Pretoria',
+        route: lex([
+          'Demo copy of the Walk 001 loop, so essays, frames and albums have a walk to link to.',
+        ]),
+        routeGeo: walk001RouteGeo,
+        capacity: 25,
+        bookingStatus: 'closed' as const,
+        leader: peopleBySlug['emmanuel-munano'],
+      },
+      {
+        title: 'Demo: the next loop',
+        slug: 'demo-next-walk',
+        date: daysFromNow(14, 6),
+        endTime: daysFromNow(14, 10),
+        meetingPoint: 'Church Square, Pretoria',
+        route: walk001Route,
+        routeGeo: walk001RouteGeo,
+        capacity: 25,
+        bookingStatus: 'open' as const,
+        leader: peopleBySlug['emmanuel-munano'],
+      },
+      {
+        title: 'Demo: full walk',
+        slug: 'demo-full-walk',
+        date: daysFromNow(21, 5),
+        meetingPoint: 'Demo meeting point',
+        capacity: 1,
+        bookingStatus: 'open' as const,
+      },
+      {
+        title: 'Demo: external booking',
+        slug: 'demo-external-booking',
+        date: daysFromNow(28, 5),
+        meetingPoint: 'Demo meeting point',
+        capacity: 25,
+        bookingUrl: 'https://example.com/booking',
+        bookingStatus: 'open' as const,
+      },
+    ]
+    const walksBySlug: Record<string, number> = {}
+    for (const walk of demoWalks) {
+      const existing = await payload.find({
+        collection: 'walks',
+        where: { slug: { equals: walk.slug } },
+        limit: 1,
+        depth: 0,
+      })
+      if (existing.docs[0]) {
+        walksBySlug[walk.slug] = existing.docs[0].id
+        // Relative dates drift: keep the fixture where the specs expect it.
+        await payload.update({
+          collection: 'walks',
+          id: existing.docs[0].id,
+          data: { date: walk.date, endTime: walk.endTime ?? null, routeGeo: walk.routeGeo ?? null },
+        })
+        continue
+      }
+      const created = await payload.create({
+        collection: 'walks',
+        data: { ...walk, priceMember: 0, _status: 'published' },
+      })
+      walksBySlug[walk.slug] = created.id
+      console.log(`  walk (demo): ${walk.title}`)
+    }
+    const demoPastWalk = walksBySlug['demo-past-walk']
+
     // A demo essay so the reader exists before Essay 001 does. Clearly demo:
     // demo frames, demo copy, replaced by the group edit after Walk 001.
     const existingEssay = await payload.find({
       collection: 'essays',
       where: { slug: { equals: 'demo-reader-essay' } },
       limit: 1,
+      depth: 0,
     })
+    if (existingEssay.docs[0] && !(existingEssay.docs[0].walks ?? []).length) {
+      await payload.update({
+        collection: 'essays',
+        id: existingEssay.docs[0].id,
+        data: { walks: [demoPastWalk] },
+      })
+      console.log('  essay (demo): linked to the demo past walk')
+    }
     if (!existingEssay.docs.length) {
       const frameDocs = await payload.find({
         collection: 'frames',
@@ -347,6 +447,7 @@ async function run() {
               { blockType: 'frame', frame: ids[5] },
             ],
             contributors: [peopleBySlug['mads-norgaard']],
+            walks: [demoPastWalk],
             publishedDate: '2026-08-01',
             tags: ['demo'],
             _status: 'published',
@@ -355,37 +456,54 @@ async function run() {
         console.log('  essay (demo): the reader test essay')
       }
     }
-    const demoWalks = [
-      {
-        title: 'Demo: full walk',
-        slug: 'demo-full-walk',
-        date: '2026-09-05T05:30:00+02:00',
-        meetingPoint: 'Demo meeting point',
-        capacity: 1,
-        bookingStatus: 'open' as const,
-      },
-      {
-        title: 'Demo: external booking',
-        slug: 'demo-external-booking',
-        date: '2026-09-12T05:30:00+02:00',
-        meetingPoint: 'Demo meeting point',
-        capacity: 25,
-        bookingUrl: 'https://example.com/booking',
-        bookingStatus: 'open' as const,
-      },
-    ]
-    for (const walk of demoWalks) {
-      const existing = await payload.find({
-        collection: 'walks',
-        where: { slug: { equals: walk.slug } },
+
+    // Two demo frames come from the past walk, so the walk record and the
+    // archive's walk filter have something to show.
+    for (const file of ['street-0001.jpg', 'street-0002.jpg']) {
+      const media = mediaByFile[file]
+      if (!media) continue
+      const frame = await payload.find({
+        collection: 'frames',
+        where: { image: { equals: media.id } },
         limit: 1,
+        depth: 0,
       })
-      if (existing.docs.length) continue
+      if (!frame.docs[0] || frame.docs[0].walk) continue
+      await payload.update({
+        collection: 'frames',
+        id: frame.docs[0].id,
+        data: { walk: demoPastWalk },
+      })
+      console.log(`  frame: ${file} linked to the demo past walk`)
+    }
+
+    // A demo album: the softer record of the past walk, plain media only.
+    const existingAlbum = await payload.find({
+      collection: 'albums',
+      where: { slug: { equals: 'demo-behind-the-walk' } },
+      limit: 1,
+      depth: 0,
+    })
+    if (!existingAlbum.docs.length) {
+      const albumMedia = ['doc-0009.jpg', 'doc-0016.jpg', 'doc-0024.jpg']
+        .map((file) => mediaByFile[file])
+        .filter(Boolean)
       await payload.create({
-        collection: 'walks',
-        data: { ...walk, priceMember: 0, _status: 'published' },
+        collection: 'albums',
+        data: {
+          title: 'Demo: behind the walk',
+          slug: 'demo-behind-the-walk',
+          intro:
+            'Three demo photographs standing in for the group shot, the edit table and the coffee after. PHOTO SLOT throughout.',
+          images: albumMedia.map((m) => m.id),
+          walks: [demoPastWalk],
+          photographer: peopleBySlug['mads-norgaard'],
+          date: daysFromNow(-21, 6),
+          publishedDate: daysFromNow(-20, 9),
+          _status: 'published',
+        },
       })
-      console.log(`  walk (demo): ${walk.title}`)
+      console.log('  album (demo): behind the walk')
     }
   }
 

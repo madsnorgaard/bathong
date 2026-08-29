@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     frames: Frame;
     essays: Essay;
+    albums: Album;
     walks: Walk;
     exhibitions: Exhibition;
     photocalls: Photocall;
@@ -83,13 +84,20 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    walks: {
+      essays: 'essays';
+      frames: 'frames';
+      albums: 'albums';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     people: PeopleSelect<false> | PeopleSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     frames: FramesSelect<false> | FramesSelect<true>;
     essays: EssaysSelect<false> | EssaysSelect<true>;
+    albums: AlbumsSelect<false> | AlbumsSelect<true>;
     walks: WalksSelect<false> | WalksSelect<true>;
     exhibitions: ExhibitionsSelect<false> | ExhibitionsSelect<true>;
     photocalls: PhotocallsSelect<false> | PhotocallsSelect<true>;
@@ -324,6 +332,10 @@ export interface Frame {
    * Set when this frame was promoted from a photocall submission.
    */
   sourceSubmission?: (number | null) | Submission;
+  /**
+   * The walk this frame was made on, if any. Only walks that have already happened.
+   */
+  walk?: (number | null) | Walk;
   updatedAt: string;
   createdAt: string;
 }
@@ -521,7 +533,10 @@ export interface Essay {
       )[]
     | null;
   contributors?: (number | Person)[] | null;
-  relatedWalk?: (number | null) | Walk;
+  /**
+   * The walk(s) this essay came out of. Only walks that have already happened.
+   */
+  walks?: (number | Walk)[] | null;
   relatedPhotocall?: (number | null) | Photocall;
   publishedDate?: string | null;
   tags?: string[] | null;
@@ -537,7 +552,13 @@ export interface Walk {
   id: number;
   title: string;
   slug?: string | null;
+  /**
+   * Start of the walk. Enter times in SAST (the picker uses your local time).
+   */
   date: string;
+  /**
+   * When the walk wraps. Until then the walk stays on the site as the current walk.
+   */
   endTime?: string | null;
   meetingPoint?: string | null;
   route?: {
@@ -576,9 +597,58 @@ export interface Walk {
   leader?: (number | null) | Person;
   heroImage?: (number | null) | Media;
   /**
-   * The essay published from this walk, once it exists.
+   * Position in the published programme, date order. Rendered as № 001.
    */
-  resultEssay?: (number | null) | Essay;
+  number?: number | null;
+  /**
+   * Essays published from this walk.
+   */
+  essays?: {
+    docs?: (number | Essay)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  frames?: {
+    docs?: (number | Frame)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  albums?: {
+    docs?: (number | Album)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "albums".
+ */
+export interface Album {
+  id: number;
+  title: string;
+  slug?: string | null;
+  /**
+   * A few lines on what this album is. Optional.
+   */
+  intro?: string | null;
+  /**
+   * Plain photographs, not frames: album images never enter the archive. The caption on the site is each file's alt text.
+   */
+  images: (number | Media)[];
+  /**
+   * The walk(s) these photographs are from. Only walks that have already happened.
+   */
+  walks?: (number | Walk)[] | null;
+  photographer?: (number | null) | Person;
+  /**
+   * Use when the photographer has no People profile. Every album must carry a credit.
+   */
+  creditOverride?: string | null;
+  date?: string | null;
+  publishedDate?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -705,6 +775,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'essays';
         value: number | Essay;
+      } | null)
+    | ({
+        relationTo: 'albums';
+        value: number | Album;
       } | null)
     | ({
         relationTo: 'walks';
@@ -909,6 +983,7 @@ export interface FramesSelect<T extends boolean = true> {
   tags?: T;
   topPick?: T;
   sourceSubmission?: T;
+  walk?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -952,10 +1027,28 @@ export interface EssaysSelect<T extends boolean = true> {
             };
       };
   contributors?: T;
-  relatedWalk?: T;
+  walks?: T;
   relatedPhotocall?: T;
   publishedDate?: T;
   tags?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "albums_select".
+ */
+export interface AlbumsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  intro?: T;
+  images?: T;
+  walks?: T;
+  photographer?: T;
+  creditOverride?: T;
+  date?: T;
+  publishedDate?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -980,7 +1073,10 @@ export interface WalksSelect<T extends boolean = true> {
   bookingStatus?: T;
   leader?: T;
   heroImage?: T;
-  resultEssay?: T;
+  number?: T;
+  essays?: T;
+  frames?: T;
+  albums?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

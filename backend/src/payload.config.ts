@@ -11,6 +11,7 @@ import { People } from './collections/People'
 import { Media } from './collections/Media'
 import { Frames } from './collections/Frames'
 import { Essays } from './collections/Essays'
+import { Albums } from './collections/Albums'
 import { Walks } from './collections/Walks'
 import { Exhibitions } from './collections/Exhibitions'
 import { Photocalls } from './collections/Photocalls'
@@ -56,6 +57,7 @@ export default buildConfig({
     Media,
     Frames,
     Essays,
+    Albums,
     Walks,
     Exhibitions,
     Photocalls,

@@ -1,12 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { anyone, isAdmin, isEditor } from '../access'
+import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
 
 export const Frames: CollectionConfig = {
   slug: 'frames',
   admin: {
     useAsTitle: 'caption',
-    defaultColumns: ['image', 'photographer', 'location', 'year', 'topPick'],
+    defaultColumns: ['image', 'photographer', 'location', 'year', 'walk', 'topPick'],
     group: 'Work',
   },
   access: { read: anyone, create: isEditor, update: isEditor, delete: isAdmin },
@@ -40,10 +41,22 @@ export const Frames: CollectionConfig = {
       relationTo: 'submissions',
       admin: { description: 'Set when this frame was promoted from a photocall submission.' },
     },
+    {
+      name: 'walk',
+      type: 'relationship',
+      relationTo: 'walks',
+      index: true,
+      filterOptions: pastWalksOnly,
+      admin: {
+        description:
+          'The walk this frame was made on, if any. Only walks that have already happened.',
+      },
+    },
   ],
   hooks: {
     beforeValidate: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
+        if (data?.walk !== undefined) await assertWalksInPast(data.walk, req, 'frame')
         // Credit is non-negotiable: every frame names its photographer,
         // either via a People profile or an explicit credit override.
         const photographer = data?.photographer ?? originalDoc?.photographer

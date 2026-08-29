@@ -1,0 +1,85 @@
+import type { CollectionConfig } from 'payload'
+import { APIError } from 'payload'
+import { isAdmin, isEditor, publishedOrEditor } from '../access'
+import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
+
+/**
+ * Albums are the softer record of a walk: group photographs, the edit table,
+ * the coffee after. They hold plain media, not frames, so nothing in an
+ * album ever enters the archive or the essay picker.
+ */
+export const Albums: CollectionConfig = {
+  slug: 'albums',
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'date', 'photographer', 'walks', '_status'],
+    group: 'Work',
+  },
+  versions: { drafts: true, maxPerDoc: 10 },
+  access: { read: publishedOrEditor, create: isEditor, update: isEditor, delete: isAdmin },
+  defaultSort: '-date',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'slug', type: 'text', unique: true, index: true },
+    {
+      name: 'intro',
+      type: 'textarea',
+      admin: { description: 'A few lines on what this album is. Optional.' },
+    },
+    {
+      name: 'images',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      required: true,
+      minRows: 1,
+      admin: {
+        description:
+          "Plain photographs, not frames: album images never enter the archive. The caption on the site is each file's alt text.",
+      },
+    },
+    {
+      name: 'walks',
+      type: 'relationship',
+      relationTo: 'walks',
+      hasMany: true,
+      filterOptions: pastWalksOnly,
+      admin: {
+        description: 'The walk(s) these photographs are from. Only walks that have already happened.',
+      },
+    },
+    { name: 'photographer', type: 'relationship', relationTo: 'people' },
+    {
+      name: 'creditOverride',
+      type: 'text',
+      admin: {
+        description:
+          'Use when the photographer has no People profile. Every album must carry a credit.',
+      },
+    },
+    {
+      name: 'date',
+      type: 'date',
+      admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } },
+    },
+    { name: 'publishedDate', type: 'date' },
+  ],
+  hooks: {
+    beforeValidate: [
+      async ({ data, originalDoc, req }) => {
+        // Credit is non-negotiable here too: album photographs are shown
+        // with a name on them, the same as every frame.
+        const photographer = data?.photographer ?? originalDoc?.photographer
+        const creditOverride = data?.creditOverride ?? originalDoc?.creditOverride
+        if (!photographer && !creditOverride) {
+          throw new APIError(
+            'An album must credit its photographer - set a photographer or a credit override.',
+            400,
+          )
+        }
+        if (data?.walks !== undefined) await assertWalksInPast(data.walks, req, 'album')
+        return data
+      },
+    ],
+  },
+}

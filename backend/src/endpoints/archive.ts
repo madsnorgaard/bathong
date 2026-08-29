@@ -1,10 +1,10 @@
 import type { Endpoint, PayloadRequest, Where } from 'payload'
-import type { Frame, Media, Person } from '../payload-types'
+import type { Frame, Media, Person, Walk } from '../payload-types'
 
 /**
  * GET /api/archive - the searchable open archive (#19) over the frames
  * collection. Public: every frame whose media is public is in the archive,
- * credited, filterable by photographer, year, tag and free text.
+ * credited, filterable by photographer, walk, year, tag and free text.
  *
  * Search is Payload `like` (compiled to ILIKE on postgres) over caption,
  * location and tags - the "Postgres is enough at this scale" decision from
@@ -35,10 +35,28 @@ const text = (raw: string | null, max: number): string => (raw ?? '').trim().sli
  */
 const publicOnly: Where = { 'image.visibility': { equals: 'public' } }
 
+type WalkFacet = {
+  slug: string
+  title: string
+  date: string | null
+  number: number | null
+  count: number
+}
+
 type Facets = {
   photographers: { slug: string; name: string; count: number }[]
+  walks: WalkFacet[]
   years: { year: number; count: number }[]
   tags: { tag: string; count: number }[]
+}
+
+/**
+ * Local API reads populate relationships without access control, so a draft
+ * walk would come through in full here; only a published walk is public.
+ */
+const walkOf = (frame: Frame): Walk | null => {
+  const walk = frame.walk && typeof frame.walk === 'object' ? (frame.walk as Walk) : null
+  return walk && walk._status === 'published' ? walk : null
 }
 
 async function facets(payload: PayloadRequest['payload']): Promise<Facets> {
@@ -47,10 +65,11 @@ async function facets(payload: PayloadRequest['payload']): Promise<Facets> {
     depth: 1,
     pagination: false,
     where: publicOnly,
-    select: { photographer: true, year: true, tags: true },
+    select: { photographer: true, walk: true, year: true, tags: true },
   })
 
   const people = new Map<string, { slug: string; name: string; count: number }>()
+  const walks = new Map<string, WalkFacet>()
   const years = new Map<number, number>()
   const tags = new Map<string, number>()
 
@@ -61,12 +80,25 @@ async function facets(payload: PayloadRequest['payload']): Promise<Facets> {
       entry.count += 1
       people.set(p.slug, entry)
     }
+    const w = walkOf(frame)
+    if (w?.slug) {
+      const entry = walks.get(w.slug) ?? {
+        slug: w.slug,
+        title: w.title,
+        date: w.date ?? null,
+        number: w.number ?? null,
+        count: 0,
+      }
+      entry.count += 1
+      walks.set(w.slug, entry)
+    }
     if (typeof frame.year === 'number') years.set(frame.year, (years.get(frame.year) ?? 0) + 1)
     for (const t of frame.tags ?? []) tags.set(t, (tags.get(t) ?? 0) + 1)
   }
 
   return {
     photographers: [...people.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    walks: [...walks.values()].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')),
     years: [...years.entries()]
       .map(([year, count]) => ({ year, count }))
       .sort((a, b) => b.year - a.year),
@@ -83,6 +115,7 @@ export const archive: Endpoint = {
     const params = new URL(req.url ?? 'http://localhost').searchParams
     const q = text(params.get('q'), MAX_Q)
     const photographerSlug = text(params.get('photographer'), 80)
+    const walkSlug = text(params.get('walk'), 80)
     const tag = text(params.get('tag'), 60)
     const year = clampInt(params.get('year'), 1800, 2200, 0)
     const page = clampInt(params.get('page'), 1, 10_000, 1)
@@ -110,6 +143,26 @@ export const archive: Endpoint = {
       }
       filters.push({ photographer: { equals: person.id } })
     }
+    if (walkSlug) {
+      // Local API reads skip access control, so the published clause is explicit.
+      const walks = await payload.find({
+        collection: 'walks',
+        where: { and: [{ slug: { equals: walkSlug } }, { _status: { equals: 'published' } }] },
+        limit: 1,
+        depth: 0,
+      })
+      const walk = walks.docs[0]
+      if (!walk) {
+        return Response.json({
+          docs: [],
+          page: 1,
+          totalPages: 1,
+          totalDocs: 0,
+          facets: await facets(payload),
+        })
+      }
+      filters.push({ walk: { equals: walk.id } })
+    }
     if (year) filters.push({ year: { equals: year } })
     if (tag) filters.push({ tags: { contains: tag } })
     if (q) {
@@ -131,6 +184,7 @@ export const archive: Endpoint = {
       const image = typeof frame.image === 'object' ? (frame.image as Media | null) : null
       const photographer =
         typeof frame.photographer === 'object' ? (frame.photographer as Person | null) : null
+      const walk = walkOf(frame)
       return {
         id: frame.id,
         caption: frame.caption ?? null,
@@ -145,6 +199,9 @@ export const archive: Endpoint = {
         photographerSlug: photographer?.slug ?? null,
         photographerName: photographer?.name ?? null,
         credit: frame.creditOverride ?? photographer?.name ?? null,
+        walkSlug: walk?.slug ?? null,
+        walkTitle: walk?.title ?? null,
+        walkNumber: walk?.number ?? null,
       }
     })
 
