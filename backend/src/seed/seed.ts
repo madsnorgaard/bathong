@@ -526,15 +526,26 @@ async function run() {
       })
       console.log('  album (demo): behind the walk')
     }
-  }
 
-    // A demo photocall so the entry flow is testable end to end.
+    // A demo photocall so the entry flow is testable end to end. SEED_DEMO
+    // only, like everything in this block: a stray run on production once
+    // put a demo call with a live entry form on the site. Dates are
+    // relative and refreshed on rerun so the call never quietly closes.
+    const callOpens = daysFromNow(-7, 0)
+    const callCloses = daysFromNow(21, 23)
     const existingCall = await payload.find({
       collection: 'photocalls',
       where: { slug: { equals: 'demo-open-call' } },
       limit: 1,
+      depth: 0,
     })
-    if (!existingCall.docs.length) {
+    if (existingCall.docs[0]) {
+      await payload.update({
+        collection: 'photocalls',
+        id: existingCall.docs[0].id,
+        data: { opensAt: callOpens, closesAt: callCloses, status: 'open' },
+      })
+    } else {
       await payload.create({
         collection: 'photocalls',
         data: {
@@ -544,8 +555,8 @@ async function run() {
             'A demo brief standing in for Photocall 001. What we are looking for, what we are not looking for, and how the edit will be made.',
             'Photocall 001 opens after the first walk, with its licence text signed off.',
           ]),
-          opensAt: '2026-08-01T00:00:00+02:00',
-          closesAt: '2026-09-12T23:59:00+02:00',
+          opensAt: callOpens,
+          closesAt: callCloses,
           maxImagesPerSubmission: 8,
           membersOnly: false,
           terms: lex([
@@ -557,6 +568,7 @@ async function run() {
       })
       console.log('  photocall (demo): open call')
     }
+  }
 
   // ---- globals ----
   await payload.updateGlobal({
