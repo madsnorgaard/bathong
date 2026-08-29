@@ -1,4 +1,4 @@
-import type { User } from '~/types/payload-types'
+import type { Person, User } from '~/types/payload-types'
 
 /**
  * Member session against Payload's REST auth (issue #13). The cookie is the
@@ -168,10 +168,60 @@ export function useAuth() {
     }
   }
 
+  /** Edit the member's own profile (the API enforces which fields are theirs). */
+  async function updateProfile(personId: number, patch: Record<string, unknown>): Promise<Person> {
+    try {
+      const res = await authed<{ doc: Person }>(`/api/people/${personId}?depth=1`, { method: 'PATCH', body: patch })
+      return res.doc
+    } catch (error) {
+      throw new Error(messageOf(error, 'Could not save. Check your connection and try again.'), { cause: error })
+    }
+  }
+
+  /**
+   * Upload a portrait as a public media file; resolves to the media id.
+   * XHR rather than fetch for real upload progress. Browser only.
+   */
+  function uploadPortrait(file: File, alt: string, onProgress?: (pct: number) => void): Promise<number> {
+    const { cmsUrl } = useRuntimeConfig().public as { cmsUrl: string }
+    return new Promise((resolve, reject) => {
+      const form = new FormData()
+      form.set('file', file)
+      form.set('_payload', JSON.stringify({ alt, visibility: 'public' }))
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', `${cmsUrl.replace(/\/$/, '')}/api/media`)
+      xhr.withCredentials = true
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100))
+      }
+      xhr.onload = () => {
+        if (xhr.status === 201) {
+          try {
+            resolve(JSON.parse(xhr.responseText).doc.id as number)
+            return
+          } catch {
+            /* fall through */
+          }
+        }
+        let message = 'The upload did not go through. Try a JPEG or PNG under 10 MB.'
+        try {
+          message = JSON.parse(xhr.responseText)?.errors?.[0]?.message ?? message
+        } catch {
+          /* keep the fallback */
+        }
+        reject(new Error(message))
+      }
+      xhr.onerror = () => reject(new Error('The upload did not go through. Check your connection and try again.'))
+      xhr.send(form)
+    })
+  }
+
   const isSignedIn = computed(() => Boolean(user.value))
 
   return {
     join,
+    updateProfile,
+    uploadPortrait,
     user,
     isSignedIn,
     authed,

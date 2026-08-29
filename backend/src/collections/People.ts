@@ -72,6 +72,7 @@ export const People: CollectionConfig = {
     {
       name: 'basedIn',
       type: 'text',
+      maxLength: 80,
       admin: {
         description:
           'City, as the photographer wants it shown (Pretoria, Cape Town...). Optional; the site claims no city when empty.',
@@ -122,6 +123,16 @@ export const People: CollectionConfig = {
       // A handle typed in the Instagram field becomes the profile link.
       ({ data }) => {
         if (typeof data?.instagram === 'string' && data.instagram.trim()) data.instagram = instagramUrl(data.instagram)
+        return data
+      },
+      // A member's portrait is a file they uploaded themselves, never
+      // someone else's frame picked by id.
+      async ({ data, originalDoc, req }) => {
+        if (!req.user || hasEditorRole(req.user)) return data
+        const next = rel(data?.portrait)
+        if (next == null || next === rel(originalDoc?.portrait)) return data
+        const media = await req.payload.findByID({ collection: 'media', id: next, depth: 0, overrideAccess: true, req })
+        if (rel(media?.uploadedBy) !== req.user.id) throw new APIError('Use a portrait you uploaded yourself.', 400)
         return data
       },
       // The roster needs a face. The rule is for members editing their own

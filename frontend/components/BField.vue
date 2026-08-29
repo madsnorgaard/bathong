@@ -10,6 +10,8 @@ const props = withDefaults(
     placeholder?: string
     textarea?: boolean
     error?: string
+    maxlength?: number
+    rows?: number
   }>(),
   { type: 'text' },
 )
@@ -29,7 +31,8 @@ const id = computed(() => `field-${props.name}`)
       :name="name"
       :required="required"
       :placeholder="placeholder"
-      rows="4"
+      :rows="rows ?? 4"
+      :maxlength="maxlength"
       :aria-invalid="error ? true : undefined"
       :aria-describedby="error ? `${id}-error` : undefined"
     />
@@ -43,6 +46,7 @@ const id = computed(() => `field-${props.name}`)
       :required="required"
       :autocomplete="autocomplete"
       :placeholder="placeholder"
+      :maxlength="maxlength"
       :aria-invalid="error ? true : undefined"
       :aria-describedby="error ? `${id}-error` : undefined"
     >
