@@ -558,7 +558,9 @@ async function run() {
     slug: 'site-settings',
     data: {
       siteTitle: 'Bathong.',
-      // contactEmail stays unset until the hello@ mailbox exists (issue #16).
+      // hello@ is an alias to the founding circle's mailboxes (#16); the
+      // footer and the About Join button both hang off this address.
+      contactEmail: 'hello@bathong.africa',
       facebook: 'https://www.facebook.com/bathongafrica',
       linkedin: 'https://www.linkedin.com/company/bathong',
       ticker: [
