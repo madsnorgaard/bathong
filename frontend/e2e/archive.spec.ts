@@ -27,6 +27,17 @@ test('a photographer filter narrows the shelf and lands in the URL', async ({ pa
   for (let i = 0; i < n; i += 1) await expect(credits.nth(i)).toContainText(name)
 })
 
+test('a walk filter narrows the shelf to the frames made on that walk', async ({ page }) => {
+  await page.goto('/archive?walk=demo-past-walk')
+  await expect(page.locator('.count')).toContainText('2 frames')
+  await expect(page.locator('nav[aria-label="Filter by walk"] a.active')).toContainText(/№ \d{3}/)
+  const walkLinks = page.locator('.cell a[href="/walks/demo-past-walk"]')
+  await expect(walkLinks).toHaveCount(2)
+
+  await page.goto('/archive?walk=no-such-walk')
+  await expect(page.getByText(/Nothing under that yet/)).toBeVisible()
+})
+
 test('a search with no match shows the empty state', async ({ page }) => {
   await page.goto('/archive?q=zzzz-no-such-thing')
   await expect(page.getByText(/Nothing under that yet/)).toBeVisible()

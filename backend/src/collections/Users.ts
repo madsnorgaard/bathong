@@ -87,13 +87,14 @@ export const Users: CollectionConfig = {
       admin: { description: 'Link to a public People profile, if this user has one.' },
     },
     {
-      name: 'membershipTier',
+      // One membership, no tiers: the plan is how it is paid.
+      name: 'membershipPlan',
       type: 'select',
       defaultValue: 'none',
       options: [
         { label: 'None', value: 'none' },
-        { label: 'Individual', value: 'individual' },
-        { label: 'Student', value: 'student' },
+        { label: 'Monthly', value: 'monthly' },
+        { label: 'Annual', value: 'annual' },
       ],
       access: { update: isAdminField },
     },

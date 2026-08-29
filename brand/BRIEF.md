@@ -33,7 +33,7 @@ It passes the street test: it is a word actually said in Pitori every day, not a
 
 ## 4. Positioning
 
-**One line:** Bathong is a street and documentary photography collective from Pretoria - building photographers, publishing photo stories, and putting the capital's streets on walls, from Pitori to the world.
+**One line:** Bathong is a street and documentary photography collective that starts in Pretoria and walks outward - building photographers through honest, frame-by-frame feedback, publishing stories about people as they are, and putting them on walls, from Pitori to the world.
 
 **The model:** a collective, not a club. The reference is the great photography cooperatives - Magnum above all, and at home the lineage of Afrapix and the Market Photo Workshop: photographers owning their platform, their standards and their archive together. Membership is open to anyone; the standard of what gets published is not lowered for anyone. That tension is the engine: open door, high bar.
 

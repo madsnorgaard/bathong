@@ -23,9 +23,9 @@ const memberNumber = computed(() =>
   profile.value?.memberNumber ? `№ ${String(profile.value.memberNumber).padStart(4, '0')}` : null,
 )
 
-const TIER: Record<string, string> = { individual: 'Individual', student: 'Student' }
+const PLAN: Record<string, string> = { monthly: 'Monthly', annual: 'Annual' }
 const STATUS: Record<string, string> = { active: 'Active', lapsed: 'Lapsed' }
-const tier = computed(() => TIER[user.value?.membershipTier ?? ''] ?? 'TBC')
+const plan = computed(() => PLAN[user.value?.membershipPlan ?? ''] ?? 'TBC')
 const status = computed(() => STATUS[user.value?.membershipStatus ?? ''] ?? 'TBC')
 const expires = computed(() =>
   user.value?.membershipExpires ? formatWalkDate(user.value.membershipExpires) : 'TBC',
@@ -69,7 +69,7 @@ async function signOut() {
       <p class="b-display-2 name">{{ user.name }}</p>
       <p class="b-caption">{{ user.email }}</p>
       <dl class="facts b-caption">
-        <div><dt>Tier</dt><dd>{{ tier }}</dd></div>
+        <div><dt>Plan</dt><dd>{{ plan }}</dd></div>
         <div><dt>Status</dt><dd>{{ status }}</dd></div>
         <div><dt>Renews</dt><dd>{{ expires }}</dd></div>
       </dl>

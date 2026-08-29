@@ -116,7 +116,9 @@ async function setBleed(tile: Locator, on: boolean) {
 test.describe.configure({ mode: 'serial', timeout: 90_000 })
 
 test.beforeAll(async ({ request }) => {
-  token = await login(request)
+  // One login per run (global-setup.ts): concurrent logins as the same
+  // admin drop each other's session.
+  token = process.env.E2E_ADMIN_TOKEN ?? (await login(request))
   const framesRes = await request.get(`${ADMIN}/api/frames?limit=8&depth=0&sort=id`, {
     headers: { Authorization: `JWT ${token}` },
   })

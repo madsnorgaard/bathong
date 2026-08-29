@@ -104,10 +104,87 @@ export const Walks: CollectionConfig = {
     { name: 'leader', type: 'relationship', relationTo: 'people' },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
     {
-      name: 'resultEssay',
-      type: 'relationship',
-      relationTo: 'essays',
-      admin: { description: 'The essay published from this walk, once it exists.' },
+      // "№ 001" is the walk's place in the published programme, date order.
+      // Virtual so a walk inserted with an earlier date renumbers the rest
+      // instead of leaving stale numbers behind; one count per read, the
+      // same price as spotsTaken.
+      name: 'number',
+      type: 'number',
+      virtual: true,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Position in the published programme, date order. Rendered as № 001.',
+      },
+      hooks: {
+        afterRead: [
+          async ({ data, req }) => {
+            // Only the published programme is numbered; a draft has no place
+            // in it yet (and would otherwise borrow its predecessor's number).
+            if (!data?.date || data._status !== 'published') return null
+            const before = await req.payload.count({
+              collection: 'walks',
+              where: {
+                and: [
+                  { _status: { equals: 'published' } },
+                  {
+                    or: [
+                      { date: { less_than: data.date } },
+                      {
+                        and: [
+                          { date: { equals: data.date } },
+                          { id: { less_than_equal: data.id } },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              req,
+            })
+            return before.totalDocs || 1
+          },
+        ],
+      },
+    },
+    // The reverse side of essays.walks / frames.walk / albums.walks. Joins
+    // are virtual (no columns) and run the joined collection's read access,
+    // so anonymous readers see published essays and albums only.
+    {
+      name: 'essays',
+      type: 'join',
+      collection: 'essays',
+      on: 'walks',
+      defaultSort: '-publishedDate',
+      defaultLimit: 24,
+      // Joined docs populate to min(maxDepth, depth) with the joined doc as
+      // level one: essay -> leadFrame -> image needs three, so the walk page
+      // reads at depth=3.
+      maxDepth: 3,
+      admin: {
+        defaultColumns: ['title', 'publishedDate', '_status'],
+        description: 'Essays published from this walk.',
+      },
+    },
+    {
+      name: 'frames',
+      type: 'join',
+      collection: 'frames',
+      on: 'walk',
+      defaultSort: '-createdAt',
+      defaultLimit: 12,
+      maxDepth: 2,
+      admin: { defaultColumns: ['image', 'photographer', 'caption'] },
+    },
+    {
+      name: 'albums',
+      type: 'join',
+      collection: 'albums',
+      on: 'walks',
+      defaultSort: '-date',
+      defaultLimit: 12,
+      maxDepth: 2,
+      admin: { defaultColumns: ['title', 'date', '_status'] },
     },
   ],
 }

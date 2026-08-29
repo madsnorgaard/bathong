@@ -8,7 +8,7 @@ import type { Person } from '~/types/payload-types'
 
 useShareMeta({
   title: 'Photographers',
-  description: 'The Bathong. collective roster: street and documentary photographers, Pretoria.',
+  description: 'The Bathong. collective roster: street and documentary photographers, starting from Pretoria.',
 })
 
 interface List<T> { docs: T[] }

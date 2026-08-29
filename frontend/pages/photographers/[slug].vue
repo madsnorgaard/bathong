@@ -69,7 +69,7 @@ const portraitAlt = computed(() => {
 
 useShareMeta({
   title: person.value?.name ?? 'Photographer',
-  description: `${person.value?.name} is a photographer with the Bathong. collective, Pretoria.`,
+  description: `${person.value?.name} is a photographer with the Bathong. collective${person.value?.basedIn ? `, based in ${person.value.basedIn}` : ''}.`,
   image: shareImage.value,
   imageAlt:
     portraitAlt.value ??
@@ -100,6 +100,10 @@ const licensingLine = computed(() =>
         <template v-else>{{ c.label }} {{ c.n }}</template>
         <template v-if="i < counts.length - 1"> · </template>
       </span>
+    </section>
+
+    <section class="share">
+      <ShareRow :title="person.name" />
     </section>
 
     <section v-if="essays.length" v-reveal class="chapter">
@@ -156,6 +160,10 @@ const licensingLine = computed(() =>
   border-bottom: 1px solid var(--grey-line);
   margin: 0 var(--space-4);
   padding: var(--space-3) 0;
+  color: var(--grey-ghost);
+}
+.share {
+  padding: var(--space-4) var(--space-4) 0;
   color: var(--grey-ghost);
 }
 .essay-grid {

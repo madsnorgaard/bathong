@@ -4,8 +4,11 @@
  *
  * Content rules apply to fixtures too: no invented prices or dates. The only
  * real programme item is Walk № 001 (Saturday 29 August 2026, Church Square).
- * State-testing fixtures (a full walk, a bookingUrl walk) are clearly marked
- * demo content and only created with SEED_DEMO=true.
+ * State-testing fixtures (a past walk to link work to, a next walk with a
+ * route, a full walk, a bookingUrl walk, an album) are clearly marked demo
+ * content and only created with SEED_DEMO=true. Their dates are relative to
+ * the seed run by design, so the e2e suite never ages out; rerunning the
+ * seed moves them forward.
  *
  * Admin user: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD, otherwise the
  * admin panel's first-user flow applies.
@@ -37,10 +40,23 @@ const lex = (paragraphs: string[]) => ({
   },
 })
 
+/** An ISO timestamp `days` from today at `hour` o'clock SAST (UTC+2). */
+const daysFromNow = (days: number, hour: number) => {
+  const now = new Date()
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days, hour - 2, 0, 0),
+  ).toISOString()
+}
+
+/**
+ * Idempotent on the alt text, not the filename: Payload renames an upload
+ * whose file already sits in MEDIA_DIR (a reset database over the tracked
+ * demo originals), so the stored filename cannot be trusted to match.
+ */
 async function ensureMedia(payload: Payload, filename: string, alt: string) {
   const existing = await payload.find({
     collection: 'media',
-    where: { filename: { equals: filename } },
+    where: { or: [{ alt: { equals: alt } }, { filename: { equals: filename } }] },
     limit: 1,
   })
   if (existing.docs[0]) return existing.docs[0]
@@ -136,13 +152,22 @@ async function run() {
           email: memberEmail,
           password: memberPassword,
           roles: ['member' as const],
-          membershipTier: 'individual',
+          membershipPlan: 'monthly',
           membershipStatus: 'active',
           profile: peopleBySlug['mads-norgaard'] ?? null,
         },
         overrideAccess: true,
       })
       console.log(`  user: ${memberEmail} (member)`)
+    } else if (existing.docs[0].membershipPlan !== 'monthly') {
+      // The plan column arrived after this account did on older stacks.
+      await payload.update({
+        collection: 'users',
+        id: existing.docs[0].id,
+        data: { membershipPlan: 'monthly', membershipStatus: 'active' },
+        overrideAccess: true,
+      })
+      console.log(`  user: ${memberEmail} (plan set)`)
     }
   }
 
@@ -155,12 +180,18 @@ async function run() {
     { file: 'doc-0016.jpg', location: 'Johannesburg' },
     { file: 'doc-0024.jpg', location: 'Johannesburg' },
   ]
+  // Payload renames an upload whose file already sits in MEDIA_DIR (a reset
+  // database with leftover files), so later steps take media from this map
+  // rather than trusting the filename twice.
+  const mediaByFile: Record<string, { id: number }> = {}
   for (const frame of demoFrames) {
+    // One alt per file: the seed's idempotency key, and honest demo copy.
     const media = await ensureMedia(
       payload,
       frame.file,
-      `Street photograph, ${frame.location}, 2018.`,
+      `Street photograph, ${frame.location}, 2018. Demo ${frame.file.replace(/\.jpg$/, '')}.`,
     )
+    mediaByFile[frame.file] = media
     const existing = await payload.find({
       collection: 'frames',
       where: { image: { equals: media.id } },
@@ -306,13 +337,97 @@ async function run() {
 
   // ---- demo state fixtures (e2e): SEED_DEMO=true only ----
   if (process.env.SEED_DEMO === 'true') {
+    // Demo walks carry relative dates. The past walk is the deterministic
+    // link target for essays, frames and albums; the next walk keeps a route
+    // on /walks so the map and RSVP specs stay honest after Walk 001 wraps.
+    const demoWalks = [
+      {
+        title: 'Demo: the walk that was',
+        slug: 'demo-past-walk',
+        date: daysFromNow(-21, 6),
+        endTime: daysFromNow(-21, 10),
+        meetingPoint: 'Church Square, Pretoria',
+        route: lex([
+          'Demo copy of the Walk 001 loop, so essays, frames and albums have a walk to link to.',
+        ]),
+        routeGeo: walk001RouteGeo,
+        capacity: 25,
+        bookingStatus: 'closed' as const,
+        leader: peopleBySlug['emmanuel-munano'],
+      },
+      {
+        title: 'Demo: the next loop',
+        slug: 'demo-next-walk',
+        date: daysFromNow(14, 6),
+        endTime: daysFromNow(14, 10),
+        meetingPoint: 'Church Square, Pretoria',
+        route: walk001Route,
+        routeGeo: walk001RouteGeo,
+        capacity: 25,
+        bookingStatus: 'open' as const,
+        leader: peopleBySlug['emmanuel-munano'],
+      },
+      {
+        title: 'Demo: full walk',
+        slug: 'demo-full-walk',
+        date: daysFromNow(21, 5),
+        meetingPoint: 'Demo meeting point',
+        capacity: 1,
+        bookingStatus: 'open' as const,
+      },
+      {
+        title: 'Demo: external booking',
+        slug: 'demo-external-booking',
+        date: daysFromNow(28, 5),
+        meetingPoint: 'Demo meeting point',
+        capacity: 25,
+        bookingUrl: 'https://example.com/booking',
+        bookingStatus: 'open' as const,
+      },
+    ]
+    const walksBySlug: Record<string, number> = {}
+    for (const walk of demoWalks) {
+      const existing = await payload.find({
+        collection: 'walks',
+        where: { slug: { equals: walk.slug } },
+        limit: 1,
+        depth: 0,
+      })
+      if (existing.docs[0]) {
+        walksBySlug[walk.slug] = existing.docs[0].id
+        // Relative dates drift: keep the fixture where the specs expect it.
+        await payload.update({
+          collection: 'walks',
+          id: existing.docs[0].id,
+          data: { date: walk.date, endTime: walk.endTime ?? null, routeGeo: walk.routeGeo ?? null },
+        })
+        continue
+      }
+      const created = await payload.create({
+        collection: 'walks',
+        data: { ...walk, priceMember: 0, _status: 'published' },
+      })
+      walksBySlug[walk.slug] = created.id
+      console.log(`  walk (demo): ${walk.title}`)
+    }
+    const demoPastWalk = walksBySlug['demo-past-walk']
+
     // A demo essay so the reader exists before Essay 001 does. Clearly demo:
     // demo frames, demo copy, replaced by the group edit after Walk 001.
     const existingEssay = await payload.find({
       collection: 'essays',
       where: { slug: { equals: 'demo-reader-essay' } },
       limit: 1,
+      depth: 0,
     })
+    if (existingEssay.docs[0] && !(existingEssay.docs[0].walks ?? []).length) {
+      await payload.update({
+        collection: 'essays',
+        id: existingEssay.docs[0].id,
+        data: { walks: [demoPastWalk] },
+      })
+      console.log('  essay (demo): linked to the demo past walk')
+    }
     if (!existingEssay.docs.length) {
       const frameDocs = await payload.find({
         collection: 'frames',
@@ -347,7 +462,9 @@ async function run() {
               { blockType: 'frame', frame: ids[5] },
             ],
             contributors: [peopleBySlug['mads-norgaard']],
-            publishedDate: '2026-08-01',
+            walks: [demoPastWalk],
+            // the day after the walk it came out of
+            publishedDate: daysFromNow(-20, 9),
             tags: ['demo'],
             _status: 'published',
           },
@@ -355,37 +472,54 @@ async function run() {
         console.log('  essay (demo): the reader test essay')
       }
     }
-    const demoWalks = [
-      {
-        title: 'Demo: full walk',
-        slug: 'demo-full-walk',
-        date: '2026-09-05T05:30:00+02:00',
-        meetingPoint: 'Demo meeting point',
-        capacity: 1,
-        bookingStatus: 'open' as const,
-      },
-      {
-        title: 'Demo: external booking',
-        slug: 'demo-external-booking',
-        date: '2026-09-12T05:30:00+02:00',
-        meetingPoint: 'Demo meeting point',
-        capacity: 25,
-        bookingUrl: 'https://example.com/booking',
-        bookingStatus: 'open' as const,
-      },
-    ]
-    for (const walk of demoWalks) {
-      const existing = await payload.find({
-        collection: 'walks',
-        where: { slug: { equals: walk.slug } },
+
+    // Two demo frames come from the past walk, so the walk record and the
+    // archive's walk filter have something to show.
+    for (const file of ['street-0001.jpg', 'street-0002.jpg']) {
+      const media = mediaByFile[file]
+      if (!media) continue
+      const frame = await payload.find({
+        collection: 'frames',
+        where: { image: { equals: media.id } },
         limit: 1,
+        depth: 0,
       })
-      if (existing.docs.length) continue
+      if (!frame.docs[0] || frame.docs[0].walk) continue
+      await payload.update({
+        collection: 'frames',
+        id: frame.docs[0].id,
+        data: { walk: demoPastWalk },
+      })
+      console.log(`  frame: ${file} linked to the demo past walk`)
+    }
+
+    // A demo album: the softer record of the past walk, plain media only.
+    const existingAlbum = await payload.find({
+      collection: 'albums',
+      where: { slug: { equals: 'demo-behind-the-walk' } },
+      limit: 1,
+      depth: 0,
+    })
+    if (!existingAlbum.docs.length) {
+      const albumMedia = ['doc-0009.jpg', 'doc-0016.jpg', 'doc-0024.jpg']
+        .map((file) => mediaByFile[file])
+        .filter(Boolean)
       await payload.create({
-        collection: 'walks',
-        data: { ...walk, priceMember: 0, _status: 'published' },
+        collection: 'albums',
+        data: {
+          title: 'Demo: behind the walk',
+          slug: 'demo-behind-the-walk',
+          intro:
+            'Three demo photographs standing in for the group shot, the edit table and the coffee after. PHOTO SLOT throughout.',
+          images: albumMedia.map((m) => m.id),
+          walks: [demoPastWalk],
+          photographer: peopleBySlug['mads-norgaard'],
+          date: daysFromNow(-21, 6),
+          publishedDate: daysFromNow(-20, 9),
+          _status: 'published',
+        },
       })
-      console.log(`  walk (demo): ${walk.title}`)
+      console.log('  album (demo): behind the walk')
     }
   }
 
@@ -431,7 +565,7 @@ async function run() {
         { text: 'Bathong!' },
         { text: 'among the people' },
         { text: 'Pitori · 012' },
-        { text: 'Walk № 001 · Sat 29 Aug · 05:30 · Church Square' },
+        { text: 'from Pretoria outward' },
       ],
     },
   })
@@ -446,7 +580,10 @@ async function run() {
         { text: 'among the people - where this work is made.' },
       ],
       body: lex([
-        'We build photographers who are there when it happens.',
+        'Bathong. is a street and documentary photography collective. It starts in Pretoria, among the people, and walks outward from there: across the city, and in time across South Africa.',
+        'A collective, not a club. We walk together and we edit together. The founding circle looks at your frames and tells you what they see, frame by frame, online or in person. That is the teaching.',
+        'We photograph people as they are. Not always a happy story. Always a true one, at face value.',
+        'The people around the collective are part of it: photographers, editors, printers and friends who come to talk, to look at work, and to open doors.',
         'A walk produces frames. A group edit turns frames into an essay. An essay earns a wall. A wall makes a photographer.',
         'You keep your copyright. Always.',
       ]),
@@ -460,13 +597,26 @@ async function run() {
     data: {
       benefits: [
         { title: 'Photowalks', description: 'Every walk, free for members.' },
-        { title: 'The group edit', description: 'Your frames on the table, edited together.' },
+        {
+          title: 'The edit',
+          description: 'Your frames on the table with the founding circle. Online or in person.',
+        },
+        { title: 'Feedback', description: 'Frame by frame. Honest, at face value.' },
+        {
+          title: 'Talks',
+          description: 'Sessions with the photographers, editors and friends around the collective.',
+        },
+        { title: 'Publication', description: 'Photocalls, essays and the archive, always credited.' },
         { title: 'The wall', description: 'Member work is first in line for exhibitions.' },
+        { title: 'The card', description: 'A membership card and your member number.' },
         { title: 'Copyright', description: 'You keep your copyright. Always.' },
       ],
-      priceIndividual: null,
-      priceStudent: null,
-      priceNote: 'Launch pricing announced soon',
+      // Decided 29 Aug 2026: one membership, one price, no tiers.
+      joiningFee: 250,
+      priceMonthly: 100,
+      priceAnnual: 1000,
+      priceNote: 'The card and your member number are included. Monthly can stop any time.',
+      openDoorNote: 'If the fee is what stands between you and the collective, write to us anyway.',
       _status: 'published',
     },
   })

@@ -8,6 +8,7 @@ import { defineConfig } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   timeout: 30_000,
   retries: 0,
   use: {
@@ -22,7 +23,9 @@ export default defineConfig({
     // output, and hydration timing matches what visitors get.
     command: 'npm run build && node .output/server/index.mjs',
     url: 'http://localhost:3000',
-    reuseExistingServer: false,
+    // To iterate on specs against a build you just made, start it yourself
+    // (`node .output/server/index.mjs`) and set E2E_REUSE_SERVER=1.
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === '1',
     timeout: 300_000,
   },
 })

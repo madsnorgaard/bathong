@@ -53,7 +53,17 @@ test('every inline script in the SSR html carries the response nonce', async ({ 
   for (const tag of scripts) expect(tag, tag).toContain(`nonce="${nonce}"`)
 })
 
-for (const path of ['/', '/walks', '/photocalls', '/stories']) {
+for (const path of [
+  '/',
+  '/walks',
+  '/walks/demo-past-walk',
+  '/photocalls',
+  '/stories',
+  '/stories/demo-reader-essay',
+  '/albums',
+  '/albums/demo-behind-the-walk',
+  '/photographers/mads-norgaard',
+]) {
   test(`${path} renders without CSP violations`, async ({ page }) => {
     const violations: string[] = []
     page.on('console', (msg) => {

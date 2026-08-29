@@ -10,6 +10,7 @@ import { defineConfig } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   testMatch: /admin-.*\.spec\.ts/,
   timeout: 45_000,
   retries: 0,

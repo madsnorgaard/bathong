@@ -10,7 +10,7 @@ import type { Person, Manifesto, Membership, SiteSetting } from '~/types/payload
 useShareMeta({
   title: 'About',
   description:
-    'Bathong: what you say when you cannot believe what you are seeing. A street and documentary photography collective from Pretoria, among the people.',
+    'Bathong: what you say when you cannot believe what you are seeing. A street and documentary photography collective that starts in Pretoria, among the people.',
 })
 
 interface List<T> { docs: T[] }
@@ -34,6 +34,10 @@ const manifestoParagraphs = computed(() => richTextParagraphs(manifesto.value?.b
 const directors = computed(() => people.value?.docs ?? [])
 const benefits = computed(() => membership.value?.benefits ?? [])
 const contactEmail = computed(() => settings.value?.contactEmail || null)
+// Join goes to the configured URL, else the mailbox; no button without either.
+const joinHref = computed(
+  () => membership.value?.joinUrl || (contactEmail.value ? `mailto:${contactEmail.value}` : null),
+)
 
 function personContact(person: Person): string | null {
   if (person.showContact && person.contactEmail) return person.contactEmail
@@ -96,17 +100,17 @@ function personContact(person: Person): string | null {
         </li>
       </ul>
       <p class="b-lede price">
-        {{ formatPrice(membership?.priceIndividual) }} ·
-        {{ membership?.priceNote ?? 'Launch pricing announced soon' }}
+        One membership, one price. {{ formatPrice(membership?.joiningFee) }} to join, then
+        {{ formatPrice(membership?.priceMonthly) }} a month or {{ formatPrice(membership?.priceAnnual) }} a year.
       </p>
+      <p v-if="membership?.priceNote" class="b-caption note">{{ membership.priceNote }}</p>
       <p class="apply">
-        Membership is by application.
-        <template v-if="contactEmail">Write to us and tell us where you shoot.</template>
-        <template v-else>Applications open with our mailbox. TBC.</template>
+        Anyone can join.
+        <template v-if="joinHref">Write to us, we send the details and your member number.</template>
+        <template v-else>Joining opens with our mailbox. TBC.</template>
+        <template v-if="membership?.openDoorNote"> {{ membership.openDoorNote }}</template>
       </p>
-      <BButton v-if="contactEmail" :href="`mailto:${contactEmail}`" variant="signal">
-        Become a member →
-      </BButton>
+      <BButton v-if="joinHref" :href="joinHref" variant="signal">Join →</BButton>
     </section>
 
     <!-- the record -->
@@ -173,6 +177,10 @@ function personContact(person: Person): string | null {
 }
 .price {
   margin-top: var(--space-4);
+}
+.note {
+  margin-top: var(--space-2);
+  color: var(--text-meta);
 }
 .apply {
   max-width: 62ch;

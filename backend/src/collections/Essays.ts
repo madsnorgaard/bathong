@@ -1,12 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isAdmin, isEditor, publishedOrEditor } from '../access'
+import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
 
 export const Essays: CollectionConfig = {
   slug: 'essays',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'publishedDate', '_status'],
+    defaultColumns: ['title', 'publishedDate', 'walks', '_status'],
     group: 'Work',
   },
   versions: { drafts: true, maxPerDoc: 25 },
@@ -65,14 +66,25 @@ export const Essays: CollectionConfig = {
       ],
     },
     { name: 'contributors', type: 'relationship', relationTo: 'people', hasMany: true },
-    { name: 'relatedWalk', type: 'relationship', relationTo: 'walks' },
+    {
+      name: 'walks',
+      type: 'relationship',
+      relationTo: 'walks',
+      hasMany: true,
+      filterOptions: pastWalksOnly,
+      admin: {
+        description:
+          'The walk(s) this essay came out of. Only walks that have already happened.',
+      },
+    },
     { name: 'relatedPhotocall', type: 'relationship', relationTo: 'photocalls' },
     { name: 'publishedDate', type: 'date' },
     { name: 'tags', type: 'text', hasMany: true },
   ],
   hooks: {
     beforeValidate: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
+        if (data?.walks !== undefined) await assertWalksInPast(data.walks, req, 'essay')
         const sequence = data?.sequence ?? originalDoc?.sequence ?? []
         // A published essay must actually contain frames.
         if (data?._status === 'published') {

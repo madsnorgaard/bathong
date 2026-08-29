@@ -119,23 +119,54 @@ unit; everything else feeds it or shows it.
 
 | Collection | Purpose | Notes |
 |---|---|---|
-| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`tier`, `status`, `expires`) exist now, admin-only, filled by future payments. |
-| `people` | Public profiles | founding circle + members + guests; may exist without an account |
+| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`plan` monthly/annual, `status`, `expires`) are admin-only, filled by future payments. |
+| `people` | Public profiles | founding circle + members + guests; may exist without an account; optional `basedIn` city, shown only when the photographer names one |
 | `media` (upload) | File library | `visibility` public/restricted + `uploadedBy`; member uploads stay restricted until published. Raster-only, sharp sizes, `./media` bind mount |
-| `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the future archive |
-| `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation; sequence and lead frame edited visually (see below) |
-| `walks` | Photowalks/events | pricing display fields + external `bookingUrl` until payments land; `resultEssay` closes the walk -> group edit -> essay loop |
+| `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the archive; optional `walk` (single, past walks only) says which walk it was made on |
+| `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation; sequence and lead frame edited visually (see below); `walks` (hasMany, past walks only) says which walk(s) it came out of |
+| `albums` | The softer record of a walk | drafts on; plain `media` (hasMany upload), never frames, so nothing in an album enters the archive or the essay picker; `walks` (hasMany, past walks only); credit rule as on frames (`photographer` or `creditOverride`); caption on the site is each file's alt text |
+| `walks` | Photowalks/events | pricing display fields + external `bookingUrl` until payments land; virtual `number` (position in the published programme, date order, rendered as № 001); the reverse side of the links above is three `join` fields (`essays`, `frames`, `albums`) - virtual, no columns, no sync hook, and they run the joined collection's read access so anonymous readers only see published work |
 | `exhibitions` | Walls | frames + venue + dates; NPC partnership line |
 | `photocalls` | Open calls | includes `terms` rich text (photographer keeps copyright, non-exclusive licence - the brief requires this in writing) |
 | `submissions` | Member responses | status pipeline submitted -> shortlisted -> published/rejected; `reviewNotes` visible to the submitter ("here is why, frame by frame"), `internalNotes` editor-only; hooks keep attached media restricted until published |
 | `orders` | Payments-shaped hole | hidden, empty until a provider is chosen; type/amount/status/provider/ref/raw - a future gateway webhook writes here and flips membership fields, nothing restructures |
 
 Globals: `site-settings` (ticker, socials, newsletter URL), `manifesto`
-(dictionary card + manifesto text), `membership` (benefits, prices - honest
-TBC until the collective decides).
+(dictionary card + manifesto text), `membership` (benefits, `joiningFee`,
+`priceMonthly`, `priceAnnual`, `priceNote`, `openDoorNote`, `joinUrl`; empty
+prices render the honest `R -`).
 
-Drafts/versions only on essays, walks, exhibitions, photocalls and the
-manifesto/membership globals.
+Drafts/versions only on essays, albums, walks, exhibitions, photocalls and
+the manifesto/membership globals.
+
+## Walk links and albums
+
+The walk closes its loop. Essays, frames and albums link to the walk that
+produced them, and only to walks that have already happened: the admin
+picker filters on `date < now` (`backend/src/fields/walkLinks.ts`,
+`pastWalksOnly`, which Payload re-checks on save) and a `beforeValidate`
+hook (`assertWalksInPast`) turns a future walk into a readable 400. Walks
+carry the reverse side as join fields, so the admin shows a walk's essays,
+frames and albums without any sync hook, and the frontend reads them in one
+request: `/api/walks?where[slug][equals]=...&depth=3&joins[essays][limit]=24`
+(joined docs populate to `min(maxDepth, depth)` counting the joined doc as
+level one; the essays join has `maxDepth: 3` so essay -> lead frame -> image
+resolves, frames and albums `maxDepth: 2`). List reads pass
+`joins[frames]=false` and stay at depth 0, where the join ids are free.
+
+The walk's `number` is virtual (an `afterRead` count of published walks
+dated before it), the one source for "№ 001" on the pages and the cards.
+`frontend/utils/walks.ts` holds the two walk predicates (a walk is current
+until it wraps) and the number/path helpers.
+
+Pages: `/walks/:slug` is the event while a walk is upcoming (plate, route,
+RSVP) and the record once it has walked (facts, route, essays, frames with a
+door to `/archive?walk=<slug>`, albums). `/albums` and `/albums/:slug`
+show albums uncropped, every photograph credited. The essay reader's door
+links back to the walk(s). Specs: `frontend/e2e/walk-detail.spec.ts`,
+`albums.spec.ts`, `archive.spec.ts` (walk filter), `reader.spec.ts`, and
+`admin-walk-links.spec.ts` (admin config: future walks rejected, join
+respects drafts and access, album credit rule, picker hides future walks).
 
 ## Visual sequence editor (essays)
 
@@ -191,7 +222,7 @@ and reset-password alongside the public POST endpoints.
 
 `SEED_DEMO=true` seeds a member login for the e2e suite:
 `member@bathong.local` / `SEED_MEMBER_PASSWORD` (default
-`bathong-member-dev`), tier individual, status active, linked to the
+`bathong-member-dev`), plan monthly, status active, linked to the
 Mads Nørgaard profile. `frontend/e2e/account.spec.ts` covers the redirect,
 sign-in, a wrong password and sign-out.
 
@@ -201,8 +232,10 @@ Sharing a URL shows a card generated for that entity, per the share-cards
 spec (design-system/design_handoff_frontend_v2/design-references/
 share-cards.html): C2 essay (lead frame + index/frame count in the bar),
 C3 photographer (portrait, member number, body of work), C4 walk (jacaranda
-plate, the date enormous - the launch-only state), C5 photocall (signal
-plate while a call is open). Rendered on request by Nitro server routes
+plate, the date enormous; `/share/walks.jpg` for the next walk and
+`/share/walk/<slug>.jpg` for any walk, "WALKED" in the top line once it
+has), C5 photocall (signal plate while a call is open), C6 album (the C2
+structure with the first photograph and count). Rendered on request by Nitro server routes
 (`frontend/server/routes/share/`) with satori + resvg + sharp - fonts are
 vendored TTF buffers in `frontend/server/assets/fonts/` (OFL), so no
 system fonts are needed in the container. JPEG q82, quality steps down to
@@ -210,6 +243,17 @@ stay under the 300 KB WhatsApp ceiling; any missing entity or failed
 render serves the static C1 default (`frontend/public/share/default.jpg`),
 never an error. Pages append `?v=<updatedAt>` so crawler caches bust on
 republish. Covered by `frontend/e2e/share-cards.spec.ts`.
+
+The share row (`frontend/components/ShareRow.vue`) sits on essays, walks,
+albums, photographer pages and an open photocall: a word and typographic
+links, no icon set. WhatsApp (`wa.me`) and Email (`mailto:`) are plain
+anchors carrying "Bathong! <title>" and the canonical URL built from
+`NUXT_PUBLIC_SITE_URL` (never the request host, so a share from the preview
+host still points home); "Copy link" renders only once the clipboard API is
+known to exist. Anchors and a Vue-bound button only, so the CSP's
+`script-src-attr 'none'` and `form-action 'self'` hold, and nothing loads
+from a third party. `frontend/utils/share.ts`, covered by
+`frontend/e2e/share-row.spec.ts` and `tests/unit/share.spec.ts`.
 
 ## The archive (#19)
 
@@ -222,13 +266,15 @@ It is served by one public endpoint, `GET /api/archive`
 |---|---|
 | `q` | free text, trimmed to 80 chars, matched with `like` (ILIKE on postgres) against caption, location and tags |
 | `photographer` | a People slug; an unknown slug returns an empty result, not a 400 |
+| `walk` | a published walk's slug; frames made on that walk; unknown slug returns an empty result |
 | `year` | exact year |
 | `tag` | exact tag |
 | `page` | 1-based; the page size is fixed at 48 |
 
 Response: `{ docs, page, totalPages, totalDocs, facets }`. `docs` is the
-compact frame shape (thumb/full urls, alt, credit, photographer slug).
-`facets` (photographers, years, tags with counts) are computed over the
+compact frame shape (thumb/full urls, alt, credit, photographer slug, walk
+slug/title/number). `facets` (photographers, walks, years, tags with counts)
+are computed over the
 whole public archive, not the filtered set, so the filter rows never
 disappear as you narrow down. Every parameter is clamped; bad input degrades
 to defaults rather than erroring.
@@ -246,7 +292,7 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 | people | R | R | CRU | CRUD |
 | media | R public | R pub+own, C, U/D own restricted | CRU all | CRUD |
 | frames | R | R | CRU | CRUD |
-| essays/walks/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
+| essays/albums/walks/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
 | submissions | - | C, R own, U own while submitted | R all, U status/notes | CRUD |
 | orders | - | R own | - | CRUD |
 | globals | R | R | U | U |
@@ -259,7 +305,13 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 - Backend: copy `backend/.env.example` to `backend/.env` (set a real
   `PAYLOAD_SECRET`), then `npm run migrate`, `npm run seed` (idempotent;
   `SEED_DEMO=true` adds e2e state fixtures, `SEED_ADMIN_EMAIL`/`_PASSWORD`
-  create the admin) and `npm run dev` on port 3001.
+  create the admin) and `npm run dev` on port 3001. The demo walks carry
+  dates relative to the seed run (a past walk three weeks back, the next
+  walk two weeks out, both on the Walk 001 route) so the suite never ages
+  out; rerunning the seed moves them. `demo-past-walk` is the link target
+  for the demo essay, two frames and the demo album. Payload renames an
+  upload whose file already sits in `./media`, so the seed keeps media ids
+  in memory rather than looking files up twice by name.
 - Frontend: `npm run dev` on port 3000. Checks: `npm run lint`,
   `npm run tokens:check` (design-system drift), `npm run types:check`
   (payload-types drift), `npm test` (unit), `npm run test:e2e` (Playwright,
@@ -276,15 +328,31 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   -> commit both files -> deploy; the container runs `payload migrate` before
   start.
 - First migration is one consolidated `initial` after the full schema lands.
+- `migrate:create` diffs against the newest `.json` snapshot in the folder,
+  so a hand-written migration without one makes the next generate re-emit
+  its changes and ask rename questions interactively (`script -qec` gives it
+  a terminal in a non-interactive shell). `20260829_121228_phase5_*`
+  re-baselined the snapshot; keep committing the `.json` from now on.
+- When a single relationship becomes hasMany, move the values into the
+  `_rels` table (and `_<slug>_v_rels` with path `version.<field>`) before
+  dropping the column - see the phase5 migration for the pattern.
 - Back up: `pg_dump` + the `./media` bind mount together - the photographs
   are the product.
 
-## Payments (deferred by decision)
+## Membership and payments
 
-No gateway is integrated. When pricing is decided the shortlist is local
-(Payfast for in-platform membership/recurring; Quicket links for event
-ticketing). The `orders` collection, membership fields on `users` and
-`bookingUrl` on walks are the prepared seams; integrating later is additive.
+Pricing was decided on 29 August 2026 (#17): one membership, no tiers.
+R250 to join (the card and the member number), then R100 a month or
+R1000 a year. The numbers live in the `membership` global and render on
+`/` and `/about`; `Join` goes to `joinUrl` or the contact mailbox. The open
+door stays without a tier: `openDoorNote` invites anyone the fee would keep
+out to write anyway.
+
+No gateway is integrated yet (#18): the shortlist is local (Payfast for
+in-platform membership/recurring; Quicket links for event ticketing). The
+`orders` collection, `membershipPlan`/`membershipStatus`/`membershipExpires`
+on `users` and `bookingUrl` on walks are the prepared seams; integrating
+later is additive.
 
 ## Roadmap milestones
 
@@ -292,5 +360,5 @@ ticketing). The `orders` collection, membership fields on `users` and
 - **M2 Platform scaffold** - backend boots, admin gated, initial migration
 - **M3 v1 site headless** - Nuxt + content, cutover from holding page
 - **M4 Members** - sign-in from the frontend (done, #13), photocall submissions, SMTP (done)
-- **M5 Payments** - blocked on pricing + provider decision
+- **M5 Payments** - pricing decided (#17), provider decision open (#18)
 - **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)

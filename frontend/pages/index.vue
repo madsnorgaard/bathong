@@ -5,17 +5,23 @@
  * as a paper chapter. Structure is carried by scale and plate changes, not
  * furniture; the only numbering is the walk's real №.
  */
-import type { Frame, Essay, Walk, SiteSetting } from '~/types/payload-types'
-
+import type { Frame, Essay, Walk, SiteSetting, Membership } from '~/types/payload-types'
 
 useShareMeta({
   description:
-    'Bathong is a street and documentary photography collective from Pretoria. Building photographers, publishing photo stories, and putting the capital on walls.',
+    'Bathong is a street and documentary photography collective. It starts in Pretoria and walks outward: photowalks, group edits, honest feedback, stories about people as they are.',
 })
 
 interface List<T> { docs: T[] }
 
-const [{ data: frames }, { data: essays }, { data: topPicks }, { data: nextWalk }, { data: settings }] =
+const [
+  { data: frames },
+  { data: essays },
+  { data: topPicks },
+  { data: nextWalk },
+  { data: settings },
+  { data: membership },
+] =
   await Promise.all([
     useCmsData<List<Frame>>('frames-latest', '/api/frames?limit=7&sort=-createdAt&depth=1'),
     useCmsData<List<Essay>>('essays-feed', '/api/essays?sort=-publishedDate&limit=12&depth=2'),
@@ -26,9 +32,10 @@ const [{ data: frames }, { data: essays }, { data: topPicks }, { data: nextWalk 
     useCmsData<List<Walk & { spotsTaken?: number }>>(
       'walks-next',
       // current until it wraps: a walk in progress stays on the homepage
-      `/api/walks?where[or][0][date][greater_than_equal]=${new Date().toISOString()}&where[or][1][endTime][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
+      nextWalksQuery(new Date().toISOString(), 1),
     ),
     useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
+    useCmsData<Membership>('membership', '/api/globals/membership'),
   ])
 
 // The lead rotates among editors' top picks, one per visit. The random seed
@@ -102,7 +109,7 @@ const tickerItems = computed(() =>
     </section>
 
     <!-- the walk: the one jacaranda chapter -->
-    <EventBlock v-if="walk" :walk="walk" :walk-index="1">
+    <EventBlock v-if="walk" :walk="walk">
       <BButton to="/walks" variant="ghost">Reserve a place →</BButton>
     </EventBlock>
 
@@ -119,7 +126,8 @@ const tickerItems = computed(() =>
     <section v-reveal class="chapter chapter--paper">
       <ChapterHead title="Become a member" />
       <p class="b-lede">
-        {{ formatPrice(null) }} · Launch pricing announced soon. Walks, the group edit, the wall.
+        {{ formatPrice(membership?.joiningFee) }} to join, then {{ formatPrice(membership?.priceMonthly) }} a month
+        or {{ formatPrice(membership?.priceAnnual) }} a year. Walks, the edit, real feedback, the wall.
         You keep your copyright. Always.
       </p>
       <div class="member-cta">

@@ -45,6 +45,7 @@ const year = new Date().getFullYear()
         <div class="col">
           <p class="b-caption">The collective</p>
           <p class="npc b-kicker">Bathong. Collective NPC · Pretoria</p>
+          <NuxtLink to="/albums" class="b-kicker">Albums →</NuxtLink>
         </div>
       </div>
       <p class="legal b-caption">© {{ year }} Bathong. Collective. Photographers keep their copyright. Always.</p>

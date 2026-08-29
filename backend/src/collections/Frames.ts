@@ -1,12 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { anyone, isAdmin, isEditor } from '../access'
+import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
 
 export const Frames: CollectionConfig = {
   slug: 'frames',
   admin: {
     useAsTitle: 'caption',
-    defaultColumns: ['image', 'photographer', 'location', 'year', 'topPick'],
+    defaultColumns: ['image', 'photographer', 'location', 'year', 'walk', 'topPick'],
     group: 'Work',
   },
   access: { read: anyone, create: isEditor, update: isEditor, delete: isAdmin },
@@ -40,14 +41,31 @@ export const Frames: CollectionConfig = {
       relationTo: 'submissions',
       admin: { description: 'Set when this frame was promoted from a photocall submission.' },
     },
+    {
+      name: 'walk',
+      type: 'relationship',
+      relationTo: 'walks',
+      index: true,
+      filterOptions: pastWalksOnly,
+      admin: {
+        description:
+          'The walk this frame was made on, if any. Only walks that have already happened.',
+      },
+    },
   ],
   hooks: {
     beforeValidate: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
+        if (data?.walk !== undefined) await assertWalksInPast(data.walk, req, 'frame')
         // Credit is non-negotiable: every frame names its photographer,
         // either via a People profile or an explicit credit override.
-        const photographer = data?.photographer ?? originalDoc?.photographer
-        const creditOverride = data?.creditOverride ?? originalDoc?.creditOverride
+        // A field the request sends (even as null) is the new value; only an
+        // absent field falls back to the saved one, so a credit cannot be
+        // cleared past the check.
+        const photographer =
+          data && 'photographer' in data ? data.photographer : originalDoc?.photographer
+        const creditOverride =
+          data && 'creditOverride' in data ? data.creditOverride : originalDoc?.creditOverride
         if (!photographer && !creditOverride) {
           throw new APIError(
             'A frame must credit its photographer - set a photographer or a credit override.',
