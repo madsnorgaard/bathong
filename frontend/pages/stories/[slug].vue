@@ -34,10 +34,13 @@ const author = computed(() => {
   const c = essay.value?.contributors?.[0]
   return c && typeof c === 'object' ? c : null
 })
-// The walks the essay came out of, populated at depth 2 (with their №).
-const linkedWalks = computed(() =>
-  (essay.value?.walks ?? []).filter((w): w is Walk => Boolean(w) && typeof w === 'object'),
-)
+// The walk the essay came out of, populated at depth 2 (with its №). An
+// essay can link several walks; the door names the first so it stays a
+// door, and the walk records carry the rest.
+const fromWalk = computed(() => {
+  const first = (essay.value?.walks ?? []).find((w): w is Walk => Boolean(w) && typeof w === 'object')
+  return first ?? null
+})
 
 // og:image is the generated C2 share card (server route); ?v busts the
 // crawlers' per-URL caches when the essay is republished.
@@ -95,8 +98,8 @@ const progress = ref({ current: 1, total: 0 })
           View all work →
         </NuxtLink>
       </div>
-      <NuxtLink v-for="walk in linkedWalks" :key="walk.id" :to="walkPath(walk)" class="b-kicker from-walk">
-        From walk {{ walkNo(walk) }}, {{ formatWalkDate(walk.date) }} →
+      <NuxtLink v-if="fromWalk" :to="walkPath(fromWalk)" class="b-kicker from-walk">
+        From walk {{ walkNo(fromWalk) }}, {{ formatWalkDate(fromWalk.date) }} →
       </NuxtLink>
       <NuxtLink v-if="nextEssay" :to="`/stories/${nextEssay.slug}`" class="next b-display-2">
         Next essay: {{ nextEssay.title }} →

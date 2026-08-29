@@ -448,7 +448,8 @@ async function run() {
             ],
             contributors: [peopleBySlug['mads-norgaard']],
             walks: [demoPastWalk],
-            publishedDate: '2026-08-01',
+            // the day after the walk it came out of
+            publishedDate: daysFromNow(-20, 9),
             tags: ['demo'],
             _status: 'published',
           },

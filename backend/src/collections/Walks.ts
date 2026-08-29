@@ -119,7 +119,9 @@ export const Walks: CollectionConfig = {
       hooks: {
         afterRead: [
           async ({ data, req }) => {
-            if (!data?.date) return null
+            // Only the published programme is numbered; a draft has no place
+            // in it yet (and would otherwise borrow its predecessor's number).
+            if (!data?.date || data._status !== 'published') return null
             const before = await req.payload.count({
               collection: 'walks',
               where: {

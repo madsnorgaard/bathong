@@ -27,7 +27,9 @@ async function login(request: APIRequestContext): Promise<string> {
 const auth = () => ({ Authorization: `JWT ${token}` })
 
 async function walkBySlug(request: APIRequestContext, slug: string) {
-  const res = await request.get(`${ADMIN}/api/walks?where[slug][equals]=${slug}&depth=0&limit=1&joins=false`)
+  const res = await request.get(
+    `${ADMIN}/api/walks?where[slug][equals]=${slug}&depth=0&limit=1&joins[essays]=false&joins[frames]=false&joins[albums]=false`,
+  )
   const { docs } = await res.json()
   expect(docs[0], `seeded walk ${slug}`).toBeTruthy()
   return docs[0] as { id: number; title: string }

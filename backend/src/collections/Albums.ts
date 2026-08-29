@@ -69,8 +69,13 @@ export const Albums: CollectionConfig = {
       async ({ data, originalDoc, req }) => {
         // Credit is non-negotiable here too: album photographs are shown
         // with a name on them, the same as every frame.
-        const photographer = data?.photographer ?? originalDoc?.photographer
-        const creditOverride = data?.creditOverride ?? originalDoc?.creditOverride
+        // A field the request sends (even as null) is the new value; only an
+        // absent field falls back to the saved one, so a credit cannot be
+        // cleared past the check.
+        const photographer =
+          data && 'photographer' in data ? data.photographer : originalDoc?.photographer
+        const creditOverride =
+          data && 'creditOverride' in data ? data.creditOverride : originalDoc?.creditOverride
         if (!photographer && !creditOverride) {
           throw new APIError(
             'An album must credit its photographer - set a photographer or a credit override.',

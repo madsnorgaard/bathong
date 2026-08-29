@@ -20,9 +20,13 @@ export async function assertWalksInPast(
   label: string,
 ): Promise<void> {
   const raw = Array.isArray(value) ? value : value == null ? [] : [value]
-  const ids = raw
-    .map((v) => (typeof v === 'object' && v ? v.id : v))
-    .filter((v): v is number | string => v !== null && v !== undefined && v !== '')
+  const ids = [
+    ...new Set(
+      raw
+        .map((v) => (typeof v === 'object' && v ? v.id : v))
+        .filter((v): v is number | string => v !== null && v !== undefined && v !== ''),
+    ),
+  ]
   if (!ids.length) return
 
   const { docs } = await req.payload.find({

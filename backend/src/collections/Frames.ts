@@ -59,8 +59,13 @@ export const Frames: CollectionConfig = {
         if (data?.walk !== undefined) await assertWalksInPast(data.walk, req, 'frame')
         // Credit is non-negotiable: every frame names its photographer,
         // either via a People profile or an explicit credit override.
-        const photographer = data?.photographer ?? originalDoc?.photographer
-        const creditOverride = data?.creditOverride ?? originalDoc?.creditOverride
+        // A field the request sends (even as null) is the new value; only an
+        // absent field falls back to the saved one, so a credit cannot be
+        // cleared past the check.
+        const photographer =
+          data && 'photographer' in data ? data.photographer : originalDoc?.photographer
+        const creditOverride =
+          data && 'creditOverride' in data ? data.creditOverride : originalDoc?.creditOverride
         if (!photographer && !creditOverride) {
           throw new APIError(
             'A frame must credit its photographer - set a photographer or a credit override.',

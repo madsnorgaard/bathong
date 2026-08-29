@@ -32,7 +32,13 @@ const leader = computed(() =>
 const isDoc = <T,>(v: T | number | string | null | undefined): v is T =>
   Boolean(v) && typeof v === 'object'
 const essays = computed(() => (walk.value?.essays?.docs ?? []).filter(isDoc<Essay>))
-const frames = computed(() => (walk.value?.frames?.docs ?? []).filter(isDoc<Frame>))
+// Restricted media (a photocall entry still under judging) populates as an
+// id for anonymous readers; a frame without a picture is not shown.
+const frames = computed(() =>
+  (walk.value?.frames?.docs ?? []).filter(
+    (f): f is Frame => isDoc<Frame>(f) && Boolean(mediaSrc(f.image as never)),
+  ),
+)
 const albums = computed(() => (walk.value?.albums?.docs ?? []).filter(isDoc<Album>))
 const hasWork = computed(() => essays.value.length + frames.value.length + albums.value.length > 0)
 

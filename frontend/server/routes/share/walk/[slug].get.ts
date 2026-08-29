@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
   const version = (getQuery(event).v as string) ?? ''
   const buf = await serveCard(event, `walk:${slug}:${version}`, async () => {
     const list = await cmsGet<{ docs: WalkDoc[] }>(
-      `/api/walks?where[slug][equals]=${encodeURIComponent(slug)}&limit=1&depth=0&joins=false`,
+      // joins are skipped per path: a bare joins=false is not honoured by 3.84
+      `/api/walks?where[slug][equals]=${encodeURIComponent(slug)}&limit=1&depth=0&joins[essays]=false&joins[frames]=false&joins[albums]=false`,
     )
     const walk = list.docs[0]
     if (!walk) return null
