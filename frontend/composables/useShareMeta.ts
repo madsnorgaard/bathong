@@ -31,7 +31,9 @@ export function useShareMeta(input: ShareMetaInput) {
   const absolute = (pathOrUrl: string) =>
     /^https?:\/\//.test(pathOrUrl) ? pathOrUrl : `${siteUrl}${pathOrUrl}`
 
-  const title = input.title ? `${input.title} - ${SITE_NAME}` : `${SITE_NAME} - Pretoria street photography collective`
+  const title = input.title
+    ? `${input.title} - ${SITE_NAME}`
+    : `${SITE_NAME} - Street and documentary photography, from Pretoria outward`
   const ogTitle = input.title ?? SITE_NAME
   const url = `${siteUrl}${route.path === '/' ? '/' : route.path}`
   const image = absolute(input.image ?? DEFAULT_IMAGE)

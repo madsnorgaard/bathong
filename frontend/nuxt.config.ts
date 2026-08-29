@@ -135,13 +135,14 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
-      title: 'Bathong. - Pretoria street photography collective',
+      title: 'Bathong. - Street and documentary photography, from Pretoria outward',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content: 'Bathong. A street photography collective working out of Pretoria.',
+          content:
+            'Bathong. is a street and documentary photography collective. It starts in Pretoria and walks outward: photowalks, group edits, honest feedback from working photographers, and stories about people as they are.',
         },
         { name: 'theme-color', content: '#141313' },
         // og/twitter tags live in useShareMeta (one call per page) so every
