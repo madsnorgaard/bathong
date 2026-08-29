@@ -291,6 +291,23 @@ through `safeHref()` on the site, so a member cannot publish a
 `javascript:` href. `people.owner` never populates (`maxDepth: 0`): the
 profile is public, the account is not.
 
+## Profile self-service
+
+`/account/profile` is the member's own page, edited by the member through
+`PATCH /api/people/:id` (People `update` access: editors, or
+`owner = user`). Their fields: portrait, `basedIn`, `bio` (a textarea; the
+site turns blank-line paragraphs into a Lexical document with
+`utils/lexical.ts`, the seed's shape), `instagram`, `website`,
+`contactEmail`, `showContact`, `onRoster`. The editorial fields (name, slug,
+member number, role, founding circle, order) carry `access.update:
+isEditorField`, so a member's PATCH of them is silently dropped. The
+portrait is uploaded as a public media file (`POST /api/media`, XHR for
+progress, `_payload` carrying alt and visibility) and then set on the
+profile; a member may only set a portrait they uploaded themselves. The
+roster switch stays disabled on the page, and refused by the API, until a
+portrait exists. Without a profile (no membership yet) the page is the door
+to joining.
+
 ## Member sign-in (#13)
 
 Members sign in on the site, never in `/admin`. The frontend talks to
