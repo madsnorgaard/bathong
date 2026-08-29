@@ -99,18 +99,40 @@ function personContact(person: Person): string | null {
           </div>
         </li>
       </ul>
-      <p class="b-lede price">
-        One membership, one price. {{ formatPrice(membership?.joiningFee) }} to join, then
-        {{ formatPrice(membership?.priceMonthly) }} a month or {{ formatPrice(membership?.priceAnnual) }} a year.
-      </p>
-      <p v-if="membership?.priceNote" class="b-caption note">{{ membership.priceNote }}</p>
-      <p class="apply">
-        Anyone can join.
-        <template v-if="joinHref">Write to us and we send the details.</template>
-        <template v-else>Joining opens with our mailbox. TBC.</template>
-        <template v-if="membership?.openDoorNote"> {{ membership.openDoorNote }}</template>
-      </p>
-      <BButton v-if="joinHref" :href="joinHref" variant="signal">Join →</BButton>
+      <!-- the fee: three numbers as rows, the kicker under them -->
+      <div class="fee" aria-label="The fee">
+        <p class="b-kicker fee-head">One membership, one price</p>
+        <dl class="fee-rows">
+          <div>
+            <dt class="b-caption">Join</dt>
+            <dd><span class="amount">{{ formatPrice(membership?.joiningFee) }}</span><small class="b-caption">once</small></dd>
+          </div>
+          <div>
+            <dt class="b-caption">Monthly</dt>
+            <dd><span class="amount">{{ formatPrice(membership?.priceMonthly) }}</span><small class="b-caption">a month</small></dd>
+          </div>
+          <div>
+            <dt class="b-caption">Annual</dt>
+            <dd><span class="amount">{{ formatPrice(membership?.priceAnnual) }}</span><small class="b-caption">a year</small></dd>
+          </div>
+        </dl>
+        <p v-if="membership?.priceNote" class="b-caption note">{{ membership.priceNote }}</p>
+      </div>
+
+      <!-- the door -->
+      <div class="join">
+        <p class="apply">
+          Anyone can join.
+          <template v-if="joinHref">Write to us and we send the details.</template>
+          <template v-else>Joining opens with our mailbox. TBC.</template>
+        </p>
+        <BButton v-if="joinHref" :href="joinHref" variant="signal">Join →</BButton>
+      </div>
+
+      <!-- the open door, on its own -->
+      <aside v-if="membership?.openDoorNote" class="open-door">
+        <p>{{ membership.openDoorNote }}</p>
+      </aside>
     </section>
 
     <!-- the record -->
@@ -175,16 +197,89 @@ function personContact(person: Person): string | null {
 .benefits {
   max-width: 44rem;
 }
-.price {
-  margin-top: var(--space-4);
+/* the fee block: ruled rows on paper, the amount in display type */
+.fee {
+  margin-top: var(--space-5);
+  max-width: 44rem;
+}
+.fee-head {
+  color: var(--text-meta);
+  margin-bottom: var(--space-3);
+}
+.fee-rows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  border-top: var(--border-frame);
+  border-bottom: var(--border-frame);
+}
+.fee-rows > div {
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  border-right: var(--hairline);
+}
+.fee-rows > div:last-child {
+  border-right: 0;
+}
+.fee-rows > div + div {
+  padding-left: var(--space-3);
+}
+.fee-rows dt {
+  color: var(--text-meta);
+}
+.fee-rows dd {
+  margin: var(--space-1) 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.amount {
+  font-family: var(--font-display);
+  font-size: var(--text-display-2);
+  line-height: var(--leading-display);
+  text-transform: uppercase;
+}
+.fee-rows small {
+  color: var(--text-meta);
 }
 .note {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   color: var(--text-meta);
+  max-width: 62ch;
+}
+.join {
+  margin-top: var(--space-5);
 }
 .apply {
   max-width: 62ch;
-  margin: var(--space-2) 0 var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+/* the open door: one sentence, set apart by the jacaranda rule */
+.open-door {
+  margin-top: var(--space-5);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--jacaranda);
+  max-width: 48ch;
+  color: var(--text-muted);
+}
+.open-door p {
+  margin: 0;
+}
+@media (max-width: 840px) {
+  .fee-rows {
+    grid-template-columns: 1fr;
+  }
+  .fee-rows > div {
+    border-right: 0;
+    border-bottom: var(--hairline);
+    padding: var(--space-3) 0;
+  }
+  .fee-rows > div:last-child {
+    border-bottom: 0;
+  }
+  .fee-rows > div + div {
+    padding-left: 0;
+  }
 }
 .npc {
   max-width: 62ch;
