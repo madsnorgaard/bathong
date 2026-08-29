@@ -236,6 +236,42 @@ walks sign-up, the refused sign-in, confirmation and the hardening cases.
 Traefik's strict rate limit covers `/api/account/*` POSTs and
 `/api/users/verify`. `/privacy` is the notice the sign-up form points at.
 
+## Joining and orders
+
+A signed-in account joins from `/account/join`: it picks monthly or annual,
+`POST /api/account/join` (`backend/src/endpoints/accountJoin.ts`) creates an
+`orders` row (`type: membership`, `plan`, `amount` frozen at order time,
+`joiningFee` when `memberSince` is empty, a unique `reference` such as
+`BTG-7K3M2Q` from an unambiguous alphabet, `status: pending`,
+`provider: manual`) and emails the bank details and the reference. One open
+order per account (asking again returns it); a running membership can renew
+in its last 30 days. There is no "I have paid" button.
+
+The bank details live on the `membership` global (`bank` group, readable by
+signed-in accounts only; `referencePrefix`). An editor marks the order
+`paid` in the admin (Orders is visible to editors; only status, paidAt,
+providerRef and note are editable, the money fields are admin-only). The
+Orders hooks then set `paidAt`, `coveredFrom` (the current expiry when the
+membership still runs, else the payment day) and `coveredUntil` (a month or
+a year on, clamped to month ends), find or create the member's People
+profile (`owner` = the account; a slug from the name), assign a member
+number from the Postgres sequence `people_member_number_seq` (atomic, never
+reused; a number typed by hand moves the sequence past it), set the
+account's plan, status, expiry, `profile` and `memberSince`, and send
+`membershipActivated`. A refund or cancellation after payment does not
+revoke membership by itself; an admin edits the account.
+
+PayFast (#18) later: its webhook finds the order by `reference` (sent as
+`m_payment_id`), sets `provider`, `providerRef`, `raw` and `status: paid`;
+the same hooks activate. Nothing restructures.
+
+Members reach their desk at `/account`: the card (`MemberCard.vue`, three
+honest states), the next walk, their RSVPs (RSVPs made while signed in
+carry `user`, readable by that member), their photocall entries with the
+written response, their published work, their payments. The public roster
+lists only profiles with `onRoster` on (needs a portrait); the founders are
+on it by migration.
+
 ## Member sign-in (#13)
 
 Members sign in on the site, never in `/admin`. The frontend talks to
@@ -337,12 +373,13 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 | Collection | Public | Member | Editor | Admin |
 |---|---|---|---|---|
 | users | C via /api/account/sign-up | R/U self (name, newsletter, password via the security page) | R | CRUD |
-| people | R | R | CRU | CRUD |
+| people | R | R, U own profile (portrait, bio, city, links, contact, roster) | CRU | CRUD |
 | media | R public | R pub+own, C, U/D own restricted | CRU all | CRUD |
 | frames | R | R | CRU | CRUD |
 | essays/albums/walks/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
 | submissions | - | C, R own, U own while submitted | R all, U status/notes | CRUD |
-| orders | - | R own | - | CRUD |
+| orders | - | R own (created via /api/account/join) | R all, U status/paidAt/note | CRUD |
+| rsvps | C | C, R own | R all, U | CRUD |
 | globals | R | R | U | U |
 | /admin panel | - | - | yes | yes |
 
