@@ -39,12 +39,14 @@ export const accountSignUp: Endpoint = {
     if (!body) return bad('Could not read the request.')
     if (str(body.website)) return bad('Could not process this request.')
 
-    const name = str(body.name, 80)
+    // The name is echoed into mail sent to an address the caller chose:
+    // one line, no links, or it is not a name.
+    const name = str(body.name, 80).replace(/\s+/g, ' ')
     const email = str(body.email, 254).toLowerCase()
     const password = typeof body.password === 'string' ? body.password : ''
     const newsletter = body.newsletter === true
 
-    if (name.length < 2) return bad('Tell us your name.')
+    if (name.length < 2 || /https?:\/\/|www\.|@/i.test(name)) return bad('Tell us your name.')
     if (!isEmail(email)) return bad('That does not look like an email address.')
     const problem = passwordProblem(password, email)
     if (problem) return bad(problem)
@@ -63,8 +65,19 @@ export const accountSignUp: Endpoint = {
 
     if (found) {
       if (found._verified === false) {
+        // Nobody has proven the address yet, so the latest submission wins:
+        // otherwise a stranger's earlier sign-up would keep their password
+        // on the account the real owner is about to confirm.
+        await payload.update({
+          collection: 'users',
+          id: found.id,
+          data: { name, password, newsletter },
+          overrideAccess: true,
+          context: { passwordChange: true },
+          req,
+        })
         const token = await refreshVerificationToken(req, found.id)
-        sendSafe(req, { to: email, ...verifyEmail(found.name, verifyLink(token)) })
+        sendSafe(req, { to: email, ...verifyEmail(name, verifyLink(token)) })
       } else {
         sendSafe(req, { to: email, ...accountExists(`${siteUrl()}/account/forgot`) })
       }
@@ -72,13 +85,21 @@ export const accountSignUp: Endpoint = {
       return ok()
     }
 
-    const created = await payload.create({
-      collection: 'users',
-      data: { name, email, password, roles: ['member'], newsletter },
-      overrideAccess: true,
-      disableVerificationEmail: true,
-      req,
-    })
+    let created: { id: number }
+    try {
+      created = await payload.create({
+        collection: 'users',
+        data: { name, email, password, roles: ['member'], newsletter },
+        overrideAccess: true,
+        disableVerificationEmail: true,
+        req,
+      })
+    } catch (err) {
+      // Two sign-ups for one new address at the same moment: the second hits
+      // the unique index. Same answer as any known address, nothing named.
+      payload.logger.info({ err }, 'account: sign-up create failed')
+      return ok()
+    }
     const withToken = (await payload.findByID({
       collection: 'users',
       id: created.id,

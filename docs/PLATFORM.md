@@ -221,7 +221,9 @@ fields are admin-only on create and update; `access.unlock` is admin-only
 (Payload's default lets any signed-in user unlock any account by email);
 the password rule (`backend/src/lib/password.ts`, mirrored in
 `frontend/utils/password.ts`: ten characters, no spaces at the ends, not
-the email) runs in `beforeValidate`; a member's stock `PATCH { password }`
+the email) runs in `beforeValidate` on create and update and in
+`beforeOperation` for reset-password (which hashes before validation); a
+member's stock `PATCH { password }`
 is refused (403) because it checks nothing and revokes nothing, the security
 page (PR4) is the path. `afterRead` shows an expired membership as lapsed
 without a write. Every existing account was marked verified by the

@@ -90,8 +90,11 @@ async function run() {
           email: adminEmail,
           password: adminPassword,
           roles: ['admin' as const],
-        },
+          // verification is on: a fresh database must still have an admin who can sign in
+          _verified: true,
+        } as never,
         overrideAccess: true,
+        disableVerificationEmail: true,
       })
       console.log(`  user: ${adminEmail} (admin)`)
     }

@@ -16,8 +16,6 @@ export const Users: CollectionConfig = {
   auth: {
     maxLoginAttempts: 5,
     lockTime: 10 * 60 * 1000, // 10 minutes
-    // /me populates the profile relationship, which the desk reads.
-    depth: 1,
     // Sign-up is open (#40): an account is free and must confirm its email
     // before it can sign in. The sign-up endpoint sends the plain-text
     // verify mail itself; this HTML one covers accounts an editor creates
@@ -179,6 +177,25 @@ export const Users: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeOperation: [
+      // reset-password never reaches beforeValidate with the plaintext (it
+      // hashes first), so the rule is applied to the operation's arguments.
+      ({ args, operation }) => {
+        if (operation === 'resetPassword') {
+          const password = (args as { data?: { password?: unknown } }).data?.password
+          if (typeof password === 'string') {
+            const problem = passwordProblem(password)
+            if (problem) {
+              throw new ValidationError({
+                collection: 'users',
+                errors: [{ path: 'password', message: problem }],
+              })
+            }
+          }
+        }
+        return args
+      },
+    ],
     beforeValidate: [
       ({ data, operation, originalDoc, req }) => {
         if (typeof data?.password !== 'string') return data

@@ -52,7 +52,8 @@ const contact = computed(() => settings.value?.contactEmail || 'hello@bathong.af
       <p>
         On a server the collective runs, and on the collective's own mail server for the emails we
         send you. The site sets one cookie, for your session, and none for tracking. Fonts and maps
-        are served from our own server, so no third party sees your visit.
+        are served from our own server. Page views are counted with Plausible, a cookieless
+        analytics tool on a server we run; it records the page and the country, not you.
       </p>
 
       <h3 class="b-kicker">How long</h3>
