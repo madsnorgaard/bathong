@@ -19,20 +19,32 @@ for how the pieces fit, how data is modelled and how deploys happen.
 Domains: **bathong.africa** primary; `www.` and `bathong.org` variants 301 to
 it; `api.bathong.africa` reserved for Payload.
 
-## Deploy (manual for now)
+## Deploy
 
-Deploys are git + SSH; CI runs the test suite on push, no deploy pipeline yet.
-Since the M3 cutover (#12), `bathong.africa` is served by `bathong_nuxt` and
-the holding page is the unrouted fallback (re-point the primary router to
-`bathong_holding` to take the platform down gracefully).
+Merging to `main` deploys: `.github/workflows/deploy.yml` waits for CI to
+pass on `main`, then runs `ops/deploy.sh` on the server over SSH with a
+dedicated key (GitHub environment `production`: `DEPLOY_SSH_KEY`,
+`DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`; the public key sits in the
+server user's `authorized_keys` with a forced command, so that key can run
+the deploy script and nothing else). Deploys are serialised; re-run one from
+the Actions tab (`workflow_dispatch`) if needed.
+
+`ops/deploy.sh` is the whole deploy and can be run by hand on the server:
+it dumps the database to `~/backups` (last 20 kept), fast-forwards the
+checkout, rebuilds both images, restarts the platform profile, waits for
+Payload (which applies pending migrations before serving) and checks the
+site answers 200. It prints the rollback commit first.
 
 ```bash
-# on the server, in the compose directory (a clone of this repo)
-git pull
-docker compose --profile platform build
-docker compose --profile platform up -d
-# (the payload container applies pending migrations itself before serving)
+# by hand, on the server
+~/docker/bathong/ops/deploy.sh
 ```
+
+Since the M3 cutover (#12), `bathong.africa` is served by `bathong_nuxt` and
+the holding page is the unrouted fallback (re-point the primary router to
+`bathong_holding` to take the platform down gracefully). Content in the
+three globals goes through the admin or a guarded seed run
+(`docker exec -e SEED_DEMO= <site>_payload npm run seed`), never the deploy.
 
 `.env` for the live site needs `CORS_ORIGINS` to include
 `https://bathong.africa` (plus `https://next.bathong.africa` if the preview

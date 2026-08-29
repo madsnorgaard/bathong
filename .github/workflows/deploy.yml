@@ -1,0 +1,34 @@
+name: Deploy
+
+# Production deploys itself when CI has passed on main. One deploy at a time;
+# a second merge while one runs waits for it. Manual trigger for re-runs.
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  production:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          ssh-keyscan -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Deploy
+        run: >
+          ssh -i ~/.ssh/deploy -p "${{ secrets.DEPLOY_PORT }}"
+          -o BatchMode=yes -o ConnectTimeout=20
+          "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+          '~/docker/bathong/ops/deploy.sh'
