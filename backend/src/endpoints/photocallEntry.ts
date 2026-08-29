@@ -1,5 +1,6 @@
 import type { Endpoint, PayloadRequest } from 'payload'
 import sharp from 'sharp'
+import { bad } from './respond'
 
 /**
  * The one door for anonymous photocall entries (W6: anyone can enter).
@@ -24,9 +25,6 @@ const MIME_BY_FORMAT: Record<string, string> = {
   tiff: 'image/tiff',
   avif: 'image/avif',
 }
-
-const bad = (message: string, status = 400) =>
-  Response.json({ errors: [{ message }] }, { status })
 
 export const photocallEntry: Endpoint = {
   path: '/photocall-entries',

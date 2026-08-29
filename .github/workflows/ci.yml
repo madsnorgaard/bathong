@@ -41,6 +41,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci --legacy-peer-deps
       - run: npx tsc --noEmit
+      - run: npm test
 
   e2e:
     runs-on: ubuntu-latest
@@ -72,6 +73,8 @@ jobs:
       SEED_ADMIN_PASSWORD: ci-only-admin-password
       # ci-only member login for the account specs (account.spec.ts)
       SEED_MEMBER_PASSWORD: ci-only-member-password
+      # admin-only test doors that read verification tokens (sign-up.spec.ts)
+      E2E_HOOKS: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

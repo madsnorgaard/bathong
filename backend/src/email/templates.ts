@@ -7,7 +7,7 @@ import type { Photocall, Rsvp, Submission, Walk } from '../payload-types'
  * (BATHONG. <noreply@bathong.africa>) comes from the adapter defaults.
  */
 
-const SIGNATURE = '\n\n— BATHONG.\nhttps://bathong.africa'
+const SIGNATURE = '\n\nBATHONG.\nhttps://bathong.africa'
 
 const walkDate = (walk: Walk): string =>
   new Intl.DateTimeFormat('en-ZA', {
@@ -85,6 +85,31 @@ export const entryVerdict = (
     text: `Hi ${name},\n\n${verdictLede[status]}${notesBlock}` + SIGNATURE,
   }
 }
+
+// ---- accounts ---------------------------------------------------------------
+// "Bathong." is the mark: it goes on anything about an account or money.
+
+export const verifyEmail = (name: string, link: string) => ({
+  subject: 'Confirm your Bathong. email',
+  text:
+    `Hi ${name},\n\n` +
+    `One step before you sign in: confirm this address.\n\n` +
+    `${link}\n\n` +
+    `You can ask for a new link from the sign-in page. ` +
+    `If you did not make an account, ignore this email and nothing happens.` +
+    SIGNATURE,
+})
+
+export const accountExists = (forgotLink: string) => ({
+  subject: 'You already have a Bathong. account',
+  text:
+    `Hi,\n\n` +
+    `Someone tried to sign up with this address, and it already has an account. ` +
+    `If that was you, sign in. Forgotten the password? Set a new one:\n\n` +
+    `${forgotLink}\n\n` +
+    `If it was not you, nothing has changed.` +
+    SIGNATURE,
+})
 
 export const editorNewRsvp = (rsvp: Rsvp, walk: Walk, serverURL: string) => ({
   subject: `New RSVP (${rsvp.status}): ${walk.title}`,

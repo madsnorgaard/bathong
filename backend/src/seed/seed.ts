@@ -154,9 +154,12 @@ async function run() {
           roles: ['member' as const],
           membershipPlan: 'monthly',
           membershipStatus: 'active',
+          memberSince: '2026-08-01T00:00:00+02:00',
           profile: peopleBySlug['mads-norgaard'] ?? null,
-        },
+          _verified: true,
+        } as never,
         overrideAccess: true,
+        disableVerificationEmail: true,
       })
       console.log(`  user: ${memberEmail} (member)`)
     } else if (existing.docs[0].membershipPlan !== 'monthly') {

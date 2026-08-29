@@ -1,20 +1,42 @@
 import type { CollectionConfig } from 'payload'
+import { APIError, ValidationError } from 'payload'
 import { hasEditorRole, isAdmin, isAdminField } from '../access'
+import { passwordProblem } from '../lib/password'
+import { siteUrl } from '../lib/siteUrl'
 
-const siteUrl = () =>
-  (process.env.SITE_URL || (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',')[0])
-    .trim()
-    .replace(/\/$/, '')
+const isAdminUser = (user: { roles?: unknown } | null | undefined) =>
+  ((user?.roles as string[] | undefined) ?? []).includes('admin')
+
+/** Only the account itself or an admin reads a pending-email address. */
+const selfOrAdminRead = ({ req: { user }, doc }: { req: { user?: { id?: number | string; roles?: unknown } | null }; doc?: { id?: number | string } }) =>
+  isAdminUser(user) || (Boolean(user?.id) && user?.id === doc?.id)
 
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: {
     maxLoginAttempts: 5,
     lockTime: 10 * 60 * 1000, // 10 minutes
+    // /me populates the profile relationship, which the desk reads.
+    depth: 1,
+    // Sign-up is open (#40): an account is free and must confirm its email
+    // before it can sign in. The sign-up endpoint sends the plain-text
+    // verify mail itself; this HTML one covers accounts an editor creates
+    // in the admin. Both point at the site, never at /admin.
+    verify: {
+      generateEmailSubject: () => 'Confirm your Bathong. email',
+      generateEmailHTML: ({ token }) => {
+        const link = `${siteUrl()}/account/verify?token=${encodeURIComponent(token ?? '')}`
+        return [
+          '<p>Confirm this email to finish making your Bathong. account:</p>',
+          `<p><a href="${link}">${link}</a></p>`,
+          '<p>If you did not make an account, ignore this email and nothing happens.</p>',
+          '<p>BATHONG.<br>https://bathong.africa</p>',
+        ].join('')
+      },
+    },
     // Password resets land on the site, never on /admin: members do not have
     // panel access, so the stock admin reset link would only confuse them.
-    // Editors can use the same page. SITE_URL falls back to the first CORS
-    // origin (the site in every environment).
+    // Editors can use the same page.
     forgotPassword: {
       generateEmailSubject: () => 'Reset your Bathong. password',
       generateEmailHTML: (args) => {
@@ -28,11 +50,6 @@ export const Users: CollectionConfig = {
         ].join('')
       },
     },
-    // The email adapter (#15) is wired, so forgotPassword emails work today.
-    // Members sign in from the site (#13) against these REST endpoints; the
-    // frontend never links /admin. Accounts are still created by editors
-    // (or the applications flow, #40), so there is no `verify` gate - add it
-    // when self-signup opens.
     // Cross-subdomain cookies: the frontend and API live on sibling subdomains,
     // so in production the cookie must be scoped to the parent domain and sent
     // cross-site. Leave COOKIE_DOMAIN unset in dev (plain http, same origin).
@@ -48,7 +65,7 @@ export const Users: CollectionConfig = {
   },
   admin: { useAsTitle: 'name', group: 'System' },
   access: {
-    // First-user creation bypasses access automatically.
+    // Accounts come through /api/account/sign-up; the admin creates editors.
     create: isAdmin,
     // Members see themselves; editors and admins see everyone.
     read: ({ req: { user } }) => {
@@ -58,14 +75,22 @@ export const Users: CollectionConfig = {
     },
     update: ({ req: { user } }) => {
       if (!user) return false
-      if ((user.roles as string[] | undefined)?.includes('admin')) return true
+      if (isAdminUser(user)) return true
       return { id: { equals: user.id } }
     },
     delete: isAdmin,
+    // Payload's default lets any signed-in user unlock any account by email.
+    unlock: isAdmin,
     // Admin panel is for the editorial circle only; members use the site.
     admin: ({ req: { user } }) => hasEditorRole(user),
   },
   fields: [
+    // Base auth fields redeclared to harden them (Payload merges over its
+    // own definition, keeping type, uniqueness and validation).
+    // Email changes go through /api/account/change-email with re-verification.
+    { name: 'email', type: 'email', access: { update: isAdminField } },
+    // Without this, any signed-in account could verify itself with a PATCH.
+    { name: '_verified', type: 'checkbox', access: { create: isAdminField, update: isAdminField } },
     { name: 'name', type: 'text', required: true },
     {
       name: 'roles',
@@ -78,13 +103,14 @@ export const Users: CollectionConfig = {
         { label: 'Editor', value: 'editor' },
         { label: 'Member', value: 'member' },
       ],
-      access: { update: isAdminField },
+      access: { create: isAdminField, update: isAdminField },
     },
     {
       name: 'profile',
       type: 'relationship',
       relationTo: 'people',
-      admin: { description: 'Link to a public People profile, if this user has one.' },
+      access: { update: isAdminField },
+      admin: { description: 'The public People profile this account edits. Set on activation.' },
     },
     {
       // One membership, no tiers: the plan is how it is paid.
@@ -96,7 +122,7 @@ export const Users: CollectionConfig = {
         { label: 'Monthly', value: 'monthly' },
         { label: 'Annual', value: 'annual' },
       ],
-      access: { update: isAdminField },
+      access: { create: isAdminField, update: isAdminField },
     },
     {
       name: 'membershipStatus',
@@ -107,12 +133,84 @@ export const Users: CollectionConfig = {
         { label: 'Active', value: 'active' },
         { label: 'Lapsed', value: 'lapsed' },
       ],
-      access: { update: isAdminField },
+      access: { create: isAdminField, update: isAdminField },
     },
     {
       name: 'membershipExpires',
       type: 'date',
-      access: { update: isAdminField },
+      access: { create: isAdminField, update: isAdminField },
+    },
+    {
+      name: 'memberSince',
+      type: 'date',
+      access: { create: isAdminField, update: isAdminField },
+      admin: {
+        description:
+          'First activation. Set once; the joining fee is charged only while this is empty.',
+      },
+    },
+    {
+      name: 'newsletter',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'Opted in to occasional email from the collective. A preference only; no tool is connected yet.',
+      },
+    },
+    {
+      // An email change waits here until the new address confirms it.
+      name: 'pendingEmail',
+      type: 'email',
+      access: { read: selfOrAdminRead, create: () => false, update: () => false },
+      admin: { readOnly: true },
+    },
+    {
+      name: 'pendingEmailToken',
+      type: 'text',
+      hidden: true,
+      access: { create: () => false, update: () => false },
+    },
+    {
+      name: 'pendingEmailExpires',
+      type: 'date',
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true },
     },
   ],
+  hooks: {
+    beforeValidate: [
+      ({ data, operation, originalDoc, req }) => {
+        if (typeof data?.password !== 'string') return data
+        // A member changes their password from the security page, which
+        // checks the current one and signs other devices out. The stock
+        // PATCH checks nothing, so it is admin-only.
+        if (operation === 'update' && !req.context?.passwordChange && !isAdminUser(req.user)) {
+          throw new APIError('Change your password from the security page.', 403)
+        }
+        const problem = passwordProblem(data.password, data.email ?? originalDoc?.email)
+        if (problem) {
+          throw new ValidationError({
+            collection: 'users',
+            errors: [{ path: 'password', message: problem }],
+          })
+        }
+        return data
+      },
+    ],
+    afterRead: [
+      // A membership past its date reads as lapsed without a write; a job
+      // that writes it and emails the member comes later.
+      ({ doc }) => {
+        if (
+          doc?.membershipStatus === 'active' &&
+          doc.membershipExpires &&
+          new Date(doc.membershipExpires).getTime() < Date.now()
+        ) {
+          doc.membershipStatus = 'lapsed'
+        }
+        return doc
+      },
+    ],
+  },
 }

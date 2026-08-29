@@ -162,12 +162,23 @@ export interface User {
   name: string;
   roles: ('admin' | 'editor' | 'member')[];
   /**
-   * Link to a public People profile, if this user has one.
+   * The public People profile this account edits. Set on activation.
    */
   profile?: (number | null) | Person;
   membershipPlan?: ('none' | 'monthly' | 'annual') | null;
   membershipStatus?: ('none' | 'active' | 'lapsed') | null;
   membershipExpires?: string | null;
+  /**
+   * First activation. Set once; the joining fee is charged only while this is empty.
+   */
+  memberSince?: string | null;
+  /**
+   * Opted in to occasional email from the collective. A preference only; no tool is connected yet.
+   */
+  newsletter?: boolean | null;
+  pendingEmail?: string | null;
+  pendingEmailToken?: string | null;
+  pendingEmailExpires?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -175,6 +186,8 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  _verified?: boolean | null;
+  _verificationToken?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -635,6 +648,9 @@ export interface Walk {
 export interface Album {
   id: number;
   title: string;
+  /**
+   * One URL segment, made from the title when empty: /albums/<slug>. Slashes and spaces are folded into hyphens.
+   */
   slug?: string | null;
   /**
    * A few lines on what this album is. Optional.
@@ -863,6 +879,11 @@ export interface UsersSelect<T extends boolean = true> {
   membershipPlan?: T;
   membershipStatus?: T;
   membershipExpires?: T;
+  memberSince?: T;
+  newsletter?: T;
+  pendingEmail?: T;
+  pendingEmailToken?: T;
+  pendingEmailExpires?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -870,6 +891,8 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  _verified?: T;
+  _verificationToken?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:
@@ -1298,7 +1321,7 @@ export interface Membership {
       }[]
     | null;
   /**
-   * Once, in rand. Includes the card and the member number.
+   * Once, in rand, for everyone who joins.
    */
   joiningFee?: number | null;
   /**
@@ -1309,6 +1332,9 @@ export interface Membership {
    * Per year, in rand.
    */
   priceAnnual?: number | null;
+  /**
+   * The kicker under the prices: what subscribing gets you.
+   */
   priceNote?: string | null;
   /**
    * The open door, kept without a tier. Clear it to hide the line.
