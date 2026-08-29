@@ -26,7 +26,7 @@ const [{ data: frames }, { data: essays }, { data: topPicks }, { data: nextWalk 
     useCmsData<List<Walk & { spotsTaken?: number }>>(
       'walks-next',
       // current until it wraps: a walk in progress stays on the homepage
-      `/api/walks?where[or][0][date][greater_than_equal]=${new Date().toISOString()}&where[or][1][endTime][greater_than_equal]=${new Date().toISOString()}&sort=date&limit=1&depth=0`,
+      nextWalksQuery(new Date().toISOString(), 1),
     ),
     useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
   ])
@@ -102,7 +102,7 @@ const tickerItems = computed(() =>
     </section>
 
     <!-- the walk: the one jacaranda chapter -->
-    <EventBlock v-if="walk" :walk="walk" :walk-index="1">
+    <EventBlock v-if="walk" :walk="walk">
       <BButton to="/walks" variant="ghost">Reserve a place →</BButton>
     </EventBlock>
 

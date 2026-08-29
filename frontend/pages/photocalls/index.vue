@@ -57,6 +57,7 @@ useShareMeta({
             <div><dt>What it costs</dt><dd>nothing</dd></div>
             <div><dt>What you keep</dt><dd>everything</dd></div>
           </dl>
+          <ShareRow :title="call.title" label="Pass it on" class="share" />
         </section>
 
         <!-- the form is on the same screen as the brief -->
@@ -91,6 +92,10 @@ useShareMeta({
 </template>
 
 <style scoped>
+.share {
+  margin-top: var(--space-4);
+  color: var(--grey-ghost);
+}
 .brief {
   display: flex;
   flex-direction: column;

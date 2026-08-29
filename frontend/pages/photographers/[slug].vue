@@ -102,6 +102,10 @@ const licensingLine = computed(() =>
       </span>
     </section>
 
+    <section class="share">
+      <ShareRow :title="person.name" />
+    </section>
+
     <section v-if="essays.length" v-reveal class="chapter">
       <ChapterHead title="Essays" />
       <div class="essay-grid">
@@ -156,6 +160,10 @@ const licensingLine = computed(() =>
   border-bottom: 1px solid var(--grey-line);
   margin: 0 var(--space-4);
   padding: var(--space-3) 0;
+  color: var(--grey-ghost);
+}
+.share {
+  padding: var(--space-4) var(--space-4) 0;
   color: var(--grey-ghost);
 }
 .essay-grid {

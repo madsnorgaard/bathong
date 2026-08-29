@@ -5,7 +5,7 @@
  * never a grid. No grain over frames: real grain in the file beats fake
  * grain on top of it.
  */
-import type { Essay } from '~/types/payload-types'
+import type { Essay, Walk } from '~/types/payload-types'
 
 definePageMeta({ layout: 'reader' })
 
@@ -34,6 +34,10 @@ const author = computed(() => {
   const c = essay.value?.contributors?.[0]
   return c && typeof c === 'object' ? c : null
 })
+// The walks the essay came out of, populated at depth 2 (with their №).
+const linkedWalks = computed(() =>
+  (essay.value?.walks ?? []).filter((w): w is Walk => Boolean(w) && typeof w === 'object'),
+)
 
 // og:image is the generated C2 share card (server route); ?v busts the
 // crawlers' per-URL caches when the essay is republished.
@@ -78,6 +82,11 @@ const progress = ref({ current: 1, total: 0 })
       @progress="(c, t) => (progress = { current: c, total: t })"
     />
 
+    <!-- pass it on: the share row sits on ink, before the door -->
+    <aside class="share">
+      <ShareRow :title="essay.title" />
+    </aside>
+
     <!-- the end is a door, never a grid -->
     <footer class="door">
       <div v-if="author" class="door-credit">
@@ -86,6 +95,9 @@ const progress = ref({ current: 1, total: 0 })
           View all work →
         </NuxtLink>
       </div>
+      <NuxtLink v-for="walk in linkedWalks" :key="walk.id" :to="walkPath(walk)" class="b-kicker from-walk">
+        From walk {{ walkNo(walk) }}, {{ formatWalkDate(walk.date) }} →
+      </NuxtLink>
       <NuxtLink v-if="nextEssay" :to="`/stories/${nextEssay.slug}`" class="next b-display-2">
         Next essay: {{ nextEssay.title }} →
       </NuxtLink>
@@ -109,6 +121,13 @@ const progress = ref({ current: 1, total: 0 })
   font-size: var(--text-lede);
   color: var(--grey-fog);
   max-width: 62ch;
+}
+.share {
+  padding: var(--space-5) var(--space-4);
+  color: var(--grey-ghost);
+}
+.from-walk {
+  color: var(--jacaranda-deep);
 }
 /* paper returns at the essay's end card */
 .door {

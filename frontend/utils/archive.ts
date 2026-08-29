@@ -5,7 +5,7 @@
 
 export type ArchiveQuery = Record<string, string | undefined>
 
-const FILTER_KEYS = ['q', 'photographer', 'year', 'tag'] as const
+const FILTER_KEYS = ['q', 'photographer', 'walk', 'year', 'tag'] as const
 
 /** A frame as served by GET /api/archive. */
 export interface ArchiveDoc {
@@ -22,6 +22,9 @@ export interface ArchiveDoc {
   photographerSlug: string | null
   photographerName: string | null
   credit: string | null
+  walkSlug: string | null
+  walkTitle: string | null
+  walkNumber: number | null
 }
 
 export interface ArchiveResponse {
@@ -31,6 +34,7 @@ export interface ArchiveResponse {
   totalDocs: number
   facets: {
     photographers: { slug: string; name: string; count: number }[]
+    walks: { slug: string; title: string; date: string | null; number: number | null; count: number }[]
     years: { year: number; count: number }[]
     tags: { tag: string; count: number }[]
   }

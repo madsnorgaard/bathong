@@ -11,6 +11,9 @@ describe('archiveFilters (the URL is the state)', () => {
   it('drops empty strings', () => {
     expect(archiveFilters({ q: '  ', tag: '' })).toEqual({})
   })
+  it('keeps the walk filter', () => {
+    expect(archiveFilters({ walk: 'demo-past-walk' })).toEqual({ walk: 'demo-past-walk' })
+  })
 })
 
 describe('archiveQuery (merge a filter change)', () => {
@@ -41,5 +44,8 @@ describe('archiveApiPath', () => {
     expect(archiveApiPath({ q: 'church square', page: '2' })).toBe('/api/archive?q=church+square&page=2')
     expect(archiveApiPath({ q: 'x', page: '1' })).toBe('/api/archive?q=x')
     expect(archiveApiPath({ page: 'abc' })).toBe('/api/archive')
+  })
+  it('passes the walk slug through', () => {
+    expect(archiveApiPath({ walk: 'demo-past-walk' })).toBe('/api/archive?walk=demo-past-walk')
   })
 })

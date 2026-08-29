@@ -7,6 +7,7 @@
  */
 interface WalkLike {
   title?: string
+  number?: number | null
   date?: string | null
   endTime?: string | null
   meetingPoint?: string | null
@@ -21,7 +22,6 @@ interface WalkLike {
 
 const props = defineProps<{
   walk: WalkLike
-  walkIndex: number
 }>()
 
 const spotsLine = computed(() => {
@@ -65,8 +65,8 @@ const inProgress = computed(() => {
 </script>
 
 <template>
-  <section class="event on-jacaranda" :aria-label="`Walk ${walkIndex}`">
-    <p class="b-kicker">{{ inProgress ? 'Walking now' : 'Next walk' }} · {{ walkNumber(walkIndex) }}</p>
+  <section class="event on-jacaranda" :aria-label="`Walk ${walk.number ?? 1}`">
+    <p class="b-kicker">{{ inProgress ? 'Walking now' : 'Next walk' }} · {{ walkNo(walk) }}</p>
     <p class="when b-display-1">
       {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>

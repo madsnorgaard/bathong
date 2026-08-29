@@ -28,7 +28,9 @@ const { data } = await useAsyncData<ArchiveResponse>(
 )
 
 const docs = computed(() => data.value?.docs ?? [])
-const facets = computed(() => data.value?.facets ?? { photographers: [], years: [], tags: [] })
+const facets = computed(
+  () => data.value?.facets ?? { photographers: [], walks: [], years: [], tags: [] },
+)
 const page = computed(() => data.value?.page ?? 1)
 const totalPages = computed(() => data.value?.totalPages ?? 1)
 const totalDocs = computed(() => data.value?.totalDocs ?? 0)
@@ -50,6 +52,7 @@ function thumbSrc(url: string | null): string | null {
       <form class="search" method="get" action="/archive" @submit.prevent="navigateTo({ path: '/archive', query: archiveQuery(route.query, { q: searchText }) })">
         <BField v-model="searchText" label="Search" name="q" placeholder="caption, place, tag" />
         <input v-if="filters.photographer" type="hidden" name="photographer" :value="filters.photographer">
+        <input v-if="filters.walk" type="hidden" name="walk" :value="filters.walk">
         <input v-if="filters.year" type="hidden" name="year" :value="filters.year">
         <input v-if="filters.tag" type="hidden" name="tag" :value="filters.tag">
         <BButton type="submit" variant="ghost" size="sm">Search →</BButton>
@@ -65,6 +68,16 @@ function thumbSrc(url: string | null): string | null {
         :class="{ active: filters.photographer === p.slug }"
       >
         {{ p.name }}
+      </NuxtLink>
+    </nav>
+    <nav v-if="facets.walks.length || filters.walk" class="filters b-kicker" aria-label="Filter by walk">
+      <NuxtLink
+        v-for="w in facets.walks"
+        :key="w.slug"
+        :to="{ path: '/archive', query: archiveQuery(route.query, { walk: filters.walk === w.slug ? undefined : w.slug }) }"
+        :class="{ active: filters.walk === w.slug }"
+      >
+        {{ walkNumber(w.number ?? 1) }} · {{ w.title }}
       </NuxtLink>
     </nav>
     <nav v-if="facets.years.length > 1 || filters.year" class="filters b-kicker" aria-label="Filter by year">
@@ -120,6 +133,9 @@ function thumbSrc(url: string | null): string | null {
           <template v-if="frame.location">{{ frame.location }}</template>
           <template v-if="frame.location && frame.year"> · </template>
           <template v-if="frame.year">{{ frame.year }}</template>
+        </p>
+        <p v-if="frame.walkSlug" class="b-caption meta">
+          <NuxtLink :to="`/walks/${frame.walkSlug}`">Walk {{ walkNumber(frame.walkNumber ?? 1) }} →</NuxtLink>
         </p>
       </article>
     </div>
@@ -198,6 +214,12 @@ function thumbSrc(url: string | null): string | null {
 }
 .meta {
   color: var(--grey-ghost);
+}
+.meta a {
+  color: inherit;
+}
+.meta a:hover {
+  color: var(--signal);
 }
 .pager {
   display: flex;
