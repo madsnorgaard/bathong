@@ -63,6 +63,14 @@ test('an album shares its generated C6 card', async ({ page }) => {
   await expect(page.locator('meta[name="copyright"]')).toHaveAttribute('content', /© Mads Nørgaard/)
 })
 
+test('Albums sits in the main nav, after Walks', async ({ page }) => {
+  await page.goto('/')
+  const labels = await page.locator('header nav[aria-label="Main"] a').allTextContents()
+  const trimmed = labels.map((l) => l.trim())
+  expect(trimmed.indexOf('Albums')).toBe(trimmed.indexOf('Walks') + 1)
+  await expect(page.locator('header nav[aria-label="Main"] a', { hasText: 'Albums' }).first()).toHaveAttribute('href', '/albums')
+})
+
 test('an unknown album is a 404', async ({ page }) => {
   const res = await page.goto('/albums/does-not-exist')
   expect(res?.status()).toBe(404)
