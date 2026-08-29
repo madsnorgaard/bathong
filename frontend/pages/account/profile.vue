@@ -39,6 +39,13 @@ const portrait = computed(() =>
   person.value?.portrait && typeof person.value.portrait === 'object' ? person.value.portrait : null,
 )
 const hasPortrait = computed(() => Boolean(portrait.value))
+// The switch shows a state the save can honour: without a portrait it reads
+// off and stays out of the patch, whatever an editor set.
+const rosterModel = computed({
+  get: () => hasPortrait.value && onRoster.value,
+  set: (v: boolean) => (onRoster.value = v),
+})
+const PORTRAIT_MAX_MB = 10
 
 const saving = ref(false)
 const saved = ref(false)
@@ -52,10 +59,15 @@ async function choosePortrait(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file || !person.value) return
-  uploading.value = true
-  uploadPct.value = 0
   portraitMessage.value = ''
   portraitError.value = ''
+  if (file.size > PORTRAIT_MAX_MB * 1024 * 1024) {
+    portraitError.value = `Under ${PORTRAIT_MAX_MB} MB, please. Export a smaller JPEG and try again.`
+    input.value = ''
+    return
+  }
+  uploading.value = true
+  uploadPct.value = 0
   try {
     const id = await uploadPortrait(file, `Portrait of ${person.value.name}`, (pct) => (uploadPct.value = pct))
     person.value = await updateProfile(person.value.id, { portrait: id })
@@ -82,7 +94,7 @@ async function save() {
       website: website.value.trim(),
       contactEmail: contactEmail.value.trim() || null,
       showContact: showContact.value,
-      onRoster: hasPortrait.value && onRoster.value,
+      ...(hasPortrait.value ? { onRoster: onRoster.value } : {}),
     })
     instagram.value = person.value.instagram ?? ''
     onRoster.value = Boolean(person.value.onRoster)
@@ -131,7 +143,7 @@ async function save() {
           :disabled="uploading"
           @change="choosePortrait"
         >
-        <p class="b-caption muted">JPEG, PNG or WebP. Tall or square reads best; it is cropped to 4:5.</p>
+        <p class="b-caption muted">JPEG, PNG or WebP under {{ PORTRAIT_MAX_MB }} MB. Tall or square reads best; it is cropped to 4:5.</p>
         <p v-if="uploading" class="b-caption" aria-live="polite">Uploading {{ uploadPct }}%</p>
         <p v-else-if="portraitMessage" class="b-caption ok" role="status">{{ portraitMessage }}</p>
         <p v-if="portraitError" class="b-caption error" role="alert">{{ portraitError }}</p>
@@ -152,7 +164,7 @@ async function save() {
           Show my contact on my page. Off, enquiries come to the collective address.
         </label>
         <label class="opt b-caption" :class="{ off: !hasPortrait }">
-          <input v-model="onRoster" type="checkbox" name="onRoster" :disabled="!hasPortrait">
+          <input v-model="rosterModel" type="checkbox" name="onRoster" :disabled="!hasPortrait">
           Show me on the roster<template v-if="!hasPortrait">. Add a portrait first.</template>
         </label>
         <p v-if="errorMessage" class="b-caption error" role="alert">{{ errorMessage }}</p>
