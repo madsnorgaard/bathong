@@ -119,8 +119,8 @@ unit; everything else feeds it or shows it.
 
 | Collection | Purpose | Notes |
 |---|---|---|
-| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`tier`, `status`, `expires`) exist now, admin-only, filled by future payments. |
-| `people` | Public profiles | founding circle + members + guests; may exist without an account |
+| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`plan` monthly/annual, `status`, `expires`) are admin-only, filled by future payments. |
+| `people` | Public profiles | founding circle + members + guests; may exist without an account; optional `basedIn` city, shown only when the photographer names one |
 | `media` (upload) | File library | `visibility` public/restricted + `uploadedBy`; member uploads stay restricted until published. Raster-only, sharp sizes, `./media` bind mount |
 | `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the archive; optional `walk` (single, past walks only) says which walk it was made on |
 | `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation; sequence and lead frame edited visually (see below); `walks` (hasMany, past walks only) says which walk(s) it came out of |
@@ -132,8 +132,9 @@ unit; everything else feeds it or shows it.
 | `orders` | Payments-shaped hole | hidden, empty until a provider is chosen; type/amount/status/provider/ref/raw - a future gateway webhook writes here and flips membership fields, nothing restructures |
 
 Globals: `site-settings` (ticker, socials, newsletter URL), `manifesto`
-(dictionary card + manifesto text), `membership` (benefits, prices - honest
-TBC until the collective decides).
+(dictionary card + manifesto text), `membership` (benefits, `joiningFee`,
+`priceMonthly`, `priceAnnual`, `priceNote`, `openDoorNote`, `joinUrl`; empty
+prices render the honest `R -`).
 
 Drafts/versions only on essays, albums, walks, exhibitions, photocalls and
 the manifesto/membership globals.
@@ -221,7 +222,7 @@ and reset-password alongside the public POST endpoints.
 
 `SEED_DEMO=true` seeds a member login for the e2e suite:
 `member@bathong.local` / `SEED_MEMBER_PASSWORD` (default
-`bathong-member-dev`), tier individual, status active, linked to the
+`bathong-member-dev`), plan monthly, status active, linked to the
 Mads Nørgaard profile. `frontend/e2e/account.spec.ts` covers the redirect,
 sign-in, a wrong password and sign-out.
 
@@ -338,12 +339,20 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 - Back up: `pg_dump` + the `./media` bind mount together - the photographs
   are the product.
 
-## Payments (deferred by decision)
+## Membership and payments
 
-No gateway is integrated. When pricing is decided the shortlist is local
-(Payfast for in-platform membership/recurring; Quicket links for event
-ticketing). The `orders` collection, membership fields on `users` and
-`bookingUrl` on walks are the prepared seams; integrating later is additive.
+Pricing was decided on 29 August 2026 (#17): one membership, no tiers.
+R250 to join (the card and the member number), then R100 a month or
+R1000 a year. The numbers live in the `membership` global and render on
+`/` and `/about`; `Join` goes to `joinUrl` or the contact mailbox. The open
+door stays without a tier: `openDoorNote` invites anyone the fee would keep
+out to write anyway.
+
+No gateway is integrated yet (#18): the shortlist is local (Payfast for
+in-platform membership/recurring; Quicket links for event ticketing). The
+`orders` collection, `membershipPlan`/`membershipStatus`/`membershipExpires`
+on `users` and `bookingUrl` on walks are the prepared seams; integrating
+later is additive.
 
 ## Roadmap milestones
 
@@ -351,5 +360,5 @@ ticketing). The `orders` collection, membership fields on `users` and
 - **M2 Platform scaffold** - backend boots, admin gated, initial migration
 - **M3 v1 site headless** - Nuxt + content, cutover from holding page
 - **M4 Members** - sign-in from the frontend (done, #13), photocall submissions, SMTP (done)
-- **M5 Payments** - blocked on pricing + provider decision
+- **M5 Payments** - pricing decided (#17), provider decision open (#18)
 - **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)

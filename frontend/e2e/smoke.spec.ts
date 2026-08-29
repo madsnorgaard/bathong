@@ -23,7 +23,8 @@ test.describe('home', () => {
     await page.goto('/')
     await expectShareMeta(page)
     await expect(page.locator('.event')).toBeVisible()
-    await expect(page.getByText('R -').first()).toBeVisible()
+    // the seeded price, from the membership global, not a literal in the page
+    await expect(page.getByText(/R 250 to join/).first()).toBeVisible()
   })
 
   test('every feed frame carries a credit', async ({ page }) => {
@@ -102,7 +103,8 @@ test.describe('about', () => {
     await expect(page.getByText('ba·thong')).toBeVisible()
     await expect(page.getByText('Emmanuel Munano')).toBeVisible()
     await expect(page.getByText('Mads Nørgaard')).toBeVisible()
-    await expect(page.getByText('R -').first()).toBeVisible()
+    await expect(page.getByText(/R 250 to join, then R 100 a month or R 1000 a year/)).toBeVisible()
+    await expect(page.getByText(/Anyone can join/)).toBeVisible()
     await expect(page.getByText(/keep their copyright/i).first()).toBeVisible()
   })
 })

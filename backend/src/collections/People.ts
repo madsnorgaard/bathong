@@ -23,6 +23,14 @@ export const People: CollectionConfig = {
     { name: 'bio', type: 'richText' },
     { name: 'roleTitle', type: 'text' },
     {
+      name: 'basedIn',
+      type: 'text',
+      admin: {
+        description:
+          'City, as the photographer wants it shown (Pretoria, Cape Town...). Optional; the site claims no city when empty.',
+      },
+    },
+    {
       name: 'foundingCircle',
       type: 'checkbox',
       defaultValue: false,
