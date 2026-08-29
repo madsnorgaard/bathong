@@ -117,6 +117,32 @@ test('an album must carry a credit and can only come from a walked walk', async 
   created.push({ collection: 'albums', id: (await ok.json()).doc.id })
 })
 
+test('an album slug is always one URL segment, made from the title when empty', async ({ request }) => {
+  const media = await (await request.get(`${ADMIN}/api/media?limit=1&depth=0`)).json()
+  const typed = await request.post(`${ADMIN}/api/albums`, {
+    headers: auth(),
+    data: {
+      title: 'E2E: slashes',
+      slug: 'walks/walk-001-first-light/Gallery ',
+      images: [media.docs[0].id],
+      creditOverride: 'E2E',
+    },
+  })
+  expect(typed.status()).toBe(201)
+  const typedDoc = (await typed.json()).doc as { id: number; slug: string }
+  created.push({ collection: 'albums', id: typedDoc.id })
+  expect(typedDoc.slug).toBe('walks-walk-001-first-light-gallery')
+
+  const empty = await request.post(`${ADMIN}/api/albums`, {
+    headers: auth(),
+    data: { title: 'E2E: Behind the Walk, Ünedited', images: [media.docs[0].id], creditOverride: 'E2E' },
+  })
+  expect(empty.status()).toBe(201)
+  const emptyDoc = (await empty.json()).doc as { id: number; slug: string }
+  created.push({ collection: 'albums', id: emptyDoc.id })
+  expect(emptyDoc.slug).toBe('e2e-behind-the-walk-unedited')
+})
+
 test('a draft walk never reaches the public archive, even with frames linked to it', async ({
   request,
 }) => {

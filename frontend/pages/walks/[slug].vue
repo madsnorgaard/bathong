@@ -99,9 +99,22 @@ useShareMeta({
         <ShareRow :title="walk.title" />
       </section>
 
-      <section v-if="routeGeo" v-reveal class="chapter">
-        <ChapterHead title="The route" />
-        <RouteMap :route="routeGeo" :meeting-point="walk.meetingPoint" />
+      <!-- the album leads the record: the walk as it was lived, before the route -->
+      <section v-if="albums.length" v-reveal class="chapter">
+        <ChapterHead title="Albums" />
+        <div class="album-grid">
+          <NuxtLink v-for="album in albums" :key="album.id" :to="`/albums/${album.slug}`" class="card">
+            <BFrame
+              :src="mediaSrc(albumCover(album) as never)"
+              :alt="albumCover(album)?.alt ?? album.title"
+              :credit="albumCredit(album)"
+              sizes="xs:100vw md:50vw lg:50vw xl:720px"
+              class="card-frame"
+            />
+            <h3 class="b-display-2">{{ album.title }}</h3>
+            <p class="b-caption">{{ album.images?.length ?? 0 }} photographs<template v-if="album.date"> · {{ formatWalkDate(album.date) }}</template></p>
+          </NuxtLink>
+        </div>
       </section>
 
       <section v-if="essays.length" v-reveal class="chapter">
@@ -138,21 +151,9 @@ useShareMeta({
         </NuxtLink>
       </section>
 
-      <section v-if="albums.length" v-reveal class="chapter">
-        <ChapterHead title="Albums" />
-        <div class="album-grid">
-          <NuxtLink v-for="album in albums" :key="album.id" :to="`/albums/${album.slug}`" class="card">
-            <BFrame
-              :src="mediaSrc(albumCover(album) as never)"
-              :alt="albumCover(album)?.alt ?? album.title"
-              :credit="albumCredit(album)"
-              sizes="xs:100vw md:50vw lg:50vw xl:720px"
-              class="card-frame"
-            />
-            <h3 class="b-display-2">{{ album.title }}</h3>
-            <p class="b-caption">{{ album.images?.length ?? 0 }} photographs<template v-if="album.date"> · {{ formatWalkDate(album.date) }}</template></p>
-          </NuxtLink>
-        </div>
+      <section v-if="routeGeo" v-reveal class="chapter">
+        <ChapterHead title="The route" />
+        <RouteMap :route="routeGeo" :meeting-point="walk.meetingPoint" />
       </section>
 
       <section v-if="!hasWork" class="chapter">
