@@ -34,10 +34,11 @@ const manifestoParagraphs = computed(() => richTextParagraphs(manifesto.value?.b
 const directors = computed(() => people.value?.docs ?? [])
 const benefits = computed(() => membership.value?.benefits ?? [])
 const contactEmail = computed(() => settings.value?.contactEmail || null)
-// Join goes to the configured URL, else the mailbox; no button without either.
-const joinHref = computed(
-  () => membership.value?.joinUrl || (contactEmail.value ? `mailto:${contactEmail.value}` : null),
-)
+// Join goes to sign-up on the site (the desk when signed in), unless the
+// global points it elsewhere.
+const { isSignedIn } = useAuth()
+const joinExternal = computed(() => membership.value?.joinUrl || null)
+const joinTo = computed(() => (isSignedIn.value ? '/account' : '/account/sign-up'))
 
 function personContact(person: Person): string | null {
   if (person.showContact && person.contactEmail) return person.contactEmail
@@ -122,11 +123,10 @@ function personContact(person: Person): string | null {
       <!-- the door -->
       <div class="join">
         <p class="apply">
-          Anyone can join.
-          <template v-if="joinHref">Write to us and we send the details.</template>
-          <template v-else>Joining opens with our mailbox. TBC.</template>
+          Anyone can join. An account is free; membership is a plan and a card.
         </p>
-        <BButton v-if="joinHref" :href="joinHref" variant="signal">Join →</BButton>
+        <BButton v-if="joinExternal" :href="joinExternal" variant="signal">Join →</BButton>
+        <BButton v-else :to="joinTo" variant="signal">Join →</BButton>
       </div>
 
       <!-- the open door, on its own -->

@@ -67,7 +67,7 @@ async function submit() {
       </BButton>
       <p class="b-caption popia">
         Your name and email are stored only to run this walk, visible to the editorial team only,
-        and deleted on request.
+        and deleted on request. <NuxtLink to="/privacy">Privacy →</NuxtLink>
       </p>
     </form>
   </div>

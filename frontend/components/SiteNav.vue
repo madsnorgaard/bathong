@@ -19,6 +19,8 @@ const { isSignedIn } = useAuth()
 const accountLink = computed(() =>
   isSignedIn.value ? { to: '/account', label: 'Account →' } : { to: '/account/sign-in', label: 'Sign in →' },
 )
+// Join is the door: an account first, the plan from the desk.
+const joinLink = computed(() => (isSignedIn.value ? '/account' : '/account/sign-up'))
 
 const sheetOpen = ref(false)
 const sheetEl = ref<HTMLElement | null>(null)
@@ -65,7 +67,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       <nav class="links b-kicker" aria-label="Main">
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
       </nav>
-      <BButton to="/about#membership" variant="ghost" size="sm" class="join">Join →</BButton>
+      <BButton :to="joinLink" variant="ghost" size="sm" class="join">Join →</BButton>
       <NuxtLink :to="accountLink.to" class="account b-kicker">{{ accountLink.label }}</NuxtLink>
       <button
         ref="toggleEl"
@@ -82,7 +84,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="b-display-2">
           {{ link.label }}
         </NuxtLink>
-        <NuxtLink to="/about#membership" class="b-display-2">Join →</NuxtLink>
+        <NuxtLink :to="joinLink" class="b-display-2">Join →</NuxtLink>
         <NuxtLink :to="accountLink.to" class="b-display-2">{{ accountLink.label }}</NuxtLink>
       </nav>
     </div>
