@@ -13,9 +13,10 @@ useShareMeta({
 
 interface List<T> { docs: T[] }
 
+// The roster is a choice: only profiles whose member switched it on.
 const { data } = await useCmsData<List<Person>>(
   'people-roster',
-  '/api/people?sort=order&limit=48&depth=1',
+  '/api/people?where[onRoster][equals]=true&sort=order&limit=48&depth=1',
 )
 const people = computed(() => data.value?.docs ?? [])
 </script>
