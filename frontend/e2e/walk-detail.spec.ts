@@ -37,11 +37,12 @@ test('a walked walk is the record: facts, leader, route, and the work it produce
     '/archive?walk=demo-past-walk',
   )
 
-  // albums
-  await expect(page.getByRole('link', { name: /Demo: behind the walk/ })).toHaveAttribute(
-    'href',
-    '/albums/demo-behind-the-walk',
-  )
+  // albums lead the record; the route comes after the work
+  const albumLink = page.getByRole('link', { name: /Demo: behind the walk/ })
+  await expect(albumLink).toHaveAttribute('href', '/albums/demo-behind-the-walk')
+  const albumY = (await albumLink.boundingBox())!.y
+  const routeY = (await page.locator('.route-map').boundingBox())!.y
+  expect(albumY, 'the album sits above the route').toBeLessThan(routeY)
 })
 
 test('the record shares its own C4 card', async ({ page }) => {

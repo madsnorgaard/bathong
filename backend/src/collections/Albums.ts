@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isAdmin, isEditor, publishedOrEditor } from '../access'
 import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
+import { formatSlug } from '../fields/slug'
 
 /**
  * Albums are the softer record of a walk: group photographs, the edit table,
@@ -20,7 +21,16 @@ export const Albums: CollectionConfig = {
   defaultSort: '-date',
   fields: [
     { name: 'title', type: 'text', required: true },
-    { name: 'slug', type: 'text', unique: true, index: true },
+    {
+      name: 'slug',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        description:
+          'One URL segment, made from the title when empty: /albums/<slug>. Slashes and spaces are folded into hyphens.',
+      },
+    },
     {
       name: 'intro',
       type: 'textarea',
@@ -66,6 +76,7 @@ export const Albums: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
+      formatSlug,
       async ({ data, originalDoc, req }) => {
         // Credit is non-negotiable here too: album photographs are shown
         // with a name on them, the same as every frame.
