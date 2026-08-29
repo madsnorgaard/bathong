@@ -23,6 +23,7 @@ import { framesIndex } from './endpoints/framesIndex'
 import { archive } from './endpoints/archive'
 import { accountResendVerification, accountSignUp } from './endpoints/accountSignUp'
 import { accountJoin } from './endpoints/accountJoin'
+import { accountSecurity } from './endpoints/accountSecurity'
 import { e2eHooks } from './endpoints/e2eHooks'
 import { SiteSettings } from './globals/SiteSettings'
 import { Manifesto } from './globals/Manifesto'
@@ -76,6 +77,7 @@ export default buildConfig({
     accountSignUp,
     accountResendVerification,
     accountJoin,
+    ...accountSecurity,
     ...e2eHooks,
   ],
   editor: lexicalEditor(),

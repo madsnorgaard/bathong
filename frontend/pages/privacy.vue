@@ -66,8 +66,9 @@ const contact = computed(() => settings.value?.contactEmail || 'hello@bathong.af
 
       <h3 class="b-kicker">Your rights (POPIA)</h3>
       <p>
-        You can see what we hold, correct it, and delete it. Your desk shows most of it; for the rest,
-        or to delete your account before that page exists, write to
+        You can see what we hold, correct it, and delete it. Your desk shows most of it, your profile
+        page edits it, and your security page changes your password or email, signs out any device,
+        and deletes your account. For anything else, write to
         <a :href="`mailto:${contact}`">{{ contact }}</a> from the address on the account and we do it
         by hand. You can also complain to the Information Regulator of South Africa.
       </p>
