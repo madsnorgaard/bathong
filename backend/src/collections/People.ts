@@ -3,6 +3,7 @@ import { APIError } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
 import { anyone, hasEditorRole, isAdmin, isEditor, isEditorField } from '../access'
 import { instagramUrl, webLinkProblem } from '../lib/links'
+import { BIO_MAX, lexicalLength } from '../lib/lexical'
 
 const webLink = (value: unknown) => webLinkProblem(value) ?? true
 
@@ -72,6 +73,7 @@ export const People: CollectionConfig = {
     {
       name: 'basedIn',
       type: 'text',
+      maxLength: 80,
       admin: {
         description:
           'City, as the photographer wants it shown (Pretoria, Cape Town...). Optional; the site claims no city when empty.',
@@ -96,8 +98,11 @@ export const People: CollectionConfig = {
       name: 'contactEmail',
       type: 'email',
       access: {
-        // Public read only when the photographer opted in; editors always.
-        read: ({ req: { user }, doc }) => hasEditorRole(user) || Boolean(doc?.showContact),
+        // Public read only when the photographer opted in; editors always;
+        // the owner always (a value they cannot read back would be lost on
+        // their next save).
+        read: ({ req: { user }, doc }) =>
+          hasEditorRole(user) || Boolean(doc?.showContact) || (Boolean(user) && rel(doc?.owner) === user?.id),
       },
       admin: { description: 'Shown on the public page only when "Show contact" is on.' },
     },
@@ -124,6 +129,33 @@ export const People: CollectionConfig = {
         if (typeof data?.instagram === 'string' && data.instagram.trim()) data.instagram = instagramUrl(data.instagram)
         return data
       },
+      // A member's portrait is a file they uploaded themselves, never
+      // someone else's frame picked by id.
+      async ({ data, originalDoc, req }) => {
+        if (!req.user || hasEditorRole(req.user)) return data
+        if (!data || !('portrait' in data) || data.portrait == null) return data
+        const next = rel(data.portrait)
+        if (next === rel(originalDoc?.portrait)) return data
+        const refuse = () => new APIError('Use a portrait you uploaded yourself.', 400)
+        if (!Number.isInteger(next)) throw refuse()
+        const media = await req.payload.findByID({
+          collection: 'media',
+          id: next as number,
+          depth: 0,
+          overrideAccess: true,
+          disableErrors: true,
+          req,
+        })
+        if (!media || rel(media.uploadedBy) !== req.user.id || media.visibility !== 'public') throw refuse()
+        return data
+      },
+      // The bio is a few lines, not an essay: the page caps it, the API holds it.
+      ({ data }) => {
+        if (data?.bio && lexicalLength(data.bio) > BIO_MAX) {
+          throw new APIError(`Keep the bio under ${BIO_MAX} characters.`, 400)
+        }
+        return data
+      },
       // The roster needs a face. The rule is for members editing their own
       // page; an editor (or the seed, with no user) may list a founder
       // before the portrait arrives. An explicit null counts as no portrait.
@@ -147,6 +179,34 @@ export const People: CollectionConfig = {
       },
     ],
     afterChange: [
+      // A replaced portrait does not linger as a public orphan: when the
+      // old file was the owner's own upload and nothing else shows it, it
+      // goes. (Members cannot delete public media themselves.)
+      async ({ doc, previousDoc, req }) => {
+        const before = rel(previousDoc?.portrait)
+        const owner = rel(doc.owner)
+        if (!before || before === rel(doc.portrait) || !owner) return
+        const { payload } = req
+        const old = await payload.findByID({
+          collection: 'media',
+          id: before,
+          depth: 0,
+          overrideAccess: true,
+          disableErrors: true,
+          req,
+        })
+        if (!old || rel(old.uploadedBy) !== owner) return
+        const [frames, people] = await Promise.all([
+          payload.count({ collection: 'frames', where: { image: { equals: before } }, overrideAccess: true, req }),
+          payload.count({ collection: 'people', where: { portrait: { equals: before } }, overrideAccess: true, req }),
+        ])
+        if (frames.totalDocs || people.totalDocs) return
+        try {
+          await payload.delete({ collection: 'media', id: before, overrideAccess: true, req })
+        } catch (err) {
+          payload.logger.warn({ err, media: before }, 'profile: old portrait not removed')
+        }
+      },
       // An owner linked by an editor becomes that account's profile.
       async ({ doc, previousDoc, req, context }) => {
         if (context?.syncingOwner) return

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * The desk's own nav: mono kickers, 44px targets. Profile and Security
- * arrive with their pages; until then the desk and joining are the doors.
+ * The desk's own nav: mono kickers, 44px targets.
  */
 defineProps<{ showJoin?: boolean }>()
 </script>
@@ -9,6 +8,8 @@ defineProps<{ showJoin?: boolean }>()
 <template>
   <nav class="account-nav b-kicker" aria-label="Account">
     <NuxtLink to="/account">Desk</NuxtLink>
+    <NuxtLink to="/account/profile">Profile</NuxtLink>
+    <NuxtLink to="/account/security">Security</NuxtLink>
     <NuxtLink v-if="showJoin" to="/account/join">Join</NuxtLink>
   </nav>
 </template>
