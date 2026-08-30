@@ -253,6 +253,9 @@ export function useAuth() {
     }
   }
 
+  const cancelEmailChange = () =>
+    account('/api/account/cancel-email-change', {}, 'Could not cancel the change. Try again.')
+
   async function sessions(): Promise<SessionList> {
     return await authed<SessionList>('/api/account/sessions')
   }
@@ -282,6 +285,7 @@ export function useAuth() {
     uploadPortrait,
     changePassword,
     changeEmail,
+    cancelEmailChange,
     confirmEmailChange,
     sessions,
     revokeSession,

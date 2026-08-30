@@ -75,6 +75,20 @@ export async function deleteUserByEmail(request: APIRequestContext, email: strin
   await request.delete(`${API}/api/users/${docs[0].id}`, { headers: adminHeaders() })
 }
 
+/**
+ * The Next dev server (local and CI) now and then resets a connection right
+ * after an image upload has kept sharp busy. One retry on that, nothing else.
+ */
+export async function retryOnReset<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call()
+  } catch (err) {
+    if (!/ECONNRESET|socket hang up/.test(String(err))) throw err
+    await new Promise((r) => setTimeout(r, 500))
+    return await call()
+  }
+}
+
 /** The token an email change is waiting on, read by the account's current address. */
 export async function pendingEmailToken(request: APIRequestContext, email: string): Promise<string> {
   const res = await request.get(`${API}/api/e2e/verification-token?email=${encodeURIComponent(email)}`, {

@@ -17,6 +17,7 @@ const {
   fetchMe,
   changePassword,
   changeEmail,
+  cancelEmailChange,
   sessions: loadSessions,
   revokeSession,
   signOutEverywhere,
@@ -65,8 +66,28 @@ const newEmail = ref('')
 const emailPassword = ref('')
 const emBusy = ref(false)
 const emError = ref('')
-const emPending = ref<string | null>(user.value?.pendingEmail ?? null)
+// a pending change is shown only while its link still works
+const stillPending = (u: { pendingEmail?: string | null; pendingEmailExpires?: string | null } | null) =>
+  u?.pendingEmail && u.pendingEmailExpires && new Date(u.pendingEmailExpires).getTime() > Date.now()
+    ? u.pendingEmail
+    : null
+const emPending = ref<string | null>(stillPending(user.value))
 const emDone = ref(false)
+const cancelling = ref(false)
+async function cancelPending() {
+  cancelling.value = true
+  emError.value = ''
+  try {
+    await cancelEmailChange()
+    emPending.value = null
+    emDone.value = false
+    await fetchMe()
+  } catch (error) {
+    emError.value = (error as Error).message
+  } finally {
+    cancelling.value = false
+  }
+}
 async function submitEmail() {
   if (emBusy.value) return
   emBusy.value = true
@@ -171,14 +192,16 @@ async function submitDelete() {
       <form class="account-form block" novalidate @submit.prevent="submitEmail">
         <h3 class="b-kicker">Email</h3>
         <p class="b-caption muted">Signed in as {{ user?.email }}.</p>
-        <p v-if="emPending && !emDone" class="b-caption">
+        <p v-if="emPending && !emDone" class="b-caption pending">
           A change to {{ emPending }} is waiting for that address to confirm it.
+          <button type="button" class="linkish" :disabled="cancelling" @click="cancelPending">Cancel it</button>
         </p>
         <BField v-model="newEmail" label="New email" name="newEmail" type="email" autocomplete="email" required />
         <BField v-model="emailPassword" label="Your password" name="emailPassword" type="password" autocomplete="current-password" required />
         <p v-if="emError" class="b-caption error" role="alert">{{ emError }}</p>
         <p v-else-if="emDone" class="b-caption ok" role="status">
           Check {{ emPending }}. The change happens when you confirm it there.
+          <button type="button" class="linkish" :disabled="cancelling" @click="cancelPending">Cancel it</button>
         </p>
         <BButton type="submit" variant="ghost" :disabled="emBusy || !newEmail || !emailPassword">
           {{ emBusy ? 'One moment...' : 'Change email →' }}
@@ -258,6 +281,20 @@ async function submitDelete() {
   min-height: 44px;
 }
 .ok {
+  color: var(--signal);
+}
+.linkish {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: var(--space-2);
+  font: inherit;
+  color: var(--grey-fog);
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: 44px;
+}
+.linkish:hover {
   color: var(--signal);
 }
 .error {

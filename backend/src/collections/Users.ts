@@ -172,7 +172,7 @@ export const Users: CollectionConfig = {
     {
       name: 'pendingEmailExpires',
       type: 'date',
-      access: { create: () => false, update: () => false },
+      access: { read: selfOrAdminRead, create: () => false, update: () => false },
       admin: { hidden: true },
     },
   ],
@@ -194,6 +194,26 @@ export const Users: CollectionConfig = {
           }
         }
         return args
+      },
+    ],
+    afterOperation: [
+      // A password reset kills a pending email change too: the person
+      // resetting may be the one that change was meant to lock out.
+      // resetPassword writes the hash straight through the db adapter, so
+      // no beforeChange hook sees it; this is the one hook that runs.
+      async ({ operation, result, req }) => {
+        if (operation !== 'resetPassword') return result
+        const id = (result as { user?: { id?: number } } | undefined)?.user?.id
+        if (id) {
+          await req.payload.update({
+            collection: 'users',
+            id,
+            data: { pendingEmail: null, pendingEmailToken: null, pendingEmailExpires: null },
+            overrideAccess: true,
+            req,
+          })
+        }
+        return result
       },
     ],
     beforeValidate: [

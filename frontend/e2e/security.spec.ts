@@ -125,6 +125,77 @@ test('email: the change waits for the new address; then the old one is out and t
   await expect(page.getByText('That link did not work.')).toBeVisible({ timeout: 15_000 })
 })
 
+test('a pending email change looks the same for a taken address, survives a reload, can be cancelled, and dies with a password change', async ({
+  page,
+  request,
+}) => {
+  test.slow()
+  const email = freshEmail('security-pending')
+  made.push(email)
+  await signUpAndVerify(page, request, email, 'Pending Member')
+
+  // a taken address: the same answer and the same pending state as a free one
+  await gotoHydrated(page, '/account/security')
+  await page.getByLabel(/^New email/).fill('member@bathong.local')
+  await page.getByLabel(/^Your password/).first().fill(PASSWORD)
+  await page.getByRole('button', { name: /Change email/ }).click()
+  await expect(page.getByText('Check member@bathong.local.')).toBeVisible()
+  await gotoHydrated(page, '/account/security')
+  await expect(page.getByText(/A change to member@bathong.local is waiting/)).toBeVisible()
+  // its token, were it ever known, does nothing
+  const inert = await pendingEmailToken(request, email)
+  const taken = await request.post(`${API}/api/account/confirm-email`, { data: { token: inert } })
+  expect(taken.status()).toBe(400)
+  expect((await request.post(`${API}/api/users/login`, { data: { email, password: PASSWORD } })).status()).toBe(200)
+
+  // cancel it
+  await page.getByRole('button', { name: /Cancel it/ }).click()
+  await expect(page.getByText(/is waiting for that address/)).toHaveCount(0)
+  await gotoHydrated(page, '/account/security')
+  await expect(page.getByText(/is waiting for that address/)).toHaveCount(0)
+
+  // a fresh change to a free address, then a password change: the change is dead
+  const newEmail = freshEmail('security-pending-new')
+  await page.getByLabel(/^New email/).fill(newEmail)
+  await page.getByLabel(/^Your password/).first().fill(PASSWORD)
+  await page.getByRole('button', { name: /Change email/ }).click()
+  await expect(page.getByText(`Check ${newEmail}.`)).toBeVisible()
+  const token = await pendingEmailToken(request, email)
+  await page.getByLabel(/^Current password/).fill(PASSWORD)
+  await page.getByLabel(/^New password/).fill(NEW_PASSWORD)
+  await page.getByRole('button', { name: /Change password/ }).click()
+  await expect(page.getByText('Changed. Other devices were signed out.')).toBeVisible()
+  await expect(page.getByText(/is waiting for that address/)).toHaveCount(0)
+  const dead = await request.post(`${API}/api/account/confirm-email`, { data: { token } })
+  expect(dead.status()).toBe(400)
+  expect((await request.post(`${API}/api/users/login`, { data: { email, password: NEW_PASSWORD } })).status()).toBe(200)
+  expect((await request.post(`${API}/api/users/login`, { data: { email: newEmail, password: NEW_PASSWORD } })).status()).toBe(401)
+})
+
+test('five wrong passwords lock the doors, as at sign-in', async ({ page, request }) => {
+  const email = freshEmail('security-lock')
+  made.push(email)
+  await signUpAndVerify(page, request, email, 'Locked Member')
+  const headers = origin(page)
+  for (let i = 0; i < 4; i += 1) {
+    const res = await page.request.post(`${API}/api/account/change-password`, {
+      headers,
+      data: { current: `wrong ${i} wrong wrong`, password: NEW_PASSWORD },
+    })
+    expect(res.status()).toBe(400)
+    expect(((await res.json()) as { errors: { message: string }[] }).errors[0].message).toBe('That is not your current password.')
+  }
+  const fifth = await page.request.post(`${API}/api/account/change-password`, {
+    headers,
+    data: { current: 'wrong five wrong wrong', password: NEW_PASSWORD },
+  })
+  expect(((await fifth.json()) as { errors: { message: string }[] }).errors[0].message).toMatch(/locked/)
+  // the right password is refused while the lock holds, on every door
+  const right = await page.request.post(`${API}/api/account/delete`, { headers, data: { password: PASSWORD } })
+  expect(((await right.json()) as { errors: { message: string }[] }).errors[0].message).toMatch(/locked/)
+  expect((await request.post(`${API}/api/users/login`, { data: { email, password: PASSWORD } })).status()).toBe(401)
+})
+
 test('closing the account: the password is checked, the person goes, the work stays credited', async ({ page, request }) => {
   test.slow()
   const email = freshEmail('security-close')
