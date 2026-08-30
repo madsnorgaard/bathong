@@ -320,18 +320,24 @@ the rate-limited `POST /api/account/*`):
 
 - **Password.** `POST /api/account/change-password { current, password }`
   checks the current password (`lib/sessions.ts` mirrors Payload's pbkdf2
-  check, which the package does not export), applies the policy, updates
-  through the local API with `context.passwordChange` (the only way past
-  the Users hook that refuses a stock self `PATCH { password }`), keeps only
-  the session making the change (`req.user._sid`) and mails
-  `passwordChanged`.
+  check and its lockout, neither of which the package exports: five wrong
+  answers lock the account for ten minutes, as at sign-in), applies the
+  policy, updates through the local API with `context.passwordChange` (the
+  only way past the Users hook that refuses a stock self `PATCH
+  { password }`), clears any pending email change, keeps only the session
+  making the change (`req.user._sid`) and mails `passwordChanged`. A
+  password reset clears a pending email change too (Users `afterOperation`
+  on `resetPassword`, the only hook that path runs).
 - **Email.** `POST /api/account/change-email { password, email }` checks the
-  password, refuses the current address, answers 200 with an
-  `accountExists` mail to a taken address (no hint to the asker), else
-  stores `pendingEmail`, a token and a one-hour expiry (those fields are not
-  writable through the collection) and mails `emailChangeVerify` to the new
-  address and `emailChangeNotice` to the old. `POST /api/account/confirm-email
-  { token }` (anonymous, from `/account/verify?kind=email`) moves the
+  password, refuses the current address, and writes the same pending state
+  (`pendingEmail`, a token, a one-hour expiry; fields not writable through
+  the collection) whether or not the address has an account, so nothing
+  the asker can read says which. A free address gets `emailChangeVerify`
+  with the link; a taken one gets `accountExists` and its token is never
+  sent; the old address gets `emailChangeNotice` either way.
+  `POST /api/account/cancel-email-change` clears it. `POST
+  /api/account/confirm-email { token }` (anonymous, from
+  `/account/verify?kind=email`) refuses a taken or expired change, moves the
   address, clears the pending fields and revokes every session.
 - **Devices.** `GET /api/account/sessions` lists live sessions with the
   current id; `POST /api/account/sessions/revoke { id }` drops one; the stock
@@ -341,12 +347,15 @@ the rate-limited `POST /api/account/*`):
 - **Close account.** `POST /api/account/delete { password }`: editors and
   admins are refused (an admin removes them); in one transaction RSVPs by
   the account or its address become `Former member` at
-  `deleted-{id}@example.invalid` (`lib/anonymise.ts`), entries lose the
-  account link and email but keep the credit name, restricted media by the
-  account is deleted, the People profile keeps its number and work but loses
-  its owner, roster place and contact, pending orders are cancelled, and the
-  user row goes. The response clears the session cookie; `accountDeleted`
-  is mailed.
+  `deleted-{id}@example.invalid` (`lib/anonymise.ts`), entries still under
+  judging are deleted with their files, published entries lose the account
+  link and email but keep the credit name (`context.closingAccount` lets the
+  immutable `submitter` go), restricted media by the account is deleted,
+  the People profile keeps its number and work but loses its owner, roster
+  place and contact, pending orders are cancelled (note appended), and the
+  user row goes. A bulk step that fails on any row fails the whole closing
+  (Payload's bulk operations collect errors instead of throwing). The
+  response clears the session cookie; `accountDeleted` is mailed.
 
 ## Member sign-in (#13)
 

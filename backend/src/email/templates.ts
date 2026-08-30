@@ -128,7 +128,7 @@ export const emailChangeNotice = (name: string, newEmail: string, contact: strin
     `Hi ${name},\n\n` +
     `Someone signed in to your account asked to move it to ${newEmail}. ` +
     `Nothing changes until that address confirms it.\n\n` +
-    `If this was not you, change your password now from your security page and write to ${contact}.` +
+    `If this was not you, change your password now from your security page: that cancels the change. Then write to ${contact}.` +
     SIGNATURE,
 })
 
@@ -145,8 +145,8 @@ export const accountDeleted = (name: string) => ({
   subject: 'Your Bathong. account is closed',
   text:
     `Hi ${name},\n\n` +
-    `Your account and personal details are deleted. RSVPs and entries you made now name nobody. ` +
-    `Work you published stays on the site with your name on it, as agreed when you published.\n\n` +
+    `Your account and personal details are deleted. RSVPs you made now name nobody, entries still under judging are withdrawn, ` +
+    `and work you published stays on the site with your name on it, as agreed when you published.\n\n` +
     `Thank you for walking with us. The door stays open.` +
     SIGNATURE,
 })
