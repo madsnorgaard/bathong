@@ -21,6 +21,9 @@ import { Rsvps } from './collections/Rsvps'
 import { photocallEntry } from './endpoints/photocallEntry'
 import { framesIndex } from './endpoints/framesIndex'
 import { archive } from './endpoints/archive'
+import { accountResendVerification, accountSignUp } from './endpoints/accountSignUp'
+import { accountJoin } from './endpoints/accountJoin'
+import { e2eHooks } from './endpoints/e2eHooks'
 import { SiteSettings } from './globals/SiteSettings'
 import { Manifesto } from './globals/Manifesto'
 import { Membership } from './globals/Membership'
@@ -66,7 +69,15 @@ export default buildConfig({
     Rsvps,
   ],
   globals: [SiteSettings, Manifesto, Membership],
-  endpoints: [photocallEntry, framesIndex, archive],
+  endpoints: [
+    photocallEntry,
+    framesIndex,
+    archive,
+    accountSignUp,
+    accountResendVerification,
+    accountJoin,
+    ...e2eHooks,
+  ],
   editor: lexicalEditor(),
   // The frontend is REST-only; removing the GraphQL surface (and with it the
   // unauthenticated playground route) beats gating it.

@@ -162,12 +162,23 @@ export interface User {
   name: string;
   roles: ('admin' | 'editor' | 'member')[];
   /**
-   * Link to a public People profile, if this user has one.
+   * The public People profile this account edits. Set on activation.
    */
   profile?: (number | null) | Person;
   membershipPlan?: ('none' | 'monthly' | 'annual') | null;
   membershipStatus?: ('none' | 'active' | 'lapsed') | null;
   membershipExpires?: string | null;
+  /**
+   * First activation. Set once; the joining fee is charged only while this is empty.
+   */
+  memberSince?: string | null;
+  /**
+   * Opted in to occasional email from the collective. A preference only; no tool is connected yet.
+   */
+  newsletter?: boolean | null;
+  pendingEmail?: string | null;
+  pendingEmailToken?: string | null;
+  pendingEmailExpires?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -175,6 +186,8 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  _verified?: boolean | null;
+  _verificationToken?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -196,9 +209,17 @@ export interface Person {
   name: string;
   slug?: string | null;
   /**
-   * The member register number, rendered as № 0001. Real numbers only.
+   * The member register number, rendered as № 0001. Assigned on activation from a sequence; a number typed by hand moves the sequence past it, so numbers are never reused.
    */
   memberNumber?: number | null;
+  /**
+   * The account that edits this profile. Set on activation; editors can link by hand.
+   */
+  owner?: (number | null) | User;
+  /**
+   * Appears on the public roster. A member needs a portrait first; editors can list a founder while the portrait is on its way.
+   */
+  onRoster?: boolean | null;
   portrait?: (number | null) | Media;
   bio?: {
     root: {
@@ -224,7 +245,13 @@ export interface Person {
    * Part of the founding circle of the collective.
    */
   foundingCircle?: boolean | null;
+  /**
+   * The profile link, or just the handle.
+   */
   instagram?: string | null;
+  /**
+   * A full link, starting with https://
+   */
   website?: string | null;
   /**
    * Shown on the public page only when "Show contact" is on.
@@ -635,6 +662,9 @@ export interface Walk {
 export interface Album {
   id: number;
   title: string;
+  /**
+   * One URL segment, made from the title when empty: /albums/<slug>. Slashes and spaces are folded into hyphens.
+   */
   slug?: string | null;
   /**
    * A few lines on what this album is. Optional.
@@ -702,12 +732,37 @@ export interface Order {
   id: number;
   user?: (number | null) | User;
   type?: ('membership' | 'walk') | null;
+  plan?: ('monthly' | 'annual') | null;
   item?: (number | null) | Walk;
+  /**
+   * Total in rand, frozen at order time.
+   */
   amount?: number | null;
+  /**
+   * The part of the amount that is the once-off joining fee.
+   */
+  joiningFee?: number | null;
   currency?: string | null;
+  /**
+   * What the member types as the EFT reference.
+   */
+  reference?: string | null;
+  /**
+   * Set to Paid when the EFT shows. That activates the membership.
+   */
   status?: ('pending' | 'paid' | 'failed' | 'cancelled' | 'refunded') | null;
+  /**
+   * Left empty, it is set when the status becomes paid.
+   */
+  paidAt?: string | null;
+  coveredFrom?: string | null;
+  coveredUntil?: string | null;
   provider?: ('payfast' | 'manual') | null;
   providerRef?: string | null;
+  /**
+   * Who confirmed the EFT, and when.
+   */
+  note?: string | null;
   /**
    * Raw provider payload for auditing.
    */
@@ -730,6 +785,10 @@ export interface Order {
 export interface Rsvp {
   id: number;
   walk: number | Walk;
+  /**
+   * Set when a signed-in member reserves.
+   */
+  user?: (number | null) | User;
   name: string;
   email: string;
   note?: string | null;
@@ -863,6 +922,11 @@ export interface UsersSelect<T extends boolean = true> {
   membershipPlan?: T;
   membershipStatus?: T;
   membershipExpires?: T;
+  memberSince?: T;
+  newsletter?: T;
+  pendingEmail?: T;
+  pendingEmailToken?: T;
+  pendingEmailExpires?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -870,6 +934,8 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  _verified?: T;
+  _verificationToken?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:
@@ -888,6 +954,8 @@ export interface PeopleSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   memberNumber?: T;
+  owner?: T;
+  onRoster?: T;
   portrait?: T;
   bio?: T;
   roleTitle?: T;
@@ -1155,12 +1223,19 @@ export interface SubmissionsSelect<T extends boolean = true> {
 export interface OrdersSelect<T extends boolean = true> {
   user?: T;
   type?: T;
+  plan?: T;
   item?: T;
   amount?: T;
+  joiningFee?: T;
   currency?: T;
+  reference?: T;
   status?: T;
+  paidAt?: T;
+  coveredFrom?: T;
+  coveredUntil?: T;
   provider?: T;
   providerRef?: T;
+  note?: T;
   raw?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1171,6 +1246,7 @@ export interface OrdersSelect<T extends boolean = true> {
  */
 export interface RsvpsSelect<T extends boolean = true> {
   walk?: T;
+  user?: T;
   name?: T;
   email?: T;
   note?: T;
@@ -1298,7 +1374,7 @@ export interface Membership {
       }[]
     | null;
   /**
-   * Once, in rand. Includes the card and the member number.
+   * Once, in rand, for everyone who joins.
    */
   joiningFee?: number | null;
   /**
@@ -1309,6 +1385,9 @@ export interface Membership {
    * Per year, in rand.
    */
   priceAnnual?: number | null;
+  /**
+   * The kicker under the prices: what subscribing gets you.
+   */
   priceNote?: string | null;
   /**
    * The open door, kept without a tier. Clear it to hide the line.
@@ -1316,9 +1395,24 @@ export interface Membership {
   openDoorNote?: string | null;
   cardImage?: (number | null) | Media;
   /**
-   * Where "Join" goes. Empty falls back to the contact mailbox.
+   * Leave empty: Join goes to sign-up on the site. Set only to send joining elsewhere.
    */
   joinUrl?: string | null;
+  /**
+   * EFT references read PREFIX-XXXXXX. Letters and digits only.
+   */
+  referencePrefix?: string | null;
+  bank?: {
+    accountName?: string | null;
+    bankName?: string | null;
+    accountNumber?: string | null;
+    branchCode?: string | null;
+    /**
+     * Cheque, savings...
+     */
+    accountType?: string | null;
+    paymentNote?: string | null;
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1384,6 +1478,17 @@ export interface MembershipSelect<T extends boolean = true> {
   openDoorNote?: T;
   cardImage?: T;
   joinUrl?: T;
+  referencePrefix?: T;
+  bank?:
+    | T
+    | {
+        accountName?: T;
+        bankName?: T;
+        accountNumber?: T;
+        branchCode?: T;
+        accountType?: T;
+        paymentNote?: T;
+      };
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

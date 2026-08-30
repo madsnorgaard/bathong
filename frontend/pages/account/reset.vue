@@ -3,6 +3,8 @@
  * Set a new password from the emailed link (?token=). A successful reset
  * also signs the member in, so they land straight on their account.
  */
+import { passwordProblem } from '~/utils/password'
+
 useShareMeta({ title: 'Set a new password', description: 'Set a new Bathong. member password.' })
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] })
 
@@ -15,11 +17,11 @@ const confirm = ref('')
 const pending = ref(false)
 const errorMessage = ref('')
 
-const MIN = 8
 const mismatch = computed(() => Boolean(confirm.value) && confirm.value !== password.value)
-const tooShort = computed(() => Boolean(password.value) && password.value.length < MIN)
+// the same rule the API applies on sign-up and password change
+const problem = computed(() => (password.value ? passwordProblem(password.value) : null))
 const canSend = computed(
-  () => Boolean(token.value && password.value && confirm.value) && !mismatch.value && !tooShort.value && !pending.value,
+  () => Boolean(token.value && password.value && confirm.value) && !mismatch.value && !problem.value && !pending.value,
 )
 
 async function submit() {
@@ -52,7 +54,7 @@ async function submit() {
         type="password"
         required
         autocomplete="new-password"
-        :error="tooShort ? `At least ${MIN} characters.` : undefined"
+        :error="problem ?? undefined"
       />
       <BField
         v-model="confirm"

@@ -63,6 +63,8 @@ for (const path of [
   '/albums',
   '/albums/demo-behind-the-walk',
   '/photographers/mads-norgaard',
+  '/account/sign-up',
+  '/privacy',
 ]) {
   test(`${path} renders without CSP violations`, async ({ page }) => {
     const violations: string[] = []

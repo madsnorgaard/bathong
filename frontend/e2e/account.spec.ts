@@ -15,7 +15,8 @@ test('the account page sends anonymous visitors to sign in, and back again', asy
 })
 
 test('a member signs in, lands on the account page, and can sign out', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -23,11 +24,11 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   // Generous: under a full parallel run the dev backend answers the login
   // and the account page's SSR read well after the default 5s.
   await expect(page).toHaveURL(/\/account$/, { timeout: 15_000 })
-  await expect(page.getByRole('heading', { name: 'Member.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Desk.' })).toBeVisible()
   await expect(page.getByText('Demo Member')).toBeVisible()
-  // one membership, no tiers: the desk shows the plan the member pays by
-  await expect(page.locator('.facts')).toContainText('Plan')
-  await expect(page.locator('.facts')).toContainText('Monthly')
+  // one membership, no tiers: the card shows the plan the member pays by
+  await expect(page.locator('.b-card--member')).toContainText('Monthly')
+  await expect(page.locator('.b-card--member')).toContainText(/Member № \d{4}/)
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
 
   await page.getByRole('button', { name: /Sign out/ }).click()
@@ -39,7 +40,8 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
 })
 
 test('a wrong password shows an error and stays on the page', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill('not-the-password')
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -48,7 +50,8 @@ test('a wrong password shows an error and stays on the page', async ({ page }) =
 })
 
 test('the session survives a full reload (SSR reads the cookie)', async ({ page }) => {
-  await page.goto('/account/sign-in')
+  // networkidle: typing before hydration is lost when Vue takes the form over
+  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()

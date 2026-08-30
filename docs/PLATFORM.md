@@ -200,6 +200,97 @@ data is byte-identical with the default UI (asserted by
 `frontend/e2e/admin-sequence.spec.ts`; run those specs alone against a dev
 backend with `npx playwright test --config=playwright.admin.config.ts`).
 
+## Member accounts (#13, #40)
+
+Anyone can make an account; an account is free, and membership (a plan, the
+card, the number) comes after. `POST /api/account/sign-up`
+(`backend/src/endpoints/accountSignUp.ts`) is the one door: it takes name,
+email, password and the newsletter preference behind a honeypot, creates the
+user with `roles: ['member']`, and sends the plain-text confirmation mail
+itself (`templates.verifyEmail`, link to `/account/verify?token=`). A known
+address gets the same `200 { ok: true }` and an "you already have an account"
+email instead, so the form never says who is a member. `users.access.create`
+stays admin-only. `POST /api/account/resend-verification` regenerates the
+token; `POST /api/users/verify/:token` (stock) confirms; an unconfirmed
+account cannot sign in (403) and the JWT strategy refuses it too.
+
+Hardening that comes with an open door (`backend/src/collections/Users.ts`):
+`email` and `_verified` are redeclared over Payload's base fields so a member
+cannot change or self-verify them; `roles`, `profile` and the membership
+fields are admin-only on create and update; `access.unlock` is admin-only
+(Payload's default lets any signed-in user unlock any account by email);
+the password rule (`backend/src/lib/password.ts`, mirrored in
+`frontend/utils/password.ts`: ten characters, no spaces at the ends, not
+the email) runs in `beforeValidate` on create and update and in
+`beforeOperation` for reset-password (which hashes before validation); a
+member's stock `PATCH { password }`
+is refused (403) because it checks nothing and revokes nothing, the security
+page (PR4) is the path. `afterRead` shows an expired membership as lapsed
+without a write. Every existing account was marked verified by the
+`phase6_accounts_verify` migration, so nobody was locked out by the gate.
+
+Test door: with `E2E_HOOKS=true` (ci.yml and a dev backend, never the
+production compose) the admin-only `GET /api/e2e/verification-token?email=`
+returns the tokens that otherwise travel by email; `frontend/e2e/sign-up.spec.ts`
+walks sign-up, the refused sign-in, confirmation and the hardening cases.
+Traefik's strict rate limit covers `/api/account/*` POSTs and
+`/api/users/verify`. `/privacy` is the notice the sign-up form points at.
+
+## Joining and orders
+
+A signed-in account joins from `/account/join`: it picks monthly or annual,
+`POST /api/account/join` (`backend/src/endpoints/accountJoin.ts`) creates an
+`orders` row (`type: membership`, `plan`, `amount` frozen at order time,
+`joiningFee` when `memberSince` is empty, a unique `reference` such as
+`BTG-7K3M2Q` from an unambiguous alphabet, `status: pending`,
+`provider: manual`) and emails the bank details and the reference. One open
+order per account, held by a partial unique index (`orders_one_pending_idx`):
+asking again with the same plan returns it, asking with the other plan moves
+the open order over (same reference, new amount, instructions sent again),
+and two joins in the same instant answer with the same order. A running
+membership can renew in its last 30 days. There is no "I have paid" button.
+
+The bank details live on the `membership` global (`bank` group, readable by
+signed-in accounts only; `referencePrefix`). An editor marks the order
+`paid` in the admin (Orders is visible to editors; status, paidAt, provider,
+providerRef and note are editable, the money fields and `raw` are
+admin-only). The
+Orders hooks then set `paidAt`, `coveredFrom` (the current expiry when the
+membership still runs, else the payment day) and `coveredUntil` (a month or
+a year on, clamped to month ends), find or create the member's People
+profile (`owner` = the account; a slug from the name), assign a member
+number from the Postgres sequence `people_member_number_seq` (atomic, never
+reused; a number typed by hand moves the sequence past it), set the
+account's plan, status, expiry, `profile` and `memberSince`, and send
+`membershipActivated`. A refund or cancellation after payment does not
+revoke membership by itself; an admin edits the account. Two limits are
+accepted at collective scale rather than engineered away: the welcome mail
+leaves inside the request transaction (Payload 3.84 has no post-commit
+hook), and two orders for one account marked paid in the same instant would
+compute the same expiry base. The activation hook reads the paid transition
+off the saved order (`doc`/`previousDoc`), never off a flag passed through
+the hook context: a local API call made with `req` replaces `req.context`,
+so a flag set after such a call in `beforeChange` never reaches
+`afterChange`.
+
+PayFast (#18) later: its webhook finds the order by `reference` (sent as
+`m_payment_id`), sets `provider`, `providerRef`, `raw` and `status: paid`;
+the same hooks activate. Nothing restructures.
+
+Members reach their desk at `/account`: the card (`MemberCard.vue`, three
+honest states), the next walk, their RSVPs (RSVPs made while signed in
+carry `user`, readable by that member), their photocall entries with the
+written response, their published work, their payments. The public roster
+lists only profiles with `onRoster` on. A member needs a portrait to switch
+it on (an explicit `portrait: null` counts as none); editors, and the seed,
+may list a founder before the portrait arrives, so the founders are on the
+roster from the seed and, on an existing database, from the migration.
+`instagram` and `website` on a profile are validated as parsed http(s)
+links (a bare handle becomes the Instagram profile link) and rendered
+through `safeHref()` on the site, so a member cannot publish a
+`javascript:` href. `people.owner` never populates (`maxDepth: 0`): the
+profile is public, the account is not.
+
 ## Member sign-in (#13)
 
 Members sign in on the site, never in `/admin`. The frontend talks to
@@ -300,13 +391,14 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 
 | Collection | Public | Member | Editor | Admin |
 |---|---|---|---|---|
-| users | - | R/U self | R | CRUD |
-| people | R | R | CRU | CRUD |
+| users | C via /api/account/sign-up | R/U self (name, newsletter, password via the security page) | R | CRUD |
+| people | R | R, U own profile (portrait, bio, city, links, contact, roster) | CRU | CRUD |
 | media | R public | R pub+own, C, U/D own restricted | CRU all | CRUD |
 | frames | R | R | CRU | CRUD |
 | essays/albums/walks/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
 | submissions | - | C, R own, U own while submitted | R all, U status/notes | CRUD |
-| orders | - | R own | - | CRUD |
+| orders | - | R own (created via /api/account/join) | R all, U status/paidAt/note | CRUD |
+| rsvps | C | C, R own | R all, U | CRUD |
 | globals | R | R | U | U |
 | /admin panel | - | - | yes | yes |
 

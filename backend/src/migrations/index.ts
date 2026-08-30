@@ -10,6 +10,8 @@ import * as migration_20260821_090000_phase4_frame_top_pick from './20260821_090
 import * as migration_20260829_121228_phase5_walk_links_albums from './20260829_121228_phase5_walk_links_albums';
 import * as migration_20260829_124727_phase5_membership_plan from './20260829_124727_phase5_membership_plan';
 import * as migration_20260829_174237_phase5_card_for_subscribers from './20260829_174237_phase5_card_for_subscribers';
+import * as migration_20260829_222313_phase6_accounts_verify from './20260829_222313_phase6_accounts_verify';
+import * as migration_20260829_224718_phase6_membership_orders from './20260829_224718_phase6_membership_orders';
 
 export const migrations = [
   {
@@ -70,6 +72,16 @@ export const migrations = [
   {
     up: migration_20260829_174237_phase5_card_for_subscribers.up,
     down: migration_20260829_174237_phase5_card_for_subscribers.down,
-    name: '20260829_174237_phase5_card_for_subscribers'
+    name: '20260829_174237_phase5_card_for_subscribers',
+  },
+  {
+    up: migration_20260829_222313_phase6_accounts_verify.up,
+    down: migration_20260829_222313_phase6_accounts_verify.down,
+    name: '20260829_222313_phase6_accounts_verify',
+  },
+  {
+    up: migration_20260829_224718_phase6_membership_orders.up,
+    down: migration_20260829_224718_phase6_membership_orders.down,
+    name: '20260829_224718_phase6_membership_orders'
   },
 ];

@@ -6,8 +6,11 @@
  */
 const props = defineProps<{ walkId: number | string }>()
 
-const name = ref('')
-const email = ref('')
+// A signed-in member reserves as themselves: the form is prefilled and the
+// request carries the session, so the RSVP lands on their desk.
+const { user, isSignedIn, authed } = useAuth()
+const name = ref(user.value?.name ?? '')
+const email = ref(user.value?.email ?? '')
 const note = ref('')
 const website = ref('') // honeypot; humans never see or fill it
 const pending = ref(false)
@@ -21,7 +24,8 @@ async function submit() {
   pending.value = true
   errorMessage.value = ''
   try {
-    const response = await cms<{ doc?: { status?: string } }>('/api/rsvps', {
+    const post = isSignedIn.value ? authed : cms
+    const response = await post<{ doc?: { status?: string } }>('/api/rsvps', {
       method: 'POST',
       body: {
         walk: props.walkId,
@@ -67,7 +71,7 @@ async function submit() {
       </BButton>
       <p class="b-caption popia">
         Your name and email are stored only to run this walk, visible to the editorial team only,
-        and deleted on request.
+        and deleted on request. <NuxtLink to="/privacy">Privacy →</NuxtLink>
       </p>
     </form>
   </div>

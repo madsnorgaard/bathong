@@ -5,6 +5,7 @@
  * ?next= and go back there afterwards (same-site paths only).
  */
 import { safeNextPath } from '~/utils/auth'
+import { isUnverifiedError } from '~/composables/useAuth'
 
 useShareMeta({ title: 'Sign in', description: 'Member sign-in for the Bathong. collective.' })
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] })
@@ -21,16 +22,19 @@ const email = ref('')
 const password = ref('')
 const pending = ref(false)
 const errorMessage = ref('')
+const unverified = ref(false)
 
 async function submit() {
   if (pending.value) return
   pending.value = true
   errorMessage.value = ''
+  unverified.value = false
   try {
     await login(email.value.trim(), password.value)
     await navigateTo(next.value, { replace: true })
   } catch (error) {
     errorMessage.value = (error as Error).message
+    unverified.value = isUnverifiedError(error)
   } finally {
     pending.value = false
   }
@@ -51,13 +55,14 @@ async function submit() {
         autocomplete="current-password"
       />
       <p v-if="errorMessage" class="b-caption error" role="alert">{{ errorMessage }}</p>
+      <ResendVerification v-if="unverified" :email="email.trim()" />
       <BButton type="submit" variant="ghost" :disabled="pending || !email || !password">
         {{ pending ? 'Signing in...' : 'Sign in →' }}
       </BButton>
       <p class="b-caption">
         <NuxtLink to="/account/forgot">Forgotten your password?</NuxtLink>
         <span class="sep">·</span>
-        Not a member yet? <NuxtLink to="/about#membership">Join →</NuxtLink>
+        Not a member yet? <NuxtLink to="/account/sign-up">Make an account →</NuxtLink>
       </p>
     </form>
   </div>

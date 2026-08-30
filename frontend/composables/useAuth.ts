@@ -16,6 +16,30 @@ type PayloadError = { data?: { errors?: { message?: string }[] }; status?: numbe
 const messageOf = (error: unknown, fallback: string) =>
   (error as PayloadError)?.data?.errors?.[0]?.message ?? fallback
 
+/** A sign-in refused only because the email is not confirmed yet. */
+export class UnverifiedEmailError extends Error {
+  readonly unverified = true
+}
+export const isUnverifiedError = (error: unknown): boolean =>
+  error instanceof UnverifiedEmailError
+
+export interface JoinOrder {
+  reference: string
+  amount: number
+  joiningFee: number
+  plan: 'monthly' | 'annual'
+  status: string
+}
+
+export interface SignUpInput {
+  name: string
+  email: string
+  password: string
+  newsletter: boolean
+  /** honeypot; humans never fill it */
+  website?: string
+}
+
 export function useAuth() {
   const user = useState<User | null>('auth-user', () => null)
   const { cms } = useCms()
@@ -64,6 +88,12 @@ export function useAuth() {
       if (/locked/i.test(raw)) {
         throw new Error('Too many attempts. This account is locked for ten minutes.', { cause: error })
       }
+      if (/verify your email/i.test(raw)) {
+        throw new UnverifiedEmailError(
+          'Confirm your email first. Check your inbox, or ask for a new link.',
+          { cause: error },
+        )
+      }
       if (status === 401) throw new Error('That email and password do not match.', { cause: error })
       throw new Error(raw || 'Could not sign in. Check your connection and try again.', {
         cause: error,
@@ -101,7 +131,57 @@ export function useAuth() {
     }
   }
 
+  /** Make an account. Answers the same whether or not the address is known. */
+  async function signUp(input: SignUpInput): Promise<void> {
+    try {
+      await cms('/api/account/sign-up', { method: 'POST', body: input })
+    } catch (error) {
+      throw new Error(messageOf(error, 'Could not make the account. Check your connection and try again.'), {
+        cause: error,
+      })
+    }
+  }
+
+  async function verifyEmail(token: string): Promise<void> {
+    try {
+      await cms(`/api/users/verify/${encodeURIComponent(token)}`, { method: 'POST' })
+    } catch (error) {
+      throw new Error('That link is invalid or already used.', { cause: error })
+    }
+  }
+
+  /** Same answer whatever the address: never says who has an account. */
+  async function resendVerification(email: string): Promise<void> {
+    try {
+      await cms('/api/account/resend-verification', { method: 'POST', body: { email } })
+    } catch (error) {
+      throw new Error(messageOf(error, 'The request did not go through. Try again.'), { cause: error })
+    }
+  }
+
+  /** Pick a plan: an order with an EFT reference comes back (or the open one). */
+  async function join(plan: 'monthly' | 'annual'): Promise<JoinOrder> {
+    try {
+      return await authed<JoinOrder>('/api/account/join', { method: 'POST', body: { plan } })
+    } catch (error) {
+      throw new Error(messageOf(error, 'Could not start the order. Try again, or write to us.'), { cause: error })
+    }
+  }
+
   const isSignedIn = computed(() => Boolean(user.value))
 
-  return { user, isSignedIn, authed, fetchMe, login, logout, forgotPassword, resetPassword }
+  return {
+    join,
+    user,
+    isSignedIn,
+    authed,
+    fetchMe,
+    login,
+    logout,
+    forgotPassword,
+    resetPassword,
+    signUp,
+    verifyEmail,
+    resendVerification,
+  }
 }

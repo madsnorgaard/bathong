@@ -170,7 +170,7 @@ function submit() {
       </BButton>
       <p class="b-caption popia">
         Your name, email and frames are stored to run this call, visible to the editorial team
-        only until published with your credit, and deleted on request.
+        only until published with your credit, and deleted on request. <NuxtLink to="/privacy">Privacy →</NuxtLink>
       </p>
     </form>
   </div>
