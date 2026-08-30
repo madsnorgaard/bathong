@@ -23,6 +23,14 @@ export class UnverifiedEmailError extends Error {
 export const isUnverifiedError = (error: unknown): boolean =>
   error instanceof UnverifiedEmailError
 
+export interface JoinOrder {
+  reference: string
+  amount: number
+  joiningFee: number
+  plan: 'monthly' | 'annual'
+  status: string
+}
+
 export interface SignUpInput {
   name: string
   email: string
@@ -151,9 +159,19 @@ export function useAuth() {
     }
   }
 
+  /** Pick a plan: an order with an EFT reference comes back (or the open one). */
+  async function join(plan: 'monthly' | 'annual'): Promise<JoinOrder> {
+    try {
+      return await authed<JoinOrder>('/api/account/join', { method: 'POST', body: { plan } })
+    } catch (error) {
+      throw new Error(messageOf(error, 'Could not start the order. Try again, or write to us.'), { cause: error })
+    }
+  }
+
   const isSignedIn = computed(() => Boolean(user.value))
 
   return {
+    join,
     user,
     isSignedIn,
     authed,

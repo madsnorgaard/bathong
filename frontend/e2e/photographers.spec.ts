@@ -8,6 +8,8 @@ import { test, expect } from '@playwright/test'
  */
 
 test('the roster lists members with real member numbers', async ({ page }) => {
+  // the founders are on the roster (set by the phase6 migration); a fresh
+  // member is not until they switch it on themselves
   await page.goto('/photographers')
   await expect(page.getByText('Emmanuel Munano')).toBeVisible()
   await expect(page.getByText('Member № 0001')).toBeVisible()

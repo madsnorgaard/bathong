@@ -1,27 +1,74 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, hasEditorRole, isAdmin, isEditor } from '../access'
+import { APIError } from 'payload'
+import { sql } from '@payloadcms/db-postgres'
+import { anyone, hasEditorRole, isAdmin, isEditor, isEditorField } from '../access'
+import { instagramUrl, webLinkProblem } from '../lib/links'
 
+const webLink = (value: unknown) => webLinkProblem(value) ?? true
+
+const rel = (v: unknown): number | null =>
+  typeof v === 'number' ? v : v && typeof v === 'object' && 'id' in v ? (v as { id: number }).id : null
+
+/**
+ * Public profiles. A member edits their own (portrait, bio, city, links,
+ * contact preference, the roster switch) through `owner`; the editorial
+ * fields (name, slug, number, role, founding circle, order) stay with
+ * editors. Read stays public: frames need the photographer for the credit.
+ */
 export const People: CollectionConfig = {
   slug: 'people',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'roleTitle', 'foundingCircle', 'order'],
+    defaultColumns: ['name', 'memberNumber', 'onRoster', 'roleTitle', 'foundingCircle', 'order'],
     group: 'Collective',
   },
-  access: { read: anyone, create: isEditor, update: isEditor, delete: isAdmin },
+  access: {
+    read: anyone,
+    create: isEditor,
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      if (hasEditorRole(user)) return true
+      return { owner: { equals: user.id } }
+    },
+    delete: isAdmin,
+  },
   defaultSort: 'order',
   fields: [
-    { name: 'name', type: 'text', required: true },
-    { name: 'slug', type: 'text', unique: true, index: true },
+    { name: 'name', type: 'text', required: true, access: { update: isEditorField } },
+    { name: 'slug', type: 'text', unique: true, index: true, access: { update: isEditorField } },
     {
       name: 'memberNumber',
       type: 'number',
       unique: true,
-      admin: { description: 'The member register number, rendered as № 0001. Real numbers only.' },
+      access: { update: isEditorField },
+      admin: {
+        description:
+          'The member register number, rendered as № 0001. Assigned on activation from a sequence; a number typed by hand moves the sequence past it, so numbers are never reused.',
+      },
+    },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      unique: true,
+      index: true,
+      // never populate: profiles are public, accounts are not
+      maxDepth: 0,
+      access: { update: isEditorField },
+      admin: { description: 'The account that edits this profile. Set on activation; editors can link by hand.' },
+    },
+    {
+      name: 'onRoster',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'Appears on the public roster. A member needs a portrait first; editors can list a founder while the portrait is on its way.',
+      },
     },
     { name: 'portrait', type: 'upload', relationTo: 'media' },
     { name: 'bio', type: 'richText' },
-    { name: 'roleTitle', type: 'text' },
+    { name: 'roleTitle', type: 'text', access: { update: isEditorField } },
     {
       name: 'basedIn',
       type: 'text',
@@ -34,10 +81,17 @@ export const People: CollectionConfig = {
       name: 'foundingCircle',
       type: 'checkbox',
       defaultValue: false,
+      access: { update: isEditorField },
       admin: { description: 'Part of the founding circle of the collective.' },
     },
-    { name: 'instagram', type: 'text' },
-    { name: 'website', type: 'text' },
+    // Rendered as plain hrefs on the public page: parsed http(s) links only.
+    {
+      name: 'instagram',
+      type: 'text',
+      validate: webLink,
+      admin: { description: 'The profile link, or just the handle.' },
+    },
+    { name: 'website', type: 'text', validate: webLink, admin: { description: 'A full link, starting with https://' } },
     {
       name: 'contactEmail',
       type: 'email',
@@ -59,7 +113,56 @@ export const People: CollectionConfig = {
     {
       name: 'order',
       type: 'number',
+      access: { update: isEditorField },
       admin: { description: 'Manual sort order on the People page (lowest first).' },
     },
   ],
+  hooks: {
+    beforeValidate: [
+      // A handle typed in the Instagram field becomes the profile link.
+      ({ data }) => {
+        if (typeof data?.instagram === 'string' && data.instagram.trim()) data.instagram = instagramUrl(data.instagram)
+        return data
+      },
+      // The roster needs a face. The rule is for members editing their own
+      // page; an editor (or the seed, with no user) may list a founder
+      // before the portrait arrives. An explicit null counts as no portrait.
+      ({ data, originalDoc, req }) => {
+        if (!req.user || hasEditorRole(req.user)) return data
+        const on = data && 'onRoster' in data ? data.onRoster : originalDoc?.onRoster
+        const portrait = data && 'portrait' in data ? data.portrait : originalDoc?.portrait
+        if (on && !portrait) throw new APIError('Add a portrait before joining the roster.', 400)
+        return data
+      },
+      // A number typed by hand moves the sequence past it.
+      async ({ data, originalDoc, req, context }) => {
+        if (context?.assigningNumber) return data
+        const n = data?.memberNumber
+        if (typeof n === 'number' && n !== originalDoc?.memberNumber) {
+          await req.payload.db.drizzle.execute(
+            sql`SELECT setval('people_member_number_seq', GREATEST((SELECT last_value FROM people_member_number_seq), ${Math.trunc(n)}::bigint))`,
+          )
+        }
+        return data
+      },
+    ],
+    afterChange: [
+      // An owner linked by an editor becomes that account's profile.
+      async ({ doc, previousDoc, req, context }) => {
+        if (context?.syncingOwner) return
+        const owner = rel(doc.owner)
+        const before = rel(previousDoc?.owner)
+        if (owner && owner !== before) {
+          await req.payload.update({
+            collection: 'users',
+            id: owner,
+            data: { profile: doc.id },
+            overrideAccess: true,
+            req,
+            context: { syncingOwner: true },
+          })
+        }
+      },
+    ],
+  },
 }

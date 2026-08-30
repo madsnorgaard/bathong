@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { API, PASSWORD, deleteUserByEmail, freshEmail, verificationToken } from './helpers/account'
+import { API, PASSWORD, deleteUserByEmail, freshEmail, gotoHydrated, verificationToken } from './helpers/account'
 
 /**
  * Making an account (anyone can join): the form, the same answer for a known
@@ -14,11 +14,12 @@ test.afterAll(async ({ request }) => {
 })
 
 test('sign up, confirm the email, sign in to the desk', async ({ page, request }) => {
+  test.slow() // five page loads and three API round trips; tight at 30 s under load
   const email = freshEmail('signup')
   made.push(email)
 
   // unconfirmed: the sign-in refuses and offers the link again
-  await page.goto('/account/sign-up')
+  await gotoHydrated(page, '/account/sign-up')
   await page.getByLabel(/^Name/).fill('E2E Member')
   await page.getByLabel(/^Email/).fill(email)
   await page.getByLabel(/^Password/).fill(PASSWORD)
@@ -26,7 +27,7 @@ test('sign up, confirm the email, sign in to the desk', async ({ page, request }
   await expect(page.getByText('Check your inbox.')).toBeVisible()
   await expect(page.getByText(email)).toBeVisible()
 
-  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account/sign-in')
   await page.getByLabel(/^Email/).fill(email)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -51,7 +52,7 @@ test('sign up, confirm the email, sign in to the desk', async ({ page, request }
 })
 
 test('a known address gets the same success, never a hint', async ({ page }) => {
-  await page.goto('/account/sign-up')
+  await gotoHydrated(page, '/account/sign-up')
   await page.getByLabel(/^Name/).fill('Someone')
   await page.getByLabel(/^Email/).fill('member@bathong.local')
   await page.getByLabel(/^Password/).fill(PASSWORD)
@@ -60,7 +61,7 @@ test('a known address gets the same success, never a hint', async ({ page }) => 
 })
 
 test('the password rule reads on the field and holds on the API', async ({ page, request }) => {
-  await page.goto('/account/sign-up')
+  await gotoHydrated(page, '/account/sign-up')
   await page.getByLabel(/^Email/).fill('rule@example.org')
   await page.getByLabel(/^Password/).fill('short')
   await expect(page.getByText('At least 10 characters.')).toBeVisible()

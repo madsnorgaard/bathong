@@ -16,6 +16,9 @@ const every = () => [
   templates.editorNewEntry(submission as never, photocall as never, 'https://api.example'),
   templates.verifyEmail('Thabo', 'https://bathong.africa/account/verify?token=x'),
   templates.accountExists('https://bathong.africa/account/forgot'),
+  templates.joinInstructions('Thabo', { plan: 'annual', amount: 1250, joiningFee: 250, reference: 'BTG-ABC234' }, { accountName: 'Bathong. Collective', bankName: 'Bank', accountNumber: '123', branchCode: '456' }),
+  templates.membershipActivated('Thabo', 7, 'monthly', '2026-09-30T04:00:00Z', 'https://bathong.africa/account'),
+  templates.editorNewJoin('Thabo', 't@example.org', 'annual', 1250, 'BTG-ABC234', 'https://api.example/admin/collections/orders/1'),
 ]
 
 describe('email templates', () => {
@@ -37,5 +40,14 @@ describe('email templates', () => {
       expect(mail.subject).not.toContain('Bathong!')
       expect(mail.text).toContain('x')
     }
+  })
+  it('spell out the money and the number on membership mail', () => {
+    const join = templates.joinInstructions('T', { plan: 'monthly', amount: 350, joiningFee: 250, reference: 'BTG-XYZ789' }, {})
+    expect(join.text).toContain('Amount: R350 (R250 joining fee included)')
+    expect(join.text).toContain('Reference: BTG-XYZ789')
+    expect(join.text).toContain('Bank details follow')
+    const active = templates.membershipActivated('T', 7, 'annual', '2027-08-30T04:00:00Z', 'https://bathong.africa/account')
+    expect(active.subject).toBe('Welcome in. Member № 0007')
+    expect(active.text).toContain('Runs until: 30 August 2027')
   })
 })
