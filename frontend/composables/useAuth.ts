@@ -31,6 +31,16 @@ export interface JoinOrder {
   status: string
 }
 
+export interface SessionInfo {
+  id: string
+  createdAt: string
+  expiresAt: string
+}
+export interface SessionList {
+  current: string | null
+  sessions: SessionInfo[]
+}
+
 export interface SignUpInput {
   name: string
   email: string
@@ -216,12 +226,71 @@ export function useAuth() {
     })
   }
 
+  const account = async <T = { ok: true }>(path: string, body: Record<string, unknown>, fallback: string): Promise<T> => {
+    try {
+      return await authed<T>(path, { method: 'POST', body })
+    } catch (error) {
+      throw new Error(messageOf(error, fallback), { cause: error })
+    }
+  }
+
+  /** New password, current one checked; every other device is signed out. */
+  const changePassword = (current: string, password: string) =>
+    account('/api/account/change-password', { current, password }, 'Could not change the password. Try again.')
+
+  /** Ask to move the account to a new address; it takes effect when that address confirms. */
+  const changeEmail = (password: string, email: string) =>
+    account<{ pendingEmail: string }>('/api/account/change-email', { password, email }, 'Could not start the change. Try again.')
+
+  /** The link from the new address lands here; signs out everywhere. */
+  async function confirmEmailChange(token: string): Promise<void> {
+    try {
+      await cms('/api/account/confirm-email', { method: 'POST', body: { token } })
+    } catch (error) {
+      throw new Error(messageOf(error, 'That link is invalid or already used.'), { cause: error })
+    } finally {
+      user.value = null
+    }
+  }
+
+  const cancelEmailChange = () =>
+    account('/api/account/cancel-email-change', {}, 'Could not cancel the change. Try again.')
+
+  async function sessions(): Promise<SessionList> {
+    return await authed<SessionList>('/api/account/sessions')
+  }
+
+  const revokeSession = (id: string) =>
+    account('/api/account/sessions/revoke', { id }, 'Could not sign that device out. Try again.')
+
+  async function signOutEverywhere(): Promise<void> {
+    try {
+      await cms('/api/users/logout?allSessions=true', { method: 'POST', credentials: 'include' })
+    } finally {
+      user.value = null
+    }
+  }
+
+  /** Close the account; the session ends with it. */
+  async function deleteAccount(password: string): Promise<void> {
+    await account('/api/account/delete', { password }, 'Could not close the account. Write to us.')
+    user.value = null
+  }
+
   const isSignedIn = computed(() => Boolean(user.value))
 
   return {
     join,
     updateProfile,
     uploadPortrait,
+    changePassword,
+    changeEmail,
+    cancelEmailChange,
+    confirmEmailChange,
+    sessions,
+    revokeSession,
+    signOutEverywhere,
+    deleteAccount,
     user,
     isSignedIn,
     authed,

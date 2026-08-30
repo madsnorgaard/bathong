@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
-import { API, deleteUserByEmail, freshEmail, gotoHydrated, joinAndActivate, signUpAndVerify } from './helpers/account'
+import { API, deleteUserByEmail, freshEmail, gotoHydrated, joinAndActivate, retryOnReset, signUpAndVerify } from './helpers/account'
 
 /**
  * The member's own page: no profile before membership; then the portrait
@@ -59,7 +59,9 @@ test('a member fills in their profile, adds a portrait, and joins the roster', a
   await expect(page.getByLabel(/Show me on the roster/)).toBeChecked()
 
   // a replaced portrait does not linger as a public orphan
-  const before = await page.request.get(`${API}/api/users/me?depth=1`, { headers: { Origin: new URL(page.url()).origin } })
+  const before = await retryOnReset(() =>
+    page.request.get(`${API}/api/users/me?depth=1`, { headers: { Origin: new URL(page.url()).origin } }),
+  )
   const firstPortrait = ((await before.json()) as { user: { profile: { portrait: number } } }).user.profile.portrait
   expect(typeof firstPortrait).toBe('number')
   await page.locator('#portrait').setInputFiles(path.join(FIXTURES, 'entry-2.jpg'))
@@ -85,7 +87,7 @@ test('a member fills in their profile, adds a portrait, and joins the roster', a
 
   // the API holds the rules on its own: a portrait must be the member's upload
   const origin = { Origin: new URL(page.url()).origin }
-  const me = await page.request.get(`${API}/api/users/me?depth=1`, { headers: origin })
+  const me = await retryOnReset(() => page.request.get(`${API}/api/users/me?depth=1`, { headers: origin }))
   const { user } = (await me.json()) as { user: { id: number; profile: { id: number } } }
   const theirs = await request.get(`${API}/api/media?limit=1&depth=0&sort=id`)
   const someoneElses = ((await theirs.json()) as { docs: { id: number; uploadedBy?: number | null }[] }).docs[0]

@@ -54,7 +54,7 @@ export async function signUpAndVerify(page: Page, request: APIRequestContext, em
   const token = await verificationToken(request, email)
   await page.goto(`/account/verify?token=${encodeURIComponent(token)}`)
   await expect(page.getByText('Confirmed.', { exact: true })).toBeVisible({ timeout: 15_000 })
-  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account/sign-in')
   await page.getByLabel(/^Email/).fill(email)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -73,6 +73,31 @@ export async function deleteUserByEmail(request: APIRequestContext, email: strin
   await request.delete(`${API}/api/people?where[owner][equals]=${docs[0].id}`, { headers: adminHeaders() })
   await request.delete(`${API}/api/media?where[uploadedBy][equals]=${docs[0].id}`, { headers: adminHeaders() })
   await request.delete(`${API}/api/users/${docs[0].id}`, { headers: adminHeaders() })
+}
+
+/**
+ * The Next dev server (local and CI) now and then resets a connection right
+ * after an image upload has kept sharp busy. One retry on that, nothing else.
+ */
+export async function retryOnReset<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call()
+  } catch (err) {
+    if (!/ECONNRESET|socket hang up/.test(String(err))) throw err
+    await new Promise((r) => setTimeout(r, 500))
+    return await call()
+  }
+}
+
+/** The token an email change is waiting on, read by the account's current address. */
+export async function pendingEmailToken(request: APIRequestContext, email: string): Promise<string> {
+  const res = await request.get(`${API}/api/e2e/verification-token?email=${encodeURIComponent(email)}`, {
+    headers: adminHeaders(),
+  })
+  expect(res.ok(), `test door: ${res.status()}`).toBeTruthy()
+  const { pendingEmailToken: token } = (await res.json()) as { pendingEmailToken: string | null }
+  expect(token, 'pending email token').toBeTruthy()
+  return token as string
 }
 
 /** The editor sees the EFT and marks the order paid; activation follows. */
