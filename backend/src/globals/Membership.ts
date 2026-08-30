@@ -43,6 +43,40 @@ export const Membership: GlobalConfig = {
       admin: { description: 'The open door, kept without a tier. Clear it to hide the line.' },
     },
     { name: 'cardImage', type: 'upload', relationTo: 'media' },
-    { name: 'joinUrl', type: 'text', admin: { description: 'Where "Join" goes. Empty falls back to the contact mailbox.' } },
+    {
+      name: 'joinUrl',
+      type: 'text',
+      admin: {
+        description: 'Leave empty: Join goes to sign-up on the site. Set only to send joining elsewhere.',
+      },
+    },
+    {
+      name: 'referencePrefix',
+      type: 'text',
+      defaultValue: 'BTG',
+      maxLength: 6,
+      admin: { description: 'EFT references read PREFIX-XXXXXX. Letters and digits only.' },
+    },
+    {
+      // Only signed-in accounts read the bank details: they are shown on the
+      // join page and in the join email, never on a public page.
+      name: 'bank',
+      type: 'group',
+      label: 'Bank details (join page, signed-in members only)',
+      access: { read: ({ req }) => Boolean(req.user) },
+      fields: [
+        { name: 'accountName', type: 'text' },
+        { name: 'bankName', type: 'text' },
+        { name: 'accountNumber', type: 'text' },
+        { name: 'branchCode', type: 'text' },
+        { name: 'accountType', type: 'text', admin: { description: 'Cheque, savings...' } },
+        {
+          name: 'paymentNote',
+          type: 'textarea',
+          defaultValue:
+            'Use the reference exactly as shown. We confirm EFTs by hand, usually within two working days.',
+        },
+      ],
+    },
   ],
 }

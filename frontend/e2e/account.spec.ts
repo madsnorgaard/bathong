@@ -24,11 +24,11 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   // Generous: under a full parallel run the dev backend answers the login
   // and the account page's SSR read well after the default 5s.
   await expect(page).toHaveURL(/\/account$/, { timeout: 15_000 })
-  await expect(page.getByRole('heading', { name: 'Member.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Desk.' })).toBeVisible()
   await expect(page.getByText('Demo Member')).toBeVisible()
-  // one membership, no tiers: the desk shows the plan the member pays by
-  await expect(page.locator('.facts')).toContainText('Plan')
-  await expect(page.locator('.facts')).toContainText('Monthly')
+  // one membership, no tiers: the card shows the plan the member pays by
+  await expect(page.locator('.b-card--member')).toContainText('Monthly')
+  await expect(page.locator('.b-card--member')).toContainText(/Member № \d{4}/)
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
 
   await page.getByRole('button', { name: /Sign out/ }).click()

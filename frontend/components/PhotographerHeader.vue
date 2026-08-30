@@ -9,6 +9,8 @@ import type { Person } from '~/types/payload-types'
 const props = defineProps<{ person: Person; fallbackEmail?: string | null }>()
 
 const bio = computed(() => richTextParagraphs(props.person.bio as never))
+const instagram = computed(() => safeHref(props.person.instagram))
+const website = computed(() => safeHref(props.person.website))
 const email = computed(() =>
   props.person.showContact && props.person.contactEmail
     ? props.person.contactEmail
@@ -38,8 +40,8 @@ const email = computed(() =>
       <p v-for="(para, i) in bio" :key="i" class="bio">{{ para }}</p>
       <div class="links b-kicker">
         <a v-if="email" :href="`mailto:${email}`">Contact →</a>
-        <a v-if="person.instagram" :href="person.instagram" rel="noopener">Instagram →</a>
-        <a v-if="person.website" :href="person.website" rel="noopener">Website →</a>
+        <a v-if="instagram" :href="instagram" rel="noopener">Instagram →</a>
+        <a v-if="website" :href="website" rel="noopener">Website →</a>
       </div>
     </div>
   </header>
