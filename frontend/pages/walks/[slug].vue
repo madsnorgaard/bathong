@@ -5,7 +5,7 @@
  * everything the walk produced - essays, frames, albums - each a door onward.
  * Nothing invented: a walk with no work yet says so in one line.
  */
-import type { Walk, Essay, Frame, Album, Media } from '~/types/payload-types'
+import type { Walk, Essay, Frame, Album, Media, Person } from '~/types/payload-types'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -26,8 +26,12 @@ if (!walk.value) {
 
 const past = computed(() => isPastWalk(walk.value!))
 const routeGeo = computed(() => parseRouteGeo(walk.value?.routeGeo))
-const leader = computed(() =>
-  walk.value?.leader && typeof walk.value.leader === 'object' ? walk.value.leader : null,
+// A walk can be led by several members; unpopulated ids (depth exhausted)
+// are dropped rather than rendered as numbers.
+const leaders = computed(() =>
+  (walk.value?.leaders ?? []).filter(
+    (l): l is Person => Boolean(l) && typeof l === 'object',
+  ),
 )
 const isDoc = <T,>(v: T | number | string | null | undefined): v is T =>
   Boolean(v) && typeof v === 'object'
@@ -88,11 +92,14 @@ useShareMeta({
           <div><dt>Start</dt><dd>{{ formatWalkTime(walk.date) }}</dd></div>
           <div v-if="walk.endTime"><dt>Wrapped</dt><dd>{{ formatWalkTime(walk.endTime) }}</dd></div>
           <div v-if="walk.meetingPoint"><dt>Met at</dt><dd>{{ walk.meetingPoint }}</dd></div>
-          <div v-if="leader">
+          <div v-if="leaders.length">
             <dt>Led by</dt>
             <dd>
-              <NuxtLink v-if="leader.slug" :to="`/photographers/${leader.slug}`">{{ leader.name }}</NuxtLink>
-              <template v-else>{{ leader.name }}</template>
+              <template v-for="(person, i) in leaders" :key="person.id">
+                <template v-if="i > 0">{{ i === leaders.length - 1 ? ' and ' : ', ' }}</template>
+                <NuxtLink v-if="person.slug" :to="`/photographers/${person.slug}`">{{ person.name }}</NuxtLink>
+                <template v-else>{{ person.name }}</template>
+              </template>
             </dd>
           </div>
         </dl>
@@ -112,7 +119,8 @@ useShareMeta({
               class="card-frame"
             />
             <h3 class="b-display-2">{{ album.title }}</h3>
-            <p class="b-caption">{{ album.images?.length ?? 0 }} photographs<template v-if="album.date"> · {{ formatWalkDate(album.date) }}</template></p>
+            <!-- whose gallery this is: one walk carries a gallery per member -->
+            <p class="b-caption">{{ albumCredit(album) }} · {{ album.images?.length ?? 0 }} photographs<template v-if="album.date"> · {{ formatWalkDate(album.date) }}</template></p>
           </NuxtLink>
         </div>
       </section>

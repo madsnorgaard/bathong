@@ -101,7 +101,17 @@ export const Walks: CollectionConfig = {
         { label: 'Closed', value: 'closed' },
       ],
     },
-    { name: 'leader', type: 'relationship', relationTo: 'people' },
+    {
+      // A walk is led by one or more members: № 001 was led by the founding
+      // circle together. Order is billing order; the first name leads.
+      name: 'leaders',
+      type: 'relationship',
+      relationTo: 'people',
+      hasMany: true,
+      admin: {
+        description: 'The member(s) leading this walk, in billing order.',
+      },
+    },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
     {
       // "№ 001" is the walk's place in the published programme, date order.

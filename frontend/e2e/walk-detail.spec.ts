@@ -4,21 +4,29 @@ import { test, expect } from '@playwright/test'
  * A walk's own page. Walked, it is the record: the facts, the route as it
  * was, and every door onward (essays, frames, albums). Upcoming, it is the
  * event with the RSVP. Runs against the SEED_DEMO walks: `demo-past-walk`
- * carries the demo essay, two frames and the demo album; `demo-next-walk`
+ * carries the demo essay, two frames and two demo albums; `demo-next-walk`
  * is open with a route.
  */
 
 const PAST = '/walks/demo-past-walk'
 
-test('a walked walk is the record: facts, leader, route, and the work it produced', async ({ page }) => {
+test('a walked walk is the record: facts, leaders, route, and the work it produced', async ({ page }) => {
   await page.goto(PAST)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Demo: the walk that was')
   await expect(page.getByText(/№ \d{3} · walked/)).toBeVisible()
   await expect(page.getByText('Church Square, Pretoria').first()).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Emmanuel Munano' })).toHaveAttribute(
+  // a walk can be led by several members: both names, both linked. Scoped
+  // to the facts list because the gallery cards carry the same names.
+  const facts = page.locator('.facts')
+  await expect(facts.getByRole('link', { name: 'Emmanuel Munano' })).toHaveAttribute(
     'href',
     '/photographers/emmanuel-munano',
   )
+  await expect(facts.getByRole('link', { name: 'Jacques Nelles' })).toHaveAttribute(
+    'href',
+    '/photographers/jacques-nelles',
+  )
+  await expect(facts.getByText(/Emmanuel Munano and Jacques Nelles/)).toBeVisible()
   await expect(page.locator('.route-map')).toBeVisible()
 
   // essays: the demo essay is a door into the reader
@@ -37,9 +45,14 @@ test('a walked walk is the record: facts, leader, route, and the work it produce
     '/archive?walk=demo-past-walk',
   )
 
-  // albums lead the record; the route comes after the work
+  // albums lead the record; the route comes after the work. One walk
+  // carries a snapshot gallery per member, each card naming whose it is.
   const albumLink = page.getByRole('link', { name: /Demo: behind the walk/ })
   await expect(albumLink).toHaveAttribute('href', '/albums/demo-behind-the-walk')
+  await expect(albumLink.getByText(/Mads Nørgaard/).first()).toBeVisible()
+  const secondGallery = page.getByRole('link', { name: /Demo: snapshots, second gallery/ })
+  await expect(secondGallery).toHaveAttribute('href', '/albums/demo-snapshots-second-gallery')
+  await expect(secondGallery.getByText(/Jacques Nelles/).first()).toBeVisible()
   const albumY = (await albumLink.boundingBox())!.y
   const routeY = (await page.locator('.route-map').boundingBox())!.y
   expect(albumY, 'the album sits above the route').toBeLessThan(routeY)

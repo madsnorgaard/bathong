@@ -625,7 +625,10 @@ export interface Walk {
   priceNonMember?: number | null;
   bookingUrl?: string | null;
   bookingStatus?: ('open' | 'full' | 'closed') | null;
-  leader?: (number | null) | Person;
+  /**
+   * The member(s) leading this walk, in billing order.
+   */
+  leaders?: (number | Person)[] | null;
   heroImage?: (number | null) | Media;
   /**
    * Position in the published programme, date order. Rendered as № 001.
@@ -1144,7 +1147,7 @@ export interface WalksSelect<T extends boolean = true> {
   priceNonMember?: T;
   bookingUrl?: T;
   bookingStatus?: T;
-  leader?: T;
+  leaders?: T;
   heroImage?: T;
   number?: T;
   essays?: T;
