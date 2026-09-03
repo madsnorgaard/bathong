@@ -8,6 +8,11 @@ import { formatSlug } from '../fields/slug'
  * Albums are the softer record of a walk: group photographs, the edit table,
  * the coffee after. They hold plain media, not frames, so nothing in an
  * album ever enters the archive or the essay picker.
+ *
+ * An album is also a member's snapshot gallery from a walk: one walk can
+ * carry several albums, one per member who shot it (№ 001 has a gallery by
+ * each founding member there). The photographer field names whose gallery
+ * it is; the walk page groups them under that credit.
  */
 export const Albums: CollectionConfig = {
   slug: 'albums',

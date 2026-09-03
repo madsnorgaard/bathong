@@ -336,7 +336,7 @@ async function run() {
         priceMember: 0,
         priceNonMember: null,
         bookingStatus: 'open',
-        leader: peopleBySlug['emmanuel-munano'],
+        leaders: [peopleBySlug['emmanuel-munano']],
         _status: 'published',
       },
     })
@@ -393,7 +393,7 @@ async function run() {
         routeGeo: walk001RouteGeo,
         capacity: 25,
         bookingStatus: 'closed' as const,
-        leader: peopleBySlug['emmanuel-munano'],
+        leaders: [peopleBySlug['emmanuel-munano'], peopleBySlug['jacques-nelles']],
       },
       {
         title: 'Demo: the next loop',
@@ -405,7 +405,7 @@ async function run() {
         routeGeo: walk001RouteGeo,
         capacity: 25,
         bookingStatus: 'open' as const,
-        leader: peopleBySlug['emmanuel-munano'],
+        leaders: [peopleBySlug['emmanuel-munano']],
       },
       {
         title: 'Demo: full walk',
@@ -436,10 +436,17 @@ async function run() {
       if (existing.docs[0]) {
         walksBySlug[walk.slug] = existing.docs[0].id
         // Relative dates drift: keep the fixture where the specs expect it.
+        // Leaders too, so a database seeded before the leaders list existed
+        // (or migrated from the single-leader column) matches the specs.
         await payload.update({
           collection: 'walks',
           id: existing.docs[0].id,
-          data: { date: walk.date, endTime: walk.endTime ?? null, routeGeo: walk.routeGeo ?? null },
+          data: {
+            date: walk.date,
+            endTime: walk.endTime ?? null,
+            routeGeo: walk.routeGeo ?? null,
+            leaders: walk.leaders ?? null,
+          },
         })
         continue
       }
@@ -533,33 +540,63 @@ async function run() {
       console.log(`  frame: ${file} linked to the demo past walk`)
     }
 
-    // A demo album: the softer record of the past walk, plain media only.
-    const existingAlbum = await payload.find({
-      collection: 'albums',
-      where: { slug: { equals: 'demo-behind-the-walk' } },
-      limit: 1,
-      depth: 0,
-    })
-    if (!existingAlbum.docs.length) {
-      const albumMedia = ['doc-0009.jpg', 'doc-0016.jpg', 'doc-0024.jpg']
-        .map((file) => mediaByFile[file])
-        .filter(Boolean)
+    // Demo albums: the softer record of the past walk, plain media only.
+    // Two of them, by two different members, because one walk carries a
+    // snapshot gallery per member who shot it.
+    const demoAlbums = [
+      {
+        title: 'Demo: behind the walk',
+        slug: 'demo-behind-the-walk',
+        intro:
+          'Three demo photographs standing in for the group shot, the edit table and the coffee after. PHOTO SLOT throughout.',
+        files: ['doc-0009.jpg', 'doc-0016.jpg', 'doc-0024.jpg'],
+        photographer: peopleBySlug['mads-norgaard'],
+      },
+      {
+        title: 'Demo: snapshots, second gallery',
+        slug: 'demo-snapshots-second-gallery',
+        intro:
+          'A second gallery from the same walk, by a second member. PHOTO SLOT throughout.',
+        files: ['doc-0001.jpg', 'doc-0012.jpg'],
+        photographer: peopleBySlug['jacques-nelles'],
+      },
+    ]
+    for (const album of demoAlbums) {
+      const existingAlbum = await payload.find({
+        collection: 'albums',
+        where: { slug: { equals: album.slug } },
+        limit: 1,
+        depth: 0,
+      })
+      if (existingAlbum.docs.length) continue
+      // Album-only media go through ensureMedia so they never become frames;
+      // files the frame block already uploaded come from mediaByFile.
+      const albumMedia: { id: number }[] = []
+      for (const file of album.files) {
+        const media =
+          mediaByFile[file] ??
+          (await ensureMedia(
+            payload,
+            file,
+            `Snapshot photograph, Johannesburg, 2018. Demo ${file.replace(/\.jpg$/, '')}.`,
+          ))
+        albumMedia.push(media)
+      }
       await payload.create({
         collection: 'albums',
         data: {
-          title: 'Demo: behind the walk',
-          slug: 'demo-behind-the-walk',
-          intro:
-            'Three demo photographs standing in for the group shot, the edit table and the coffee after. PHOTO SLOT throughout.',
+          title: album.title,
+          slug: album.slug,
+          intro: album.intro,
           images: albumMedia.map((m) => m.id),
           walks: [demoPastWalk],
-          photographer: peopleBySlug['mads-norgaard'],
+          photographer: album.photographer,
           date: daysFromNow(-21, 6),
           publishedDate: daysFromNow(-20, 9),
           _status: 'published',
         },
       })
-      console.log('  album (demo): behind the walk')
+      console.log(`  album (demo): ${album.title}`)
     }
 
     // A demo photocall so the entry flow is testable end to end. SEED_DEMO

@@ -1,5 +1,5 @@
-import { expect, test, type APIRequestContext } from '@playwright/test'
-import { API, adminHeaders, deleteUserByEmail, freshEmail, gotoHydrated, signUpAndVerify } from './helpers/account'
+import { expect, test } from '@playwright/test'
+import { API, deleteUserByEmail, freshEmail, gotoHydrated, markPaid, signUpAndVerify } from './helpers/account'
 
 /**
  * Joining by EFT: a fresh member picks a plan and gets a reference; an
@@ -12,20 +12,6 @@ const made: string[] = []
 test.afterAll(async ({ request }) => {
   for (const email of made) await deleteUserByEmail(request, email)
 })
-
-async function markPaid(request: APIRequestContext, reference: string) {
-  const list = await request.get(`${API}/api/orders?where[reference][equals]=${reference}&depth=0&limit=1`, {
-    headers: adminHeaders(),
-  })
-  const { docs } = (await list.json()) as { docs: { id: number }[] }
-  expect(docs[0], `order ${reference}`).toBeTruthy()
-  const res = await request.patch(`${API}/api/orders/${docs[0].id}`, {
-    headers: adminHeaders(),
-    data: { status: 'paid', note: 'e2e: EFT seen' },
-  })
-  expect(res.ok(), `mark paid: ${res.status()}`).toBeTruthy()
-  return (await res.json()).doc as { coveredFrom: string; coveredUntil: string; paidAt: string }
-}
 
 test('a new member joins on the annual plan, pays by reference, and gets a card and a number', async ({
   page,

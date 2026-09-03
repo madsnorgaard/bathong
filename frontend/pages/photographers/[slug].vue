@@ -35,7 +35,7 @@ const [{ data: essaysData }, { data: framesData }, { data: walksData }, { data: 
     ),
     useCmsData<List<unknown>>(
       `person-walks-${slug}`,
-      `/api/walks?where[leader][equals]=${personId}&limit=0`,
+      `/api/walks?where[leaders][contains]=${personId}&limit=0`,
     ),
     useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
   ])

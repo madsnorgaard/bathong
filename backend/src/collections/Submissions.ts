@@ -110,7 +110,7 @@ export const Submissions: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      async ({ data, req, operation, originalDoc }) => {
+      async ({ data, req, operation, originalDoc, context }) => {
         if (operation === 'create') {
           // Logged-in entries pin the user; anonymous ones carry name + email.
           if (req.user) {
@@ -154,8 +154,9 @@ export const Submissions: CollectionConfig = {
           }
         }
 
-        if (operation === 'update' && originalDoc) {
-          // The submitter is immutable after creation.
+        if (operation === 'update' && originalDoc && !context?.closingAccount) {
+          // The submitter is immutable after creation; only a closing
+          // account (accountSecurity.ts) unlinks it.
           data.submitter = relationId(originalDoc.submitter) ?? originalDoc.submitter
         }
 
