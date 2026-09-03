@@ -557,7 +557,7 @@ async function run() {
         slug: 'demo-snapshots-second-gallery',
         intro:
           'A second gallery from the same walk, by a second member. PHOTO SLOT throughout.',
-        files: ['doc-10.jpg', 'doc-11.jpg'],
+        files: ['doc-0001.jpg', 'doc-0012.jpg'],
         photographer: peopleBySlug['jacques-nelles'],
       },
     ]
