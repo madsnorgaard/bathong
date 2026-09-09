@@ -65,6 +65,34 @@ test.describe('mobile, the majority case', () => {
     await expect(sheet).toBeHidden()
   })
 
+  test('portrait: the whole menu fits the viewport, sign in included, no scroll', async ({ page }) => {
+    // A short portrait phone: the sheet's fluid rhythm must fit every link
+    // and the pinned Join / Sign in row without scrolling.
+    await page.setViewportSize({ width: 360, height: 640 })
+    await page.goto('/', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: /menu/i }).click()
+    const sheet = page.getByRole('dialog', { name: 'Menu' })
+    await expect(sheet).toBeVisible()
+
+    const signIn = sheet.getByRole('link', { name: /Sign in|Account/ })
+    const joinBtn = sheet.getByRole('link', { name: /Join/ })
+    for (const target of [signIn, joinBtn]) {
+      const b = await target.boundingBox()
+      expect(b, 'action must render').toBeTruthy()
+      expect(b!.y + b!.height, 'action must sit inside the viewport').toBeLessThanOrEqual(640)
+    }
+    // and the sheet itself needs no scrolling to show everything
+    const needsScroll = await sheet.evaluate((el) => el.scrollHeight > el.clientHeight + 1)
+    expect(needsScroll, 'the sheet fits without scrolling').toBe(false)
+
+    // the page behind is locked while the sheet is open
+    const locked = await page.evaluate(() => document.documentElement.style.overflow === 'hidden')
+    expect(locked, 'page scroll locked behind the sheet').toBe(true)
+    await page.keyboard.press('Escape')
+    const unlocked = await page.evaluate(() => document.documentElement.style.overflow !== 'hidden')
+    expect(unlocked, 'page scroll restored on close').toBe(true)
+  })
+
   test('walks: the RSVP form is usable with 44px targets and readable states', async ({ page }) => {
     await page.goto('/walks', { waitUntil: 'networkidle' })
     await noHorizontalScroll(page)
