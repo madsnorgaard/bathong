@@ -41,6 +41,18 @@ test('the workshops index is the next workshop: plate, venue, price, practical l
   await expect(page.getByText(/R\s?400.*per person/).first()).toBeVisible()
   await expect(page.getByText('Bring your empty tins with lids.').first()).toBeVisible()
   await expect(page.locator('#rsvp')).toBeVisible()
+  // the invite card opens the full poster in its own tab
+  const invite = page.locator('a.invite')
+  await expect(invite).toBeVisible()
+  await expect(invite).toHaveAttribute('href', /\/api\/media\//)
+  await expect(invite).toHaveAttribute('target', '_blank')
+  await expect(invite.getByText('Open the full invite →')).toBeVisible()
+  // who runs it, and with whom: several partners, logos on the paper ground
+  await expect(page.getByText(/Facilitated by/)).toBeVisible()
+  const partners = page.locator('.partners')
+  await expect(partners.getByText('Demo partner one')).toBeVisible()
+  await expect(partners.getByText('Demo partner two')).toBeVisible()
+  await expect(partners.locator('img.logo')).toHaveCount(1)
 })
 
 test('an anonymous RSVP on the workshop page lands on the list', async ({ page }) => {

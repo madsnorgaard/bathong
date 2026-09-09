@@ -769,13 +769,16 @@ export interface Workshop {
    */
   contact?: (number | null) | Person;
   /**
-   * A partner organisation hosting or co-running the workshop.
+   * Partner organisations hosting or co-running the workshop.
    */
-  partner?: {
-    name?: string | null;
-    url?: string | null;
-    logo?: (number | null) | Media;
-  };
+  partners?:
+    | {
+        name: string;
+        url?: string | null;
+        logo?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
   heroImage?: (number | null) | Media;
   /**
    * Position in the published workshop programme, date order. Rendered as № 001.
@@ -1288,12 +1291,13 @@ export interface WorkshopsSelect<T extends boolean = true> {
   bookingStatus?: T;
   facilitators?: T;
   contact?: T;
-  partner?:
+  partners?:
     | T
     | {
         name?: T;
         url?: T;
         logo?: T;
+        id?: T;
       };
   heroImage?: T;
   number?: T;

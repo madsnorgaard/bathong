@@ -37,6 +37,12 @@ const contact = computed(() =>
     ? workshop.value.contact
     : null,
 )
+const invite = computed(() =>
+  workshop.value?.heroImage && typeof workshop.value.heroImage === 'object'
+    ? workshop.value.heroImage
+    : null,
+)
+const partners = computed(() => workshop.value?.partners ?? [])
 const venueLine = computed(
   () =>
     [workshop.value?.venueName, workshop.value?.venueAddress].filter(Boolean).join(', ') || null,
@@ -97,6 +103,10 @@ useShareMeta({
           <div><dt>Start</dt><dd>{{ formatWalkTime(workshop.date) }}</dd></div>
           <div v-if="workshop.endTime"><dt>Wrapped</dt><dd>{{ formatWalkTime(workshop.endTime) }}</dd></div>
           <div v-if="venueLine"><dt>Venue</dt><dd>{{ venueLine }}</dd></div>
+          <div v-if="partners.length">
+            <dt>With</dt>
+            <dd>{{ partners.map((p) => p.name).filter(Boolean).join(', ') }}</dd>
+          </div>
           <div v-if="facilitators.length">
             <dt>Facilitated by</dt>
             <dd>
@@ -109,6 +119,11 @@ useShareMeta({
           </div>
         </dl>
         <ShareRow :title="workshop.title" />
+      </section>
+
+      <section v-if="invite" v-reveal class="chapter">
+        <ChapterHead title="The invite" />
+        <WorkshopInvite :media="invite" :title="workshop.title" />
       </section>
 
       <!-- the galleries are the record: what the workshop made -->
@@ -143,20 +158,29 @@ useShareMeta({
         <p v-else class="b-caption">Bookings closed</p>
       </EventBlock>
 
-      <section v-if="practicalLines.length || workshop.partner?.name || contact" v-reveal class="chapter chapter--paper">
+      <section v-if="invite" v-reveal class="chapter">
+        <ChapterHead title="The invite" />
+        <WorkshopInvite :media="invite" :title="workshop.title" />
+      </section>
+
+      <section v-if="practicalLines.length || partners.length || contact || facilitators.length" v-reveal class="chapter chapter--paper">
         <ChapterHead title="What to know" />
         <div class="what">
           <p v-for="(line, i) in practicalLines" :key="i" class="b-lede">{{ line }}</p>
-          <p v-if="workshop.partner?.name" class="b-caption partner">
-            With
-            <a v-if="workshop.partner.url" :href="workshop.partner.url">{{ workshop.partner.name }}</a>
-            <template v-else>{{ workshop.partner.name }}</template>
+          <p v-if="facilitators.length" class="b-caption meta">
+            Facilitated by
+            <template v-for="(person, i) in facilitators" :key="person.id">
+              <template v-if="i > 0">{{ i === facilitators.length - 1 ? ' and ' : ', ' }}</template>
+              <NuxtLink v-if="person.slug" :to="`/photographers/${person.slug}`">{{ person.name }}</NuxtLink>
+              <template v-else>{{ person.name }}</template>
+            </template>
           </p>
-          <p v-if="contact" class="b-caption partner">
+          <p v-if="contact" class="b-caption meta">
             Questions go to
             <NuxtLink v-if="contact.slug" :to="`/photographers/${contact.slug}`">{{ contact.name }}</NuxtLink>
             <template v-else>{{ contact.name }}</template>
           </p>
+          <WorkshopPartners v-if="partners.length" :partners="partners" />
         </div>
       </section>
 
@@ -213,7 +237,7 @@ useShareMeta({
   gap: var(--space-3);
   max-width: 62ch;
 }
-.partner a {
+.meta a {
   color: var(--signal);
 }
 .album-grid {

@@ -410,7 +410,7 @@ async function run() {
         bookingStatus: 'open',
         facilitators: [peopleBySlug['alet-pretorius']],
         contact: peopleBySlug['alet-pretorius'],
-        partner: { name: 'Botaki ba Afrika' },
+        partners: [{ name: 'Botaki ba Afrika' }],
         _status: 'published',
       },
     })
@@ -503,7 +503,13 @@ async function run() {
 
     // Demo workshops mirror the demo walks: relative dates refreshed on
     // rerun, one upcoming RSVP target, one capacity-1 waitlist target, one
-    // held workshop for the record page and its gallery.
+    // held workshop for the record page and its gallery. The next workshop
+    // carries an invite stand-in so the invite card is testable.
+    const demoInvite = await ensureMedia(
+      payload,
+      'doc-0013-portrait.jpg',
+      'Demo invite poster stand-in for the next workshop. Demo doc-0013-portrait.',
+    )
     const demoWorkshops = [
       {
         title: 'Demo: the next workshop',
@@ -521,6 +527,11 @@ async function run() {
           { line: 'Bring your empty tins with lids.' },
         ],
         facilitators: [peopleBySlug['alet-pretorius']],
+        heroImage: demoInvite.id,
+        partners: [
+          { name: 'Demo partner one', logo: demoInvite.id },
+          { name: 'Demo partner two', url: 'https://example.org' },
+        ],
       },
       {
         title: 'Demo: small workshop',
@@ -556,10 +567,16 @@ async function run() {
       if (existing.docs[0]) {
         workshopsBySlug[workshop.slug] = existing.docs[0].id
         // Relative dates drift: keep the fixture where the specs expect it.
+        // The invite too, so databases seeded before it existed match.
         await payload.update({
           collection: 'workshops',
           id: existing.docs[0].id,
-          data: { date: workshop.date, endTime: workshop.endTime ?? null },
+          data: {
+            date: workshop.date,
+            endTime: workshop.endTime ?? null,
+            heroImage: 'heroImage' in workshop ? workshop.heroImage : undefined,
+            partners: 'partners' in workshop ? workshop.partners : undefined,
+          },
         })
         continue
       }

@@ -14,6 +14,7 @@ import * as migration_20260829_222313_phase6_accounts_verify from './20260829_22
 import * as migration_20260829_224718_phase6_membership_orders from './20260829_224718_phase6_membership_orders';
 import * as migration_20260903_171106_phase7_walk_leaders from './20260903_171106_phase7_walk_leaders';
 import * as migration_20260909_174002_phase8_workshops from './20260909_174002_phase8_workshops';
+import * as migration_20260909_192337_phase9_workshop_partners from './20260909_192337_phase9_workshop_partners';
 
 export const migrations = [
   {
@@ -94,6 +95,11 @@ export const migrations = [
   {
     up: migration_20260909_174002_phase8_workshops.up,
     down: migration_20260909_174002_phase8_workshops.down,
-    name: '20260909_174002_phase8_workshops'
+    name: '20260909_174002_phase8_workshops',
+  },
+  {
+    up: migration_20260909_192337_phase9_workshop_partners.up,
+    down: migration_20260909_192337_phase9_workshop_partners.down,
+    name: '20260909_192337_phase9_workshop_partners'
   },
 ];
