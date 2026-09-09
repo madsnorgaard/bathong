@@ -208,6 +208,9 @@ export const walkPlate = (args: {
   topLine: string
   dateLines: string[]
   bottomLine: string
+  // The ink bar's two lines; the walk pair is the default so every existing
+  // walk card stays byte-identical.
+  barLines?: string[]
 }) =>
   root(
     [
@@ -226,7 +229,7 @@ export const walkPlate = (args: {
           mono(args.bottomLine, 20, 0.14, PAPER),
         ],
       ),
-      inkBar(['BRING ONE LENS', 'BATHONG.AFRICA/WALKS'], 34, INK),
+      inkBar(args.barLines ?? ['BRING ONE LENS', 'BATHONG.AFRICA/WALKS'], 34, INK),
     ],
     JACARANDA,
   )

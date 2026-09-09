@@ -79,8 +79,15 @@ function callTitle(s: Submission): string {
   const call = s.photocall as Photocall | number
   return typeof call === 'object' ? call.title : 'Photocall'
 }
-function rsvpWalk(r: Rsvp): Walk | null {
-  return r.walk && typeof r.walk === 'object' ? r.walk : null
+// An RSVP names exactly one event: a walk or a workshop.
+function rsvpEvent(r: Rsvp): { title: string; date: string; path: string } | null {
+  if (r.walk && typeof r.walk === 'object') {
+    return { title: r.walk.title, date: r.walk.date, path: walkPath(r.walk) }
+  }
+  if (r.workshop && typeof r.workshop === 'object') {
+    return { title: r.workshop.title, date: r.workshop.date, path: workshopPath(r.workshop) }
+  }
+  return null
 }
 
 const signingOut = ref(false)
@@ -127,11 +134,11 @@ async function signOut() {
       <ul v-else class="b-ruled">
         <li v-for="r in rsvps" :key="r.id">
           <div class="row">
-            <NuxtLink v-if="rsvpWalk(r)" :to="walkPath(rsvpWalk(r)!)" class="b-kicker">{{ rsvpWalk(r)!.title }}</NuxtLink>
+            <NuxtLink v-if="rsvpEvent(r)" :to="rsvpEvent(r)!.path" class="b-kicker">{{ rsvpEvent(r)!.title }}</NuxtLink>
             <span v-else class="b-kicker">A walk</span>
             <BTag>{{ RSVP_STATUS[r.status ?? 'confirmed'] ?? r.status }}</BTag>
           </div>
-          <p v-if="rsvpWalk(r)" class="b-caption muted">{{ formatWalkDate(rsvpWalk(r)!.date) }}</p>
+          <p v-if="rsvpEvent(r)" class="b-caption muted">{{ formatWalkDate(rsvpEvent(r)!.date) }}</p>
         </li>
       </ul>
     </section>

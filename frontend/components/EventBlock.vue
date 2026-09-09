@@ -15,27 +15,44 @@ interface WalkLike {
   spotsTaken?: number | null
   priceMember?: number | null
   priceNonMember?: number | null
+  price?: number | null
+  priceIncludes?: string | null
   bookingUrl?: string | null
   bookingStatus?: 'open' | 'full' | 'closed' | null
   route?: unknown
 }
 
-const props = defineProps<{
-  walk: WalkLike
-}>()
+const props = withDefaults(
+  defineProps<{
+    walk: WalkLike
+    // The plate serves walks and workshops; the prop stays structural, the
+    // kind only changes the words around it.
+    kind?: 'walk' | 'workshop'
+  }>(),
+  { kind: 'walk' },
+)
+
+const nounCap = computed(() => (props.kind === 'workshop' ? 'Workshop' : 'Walk'))
 
 const spotsLine = computed(() => {
   const { capacity, spotsTaken, bookingStatus } = props.walk
   if (bookingStatus === 'closed') return 'Bookings closed'
-  if (bookingStatus === 'full') return 'Walk is full'
+  if (bookingStatus === 'full') return `${nounCap.value} is full`
   if (capacity == null) return null
   const left = Math.max(0, capacity - (spotsTaken ?? 0))
-  if (left === 0) return 'Walk is full'
+  if (left === 0) return `${nounCap.value} is full`
   return `${left} of ${capacity} places left`
 })
 
 // Only prices that are actually set appear; 0 is a real price ("free").
+// A walk prices members and guests apart; a workshop is one price for all.
 const priceLine = computed(() => {
+  const flat = props.walk.price
+  if (flat != null) {
+    const base = flat === 0 ? 'free' : `${formatPrice(flat)} per person`
+    const includes = props.walk.priceIncludes
+    return includes ? `${base}, ${includes.charAt(0).toLowerCase()}${includes.slice(1)}` : base
+  }
   const parts: string[] = []
   const member = props.walk.priceMember
   if (member != null) {
@@ -65,8 +82,10 @@ const inProgress = computed(() => {
 </script>
 
 <template>
-  <section class="event on-jacaranda" :aria-label="`Walk ${walk.number ?? 1}`">
-    <p class="b-kicker">{{ inProgress ? 'Walking now' : 'Next walk' }} · {{ walkNo(walk) }}</p>
+  <section class="event on-jacaranda" :aria-label="`${nounCap} ${walk.number ?? 1}`">
+    <p class="b-kicker">
+      {{ inProgress ? (kind === 'workshop' ? 'Happening now' : 'Walking now') : `Next ${kind}` }} · {{ walkNo(walk) }}
+    </p>
     <p class="when b-display-1">
       {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>
@@ -90,7 +109,7 @@ const inProgress = computed(() => {
         <BButton v-if="walk.bookingUrl" :href="walk.bookingUrl" variant="ghost">
           Reserve a place →
         </BButton>
-        <BButton v-else to="/walks" variant="ghost">Reserve a place →</BButton>
+        <BButton v-else :to="kind === 'workshop' ? '/workshops' : '/walks'" variant="ghost">Reserve a place →</BButton>
       </slot>
     </div>
   </section>

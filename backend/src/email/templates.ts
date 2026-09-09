@@ -1,4 +1,4 @@
-import type { Photocall, Rsvp, Submission, Walk } from '../payload-types'
+import type { Photocall, Rsvp, Submission, Walk, Workshop } from '../payload-types'
 
 /**
  * Every outbound email as a pure { subject, text } builder. Plain text on
@@ -9,46 +9,64 @@ import type { Photocall, Rsvp, Submission, Walk } from '../payload-types'
 
 const SIGNATURE = '\n\nBATHONG.\nhttps://bathong.africa'
 
-const walkDate = (walk: Walk): string =>
+type RsvpEvent = Walk | Workshop
+type RsvpNoun = 'walk' | 'workshop'
+
+const eventDate = (event: RsvpEvent): string =>
   new Intl.DateTimeFormat('en-ZA', {
     dateStyle: 'full',
     timeStyle: 'short',
     timeZone: 'Africa/Johannesburg',
-  }).format(new Date(walk.date))
+  }).format(new Date(event.date))
 
-const walkDetails = (walk: Walk): string => {
-  const lines = [`Walk: ${walk.title}`, `When: ${walkDate(walk)}`]
-  if (walk.meetingPoint) lines.push(`Meeting point: ${walk.meetingPoint}`)
+// A walk meets somewhere on a route; a workshop happens at a venue.
+const eventDetails = (event: RsvpEvent, noun: RsvpNoun): string => {
+  const lines = [
+    `${noun === 'workshop' ? 'Workshop' : 'Walk'}: ${event.title}`,
+    `When: ${eventDate(event)}`,
+  ]
+  if ('meetingPoint' in event && event.meetingPoint) {
+    lines.push(`Meeting point: ${event.meetingPoint}`)
+  }
+  if ('venueName' in event && event.venueName) {
+    lines.push(
+      `Venue: ${event.venueName}${event.venueAddress ? `, ${event.venueAddress}` : ''}`,
+    )
+  }
   return lines.join('\n')
 }
 
-export const rsvpConfirmed = (rsvp: Rsvp, walk: Walk) => ({
-  subject: `You're on the list: ${walk.title}`,
+// The one practical line per event type; both are real invite copy.
+const bringLine = (noun: RsvpNoun): string =>
+  noun === 'workshop' ? 'Bring your empty tins with lids.' : 'Bring one lens.'
+
+export const rsvpConfirmed = (rsvp: Rsvp, event: RsvpEvent, noun: RsvpNoun = 'walk') => ({
+  subject: `You're on the list: ${event.title}`,
   text:
     `Hi ${rsvp.name},\n\n` +
-    `Your place on the walk is confirmed.\n\n` +
-    `${walkDetails(walk)}\n\n` +
-    `Bring one lens. If your plans change, just reply to this email.` +
+    `Your place on the ${noun} is confirmed.\n\n` +
+    `${eventDetails(event, noun)}\n\n` +
+    `${bringLine(noun)} If your plans change, just reply to this email.` +
     SIGNATURE,
 })
 
-export const rsvpWaitlisted = (rsvp: Rsvp, walk: Walk) => ({
-  subject: `Waitlist: ${walk.title}`,
+export const rsvpWaitlisted = (rsvp: Rsvp, event: RsvpEvent, noun: RsvpNoun = 'walk') => ({
+  subject: `Waitlist: ${event.title}`,
   text:
     `Hi ${rsvp.name},\n\n` +
-    `This walk is currently full, so you're on the waitlist. ` +
+    `This ${noun} is currently full, so you're on the waitlist. ` +
     `If a place opens up we'll email you straight away.\n\n` +
-    `${walkDetails(walk)}` +
+    `${eventDetails(event, noun)}` +
     SIGNATURE,
 })
 
-export const rsvpPromoted = (rsvp: Rsvp, walk: Walk) => ({
-  subject: `A place opened up: ${walk.title}`,
+export const rsvpPromoted = (rsvp: Rsvp, event: RsvpEvent, noun: RsvpNoun = 'walk') => ({
+  subject: `A place opened up: ${event.title}`,
   text:
     `Hi ${rsvp.name},\n\n` +
-    `Good news - a place opened up and your spot on the walk is now confirmed.\n\n` +
-    `${walkDetails(walk)}\n\n` +
-    `Bring one lens. If your plans change, just reply to this email.` +
+    `Good news - a place opened up and your spot on the ${noun} is now confirmed.\n\n` +
+    `${eventDetails(event, noun)}\n\n` +
+    `${bringLine(noun)} If your plans change, just reply to this email.` +
     SIGNATURE,
 })
 
@@ -228,8 +246,8 @@ export const editorNewJoin = (
     `Mark it paid here once the EFT shows:\n${adminLink}`,
 })
 
-export const editorNewRsvp = (rsvp: Rsvp, walk: Walk, serverURL: string) => ({
-  subject: `New RSVP (${rsvp.status}): ${walk.title}`,
+export const editorNewRsvp = (rsvp: Rsvp, event: RsvpEvent, serverURL: string) => ({
+  subject: `New RSVP (${rsvp.status}): ${event.title}`,
   text:
     `${rsvp.name} <${rsvp.email}> - ${rsvp.status}\n` +
     (rsvp.note ? `Note: ${rsvp.note}\n` : '') +

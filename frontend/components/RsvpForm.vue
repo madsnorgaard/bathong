@@ -4,7 +4,10 @@
  * enforces honeypot, duplicates and capacity (waitlist overflow) and sends
  * the confirmation/waitlist email from its afterChange hook.
  */
-const props = defineProps<{ walkId: number | string }>()
+// Exactly one of walkId / workshopId names the event being reserved.
+const props = defineProps<{ walkId?: number | string; workshopId?: number | string }>()
+
+const noun = computed(() => (props.workshopId != null ? 'workshop' : 'walk'))
 
 // A signed-in member reserves as themselves: the form is prefilled and the
 // request carries the session, so the RSVP lands on their desk.
@@ -29,6 +32,7 @@ async function submit() {
       method: 'POST',
       body: {
         walk: props.walkId,
+        workshop: props.workshopId,
         name: name.value,
         email: email.value,
         note: note.value || undefined,
@@ -49,11 +53,13 @@ async function submit() {
 <template>
   <div class="rsvp">
     <p v-if="result === 'confirmed'" class="state b-lede">
-      You're on the list. Bring one lens. A written confirmation is on its way to your inbox.
+      You're on the list.
+      {{ noun === 'workshop' ? 'Bring your empty tins with lids.' : 'Bring one lens.' }}
+      A written confirmation is on its way to your inbox.
     </p>
     <p v-else-if="result === 'waitlist'" class="state b-lede">
-      The walk is full, and you're on the waitlist. We've emailed you a note, and we'll write
-      again if a place opens.
+      The {{ noun }} is full, and you're on the waitlist. We've emailed you a note, and we'll
+      write again if a place opens.
     </p>
     <form v-else novalidate @submit.prevent="submit">
       <div class="fields">
@@ -70,7 +76,7 @@ async function submit() {
         {{ pending ? 'Sending...' : 'Reserve a place →' }}
       </BButton>
       <p class="b-caption popia">
-        Your name and email are stored only to run this walk, visible to the editorial team only,
+        Your name and email are stored only to run this {{ noun }}, visible to the editorial team only,
         and deleted on request. <NuxtLink to="/privacy">Privacy →</NuxtLink>
       </p>
     </form>
