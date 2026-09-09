@@ -63,11 +63,13 @@ test('an album shares its generated C6 card', async ({ page }) => {
   await expect(page.locator('meta[name="copyright"]')).toHaveAttribute('content', /© Mads Nørgaard/)
 })
 
-test('Albums sits in the main nav, after Walks', async ({ page }) => {
+test('Albums sits in the main nav, after Walks and Workshops', async ({ page }) => {
   await page.goto('/')
   const labels = await page.locator('header nav[aria-label="Main"] a').allTextContents()
   const trimmed = labels.map((l) => l.trim())
-  expect(trimmed.indexOf('Albums')).toBe(trimmed.indexOf('Walks') + 1)
+  // the programme pair leads: Walks, then Workshops, then the work
+  expect(trimmed.indexOf('Workshops')).toBe(trimmed.indexOf('Walks') + 1)
+  expect(trimmed.indexOf('Albums')).toBe(trimmed.indexOf('Workshops') + 1)
   await expect(page.locator('header nav[aria-label="Main"] a', { hasText: 'Albums' }).first()).toHaveAttribute('href', '/albums')
 })
 
