@@ -5,10 +5,13 @@
  */
 import { walkNumber } from './format'
 
-/** Upcoming or in progress: starts later, or has not wrapped yet. */
+/**
+ * Upcoming or in progress: starts later, or has not wrapped yet. Depth 1 so
+ * the invite (heroImage) arrives populated on the index.
+ */
 export function nextWorkshopsQuery(now: string, limit: number): string {
   const t = encodeURIComponent(now)
-  return `/api/workshops?where[or][0][date][greater_than_equal]=${t}&where[or][1][endTime][greater_than_equal]=${t}&sort=date&limit=${limit}&depth=0`
+  return `/api/workshops?where[or][0][date][greater_than_equal]=${t}&where[or][1][endTime][greater_than_equal]=${t}&sort=date&limit=${limit}&depth=1`
 }
 
 /** Started, and either has no wrap time or has wrapped. Newest first. */

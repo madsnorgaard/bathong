@@ -39,6 +39,12 @@ const plate = computed(() => {
   }
 })
 
+const invite = computed(() =>
+  nextWorkshop.value?.heroImage && typeof nextWorkshop.value.heroImage === 'object'
+    ? nextWorkshop.value.heroImage
+    : null,
+)
+
 const practicalLines = computed(
   () =>
     (nextWorkshop.value?.practicalInfo ?? [])
@@ -78,6 +84,11 @@ useShareMeta({
         </BButton>
         <p v-else class="b-caption">Bookings closed</p>
       </EventBlock>
+
+      <section v-if="invite" v-reveal class="chapter">
+        <ChapterHead title="The invite" />
+        <WorkshopInvite :media="invite" :title="nextWorkshop.title" />
+      </section>
 
       <!-- the practical lines answer the fear, on paper -->
       <section v-if="practicalLines.length || nextWorkshop.partner?.name" v-reveal class="chapter chapter--paper">

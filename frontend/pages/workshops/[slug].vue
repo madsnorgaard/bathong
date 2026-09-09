@@ -37,6 +37,11 @@ const contact = computed(() =>
     ? workshop.value.contact
     : null,
 )
+const invite = computed(() =>
+  workshop.value?.heroImage && typeof workshop.value.heroImage === 'object'
+    ? workshop.value.heroImage
+    : null,
+)
 const venueLine = computed(
   () =>
     [workshop.value?.venueName, workshop.value?.venueAddress].filter(Boolean).join(', ') || null,
@@ -111,6 +116,11 @@ useShareMeta({
         <ShareRow :title="workshop.title" />
       </section>
 
+      <section v-if="invite" v-reveal class="chapter">
+        <ChapterHead title="The invite" />
+        <WorkshopInvite :media="invite" :title="workshop.title" />
+      </section>
+
       <!-- the galleries are the record: what the workshop made -->
       <section v-if="albums.length" v-reveal class="chapter">
         <ChapterHead title="Albums" />
@@ -142,6 +152,11 @@ useShareMeta({
         <BButton v-else-if="workshop.bookingUrl" :href="workshop.bookingUrl" variant="ghost">Reserve a place →</BButton>
         <p v-else class="b-caption">Bookings closed</p>
       </EventBlock>
+
+      <section v-if="invite" v-reveal class="chapter">
+        <ChapterHead title="The invite" />
+        <WorkshopInvite :media="invite" :title="workshop.title" />
+      </section>
 
       <section v-if="practicalLines.length || workshop.partner?.name || contact" v-reveal class="chapter chapter--paper">
         <ChapterHead title="What to know" />

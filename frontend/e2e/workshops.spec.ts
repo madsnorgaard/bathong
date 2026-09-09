@@ -41,6 +41,12 @@ test('the workshops index is the next workshop: plate, venue, price, practical l
   await expect(page.getByText(/R\s?400.*per person/).first()).toBeVisible()
   await expect(page.getByText('Bring your empty tins with lids.').first()).toBeVisible()
   await expect(page.locator('#rsvp')).toBeVisible()
+  // the invite card opens the full poster in its own tab
+  const invite = page.locator('a.invite')
+  await expect(invite).toBeVisible()
+  await expect(invite).toHaveAttribute('href', /\/api\/media\//)
+  await expect(invite).toHaveAttribute('target', '_blank')
+  await expect(invite.getByText('Open the full invite →')).toBeVisible()
 })
 
 test('an anonymous RSVP on the workshop page lands on the list', async ({ page }) => {
