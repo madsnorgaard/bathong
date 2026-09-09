@@ -100,8 +100,9 @@ jobs:
           npm ci
           # The runner ships a google-chrome apt source whose mirror metadata
           # goes stale (hash sum mismatch) and fails the apt update inside
-          # --with-deps. CI runs chromium, not Chrome, so drop the source.
-          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+          # --with-deps. CI runs chromium, not Chrome, so drop every source
+          # that points at dl.google.com, whatever the file is called.
+          grep -rl dl.google.com /etc/apt/sources.list.d/ | xargs -r sudo rm -f
           npx playwright install --with-deps chromium
       - name: Playwright smoke
         working-directory: frontend
