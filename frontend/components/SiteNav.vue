@@ -55,10 +55,27 @@ function onKeydown(e: KeyboardEvent) {
 
 watch(sheetOpen, (open) => {
   if (open) nextTick(() => sheetEl.value?.querySelector<HTMLElement>('a, button')?.focus())
+  // The sheet owns the viewport while open: the page behind must not scroll.
+  if (import.meta.client) document.documentElement.style.overflow = open ? 'hidden' : ''
 })
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
+// Rotating past the breakpoint hides the sheet by CSS; the state (and the
+// scroll lock with it) must follow, or the page stays frozen.
+let desktopQuery: MediaQueryList | null = null
+const closeOnDesktop = () => {
+  if (desktopQuery?.matches) sheetOpen.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+  desktopQuery = window.matchMedia('(min-width: 841px)')
+  desktopQuery.addEventListener('change', closeOnDesktop)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeydown)
+  desktopQuery?.removeEventListener('change', closeOnDesktop)
+  document.documentElement.style.overflow = ''
+})
 </script>
 
 <template>
@@ -85,15 +102,19 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="b-display-2">
           {{ link.label }}
         </NuxtLink>
-        <NuxtLink :to="joinLink" class="b-display-2">Join →</NuxtLink>
-        <NuxtLink :to="accountLink.to" class="b-display-2">{{ accountLink.label }}</NuxtLink>
       </nav>
+      <!-- the doors stay in reach: pinned to the sheet's foot, never below the fold -->
+      <div class="sheet-actions">
+        <BButton :to="joinLink" variant="ghost" class="sheet-join">Join →</BButton>
+        <NuxtLink :to="accountLink.to" class="sheet-account b-kicker">{{ accountLink.label }}</NuxtLink>
+      </div>
     </div>
   </header>
 </template>
 
 <style scoped>
 .nav {
+  --nav-bar-h: 64px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -155,22 +176,64 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   .sheet-toggle {
     display: inline-flex;
   }
+  .nav-inner {
+    /* deterministic bar height so the sheet can own the rest exactly */
+    height: var(--nav-bar-h);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
   .sheet {
     display: flex;
     flex-direction: column;
-    padding: var(--space-5) var(--space-4);
+    /* the rest of the real viewport: dvh tracks the URL bar, vh is the
+       fallback; safe-area keeps the foot clear of the home indicator */
+    height: calc(100vh - var(--nav-bar-h));
+    height: calc(100dvh - var(--nav-bar-h));
+    overflow-y: auto; /* safety valve; the fluid rhythm below means it should never engage */
+    overscroll-behavior: contain;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
     border-bottom: var(--hairline);
   }
   .sheet-links {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    /* rhythm and type breathe with the viewport height, so every link and
+       the actions row fit a portrait phone without scrolling */
+    gap: clamp(8px, 1.8dvh, var(--space-4));
   }
   .sheet-links a {
     color: var(--paper);
     min-height: 44px;
     display: flex;
     align-items: center;
+    font-size: clamp(1.15rem, 3.8dvh, 2rem);
+  }
+  .sheet-links a:hover,
+  .sheet-links a.router-link-active {
+    color: var(--signal);
+  }
+  .sheet-actions {
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: var(--hairline);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .sheet-actions :deep(.sheet-join) {
+    color: var(--signal);
+    border-color: var(--paper);
+  }
+  .sheet-account {
+    color: var(--grey-fog);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .sheet-account:hover,
+  .sheet-account.router-link-active {
+    color: var(--signal);
   }
 }
 </style>
