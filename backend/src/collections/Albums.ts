@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isAdmin, isEditor, publishedOrEditor } from '../access'
-import { assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
+import { assertEventsInPast, assertWalksInPast, pastWalksOnly } from '../fields/walkLinks'
 import { formatSlug } from '../fields/slug'
 
 /**
@@ -18,7 +18,7 @@ export const Albums: CollectionConfig = {
   slug: 'albums',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'date', 'photographer', 'walks', '_status'],
+    defaultColumns: ['title', 'date', 'photographer', 'walks', 'workshops', '_status'],
     group: 'Work',
   },
   versions: { drafts: true, maxPerDoc: 10 },
@@ -63,6 +63,17 @@ export const Albums: CollectionConfig = {
         description: 'The walk(s) these photographs are from. Only walks that have already happened.',
       },
     },
+    {
+      name: 'workshops',
+      type: 'relationship',
+      relationTo: 'workshops',
+      hasMany: true,
+      filterOptions: pastWalksOnly,
+      admin: {
+        description:
+          'The workshop(s) these photographs are from. Only workshops that have already been held.',
+      },
+    },
     { name: 'photographer', type: 'relationship', relationTo: 'people' },
     {
       name: 'creditOverride',
@@ -99,6 +110,8 @@ export const Albums: CollectionConfig = {
           )
         }
         if (data?.walks !== undefined) await assertWalksInPast(data.walks, req, 'album')
+        if (data?.workshops !== undefined)
+          await assertEventsInPast('workshops', data.workshops, req, 'album', 'workshop')
         return data
       },
     ],

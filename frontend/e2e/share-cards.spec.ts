@@ -61,6 +61,18 @@ test('an album page shares its generated C6 card', async ({ page, request }) => 
   await expectCard(request, '/share/album/demo-behind-the-walk.jpg')
 })
 
+test('a workshop page shares its own card', async ({ page, request }) => {
+  const content = await ogImage(page, '/workshops/demo-past-workshop')
+  expect(content).toMatch(/\/share\/workshop\/demo-past-workshop\.jpg\?v=\d+$/)
+  await expectCard(request, '/share/workshop/demo-past-workshop.jpg')
+})
+
+test('the workshops page shares the next-workshop card while one is upcoming', async ({ page, request }) => {
+  const content = await ogImage(page, '/workshops')
+  expect(content).toMatch(/\/share\/(workshops\.jpg\?v=\d+|default\.jpg)$/)
+  if (content?.includes('workshops.jpg')) await expectCard(request, '/share/workshops.jpg')
+})
+
 test('photocalls page shares the C5 card only while a call is open', async ({ page }) => {
   const content = await ogImage(page, '/photocalls')
   expect(content).toMatch(/\/share\/(photocalls\.jpg\?v=\d+|default\.jpg)$/)
@@ -74,6 +86,7 @@ test('unknown entities and failures serve the default card, never an error', asy
     '/share/essay/does-not-exist.jpg',
     '/share/walk/does-not-exist.jpg',
     '/share/album/does-not-exist.jpg',
+    '/share/workshop/does-not-exist.jpg',
   ]) {
     const fallback = await expectCard(request, path)
     expect(fallback.equals(defaultCard), path).toBe(true)

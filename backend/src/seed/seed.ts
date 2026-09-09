@@ -375,6 +375,48 @@ async function run() {
     console.log(`  walk (draft): ${draft.title}`)
   }
 
+  // ---- workshops: the taught side of the programme ----
+  // Workshop 001 is real, straight from the October invite. Facts only:
+  // no hero image is seeded because no honest photograph exists for it yet
+  // (the invite poster is a designed flyer, not a content photograph).
+  const workshop001 = await payload.find({
+    collection: 'workshops',
+    where: { slug: { equals: 'workshop-001-pinhole' } },
+    limit: 1,
+  })
+  if (!workshop001.docs.length) {
+    await payload.create({
+      collection: 'workshops',
+      data: {
+        title: 'Pinhole Photography Workshop',
+        slug: 'workshop-001-pinhole',
+        date: '2026-10-03T11:00:00+02:00',
+        endTime: '2026-10-03T16:00:00+02:00',
+        venueName: 'Botaki ba Afrika',
+        venueAddress: 'Hatfield, Pretoria',
+        description: lex([
+          'Learn all about analogue photography and experience developing in the darkroom.',
+          'All materials are included in the price.',
+        ]),
+        practicalInfo: [
+          { line: 'All skill levels welcome.' },
+          { line: 'Child friendly, accompanied by an adult.' },
+          { line: 'Bring your empty tins with lids.' },
+          { line: 'Help grow our library: donate photography books and magazines.' },
+        ],
+        capacity: 20,
+        price: 400,
+        priceIncludes: 'All materials included',
+        bookingStatus: 'open',
+        facilitators: [peopleBySlug['alet-pretorius']],
+        contact: peopleBySlug['alet-pretorius'],
+        partner: { name: 'Botaki ba Afrika' },
+        _status: 'published',
+      },
+    })
+    console.log('  workshop: \u2116 001 pinhole')
+  }
+
   // ---- demo state fixtures (e2e): SEED_DEMO=true only ----
   if (process.env.SEED_DEMO === 'true') {
     // Demo walks carry relative dates. The past walk is the deterministic
@@ -459,6 +501,77 @@ async function run() {
     }
     const demoPastWalk = walksBySlug['demo-past-walk']
 
+    // Demo workshops mirror the demo walks: relative dates refreshed on
+    // rerun, one upcoming RSVP target, one capacity-1 waitlist target, one
+    // held workshop for the record page and its gallery.
+    const demoWorkshops = [
+      {
+        title: 'Demo: the next workshop',
+        slug: 'demo-next-workshop',
+        date: daysFromNow(10, 11),
+        endTime: daysFromNow(10, 16),
+        venueName: 'Demo venue',
+        venueAddress: 'Pretoria',
+        capacity: 20,
+        price: 400,
+        priceIncludes: 'All materials included',
+        bookingStatus: 'open' as const,
+        practicalInfo: [
+          { line: 'All skill levels welcome.' },
+          { line: 'Bring your empty tins with lids.' },
+        ],
+        facilitators: [peopleBySlug['alet-pretorius']],
+      },
+      {
+        title: 'Demo: small workshop',
+        slug: 'demo-small-workshop',
+        date: daysFromNow(17, 11),
+        venueName: 'Demo venue',
+        venueAddress: 'Pretoria',
+        capacity: 1,
+        price: 400,
+        bookingStatus: 'open' as const,
+      },
+      {
+        title: 'Demo: the workshop that was',
+        slug: 'demo-past-workshop',
+        date: daysFromNow(-14, 11),
+        endTime: daysFromNow(-14, 16),
+        venueName: 'Demo venue',
+        venueAddress: 'Pretoria',
+        capacity: 20,
+        price: 400,
+        bookingStatus: 'closed' as const,
+        facilitators: [peopleBySlug['alet-pretorius']],
+      },
+    ]
+    const workshopsBySlug: Record<string, number> = {}
+    for (const workshop of demoWorkshops) {
+      const existing = await payload.find({
+        collection: 'workshops',
+        where: { slug: { equals: workshop.slug } },
+        limit: 1,
+        depth: 0,
+      })
+      if (existing.docs[0]) {
+        workshopsBySlug[workshop.slug] = existing.docs[0].id
+        // Relative dates drift: keep the fixture where the specs expect it.
+        await payload.update({
+          collection: 'workshops',
+          id: existing.docs[0].id,
+          data: { date: workshop.date, endTime: workshop.endTime ?? null },
+        })
+        continue
+      }
+      const created = await payload.create({
+        collection: 'workshops',
+        data: { ...workshop, _status: 'published' },
+      })
+      workshopsBySlug[workshop.slug] = created.id
+      console.log(`  workshop (demo): ${workshop.title}`)
+    }
+    const demoPastWorkshop = workshopsBySlug['demo-past-workshop']
+
     // A demo essay so the reader exists before Essay 001 does. Clearly demo:
     // demo frames, demo copy, replaced by the group edit after Walk 001.
     const existingEssay = await payload.find({
@@ -542,7 +655,8 @@ async function run() {
 
     // Demo albums: the softer record of the past walk, plain media only.
     // Two of them, by two different members, because one walk carries a
-    // snapshot gallery per member who shot it.
+    // snapshot gallery per member who shot it; a third belongs to the held
+    // demo workshop, because workshops carry galleries too.
     const demoAlbums = [
       {
         title: 'Demo: behind the walk',
@@ -551,6 +665,7 @@ async function run() {
           'Three demo photographs standing in for the group shot, the edit table and the coffee after. PHOTO SLOT throughout.',
         files: ['doc-0009.jpg', 'doc-0016.jpg', 'doc-0024.jpg'],
         photographer: peopleBySlug['mads-norgaard'],
+        walks: [demoPastWalk],
       },
       {
         title: 'Demo: snapshots, second gallery',
@@ -559,6 +674,16 @@ async function run() {
           'A second gallery from the same walk, by a second member. PHOTO SLOT throughout.',
         files: ['doc-0001.jpg', 'doc-0012.jpg'],
         photographer: peopleBySlug['jacques-nelles'],
+        walks: [demoPastWalk],
+      },
+      {
+        title: 'Demo: tins and paper',
+        slug: 'demo-workshop-album',
+        intro:
+          'Two demo photographs standing in for the pinhole prints on the drying line. PHOTO SLOT throughout.',
+        files: ['street-0004.jpg', 'street-0005.jpg'],
+        photographer: peopleBySlug['alet-pretorius'],
+        workshops: [demoPastWorkshop],
       },
     ]
     for (const album of demoAlbums) {
@@ -589,7 +714,8 @@ async function run() {
           slug: album.slug,
           intro: album.intro,
           images: albumMedia.map((m) => m.id),
-          walks: [demoPastWalk],
+          walks: 'walks' in album ? album.walks : undefined,
+          workshops: 'workshops' in album ? album.workshops : undefined,
           photographer: album.photographer,
           date: daysFromNow(-21, 6),
           publishedDate: daysFromNow(-20, 9),

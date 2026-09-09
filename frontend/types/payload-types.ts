@@ -76,6 +76,7 @@ export interface Config {
     essays: Essay;
     albums: Album;
     walks: Walk;
+    workshops: Workshop;
     exhibitions: Exhibition;
     photocalls: Photocall;
     submissions: Submission;
@@ -92,6 +93,9 @@ export interface Config {
       frames: 'frames';
       albums: 'albums';
     };
+    workshops: {
+      albums: 'albums';
+    };
   };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
@@ -101,6 +105,7 @@ export interface Config {
     essays: EssaysSelect<false> | EssaysSelect<true>;
     albums: AlbumsSelect<false> | AlbumsSelect<true>;
     walks: WalksSelect<false> | WalksSelect<true>;
+    workshops: WorkshopsSelect<false> | WorkshopsSelect<true>;
     exhibitions: ExhibitionsSelect<false> | ExhibitionsSelect<true>;
     photocalls: PhotocallsSelect<false> | PhotocallsSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
@@ -681,6 +686,10 @@ export interface Album {
    * The walk(s) these photographs are from. Only walks that have already happened.
    */
   walks?: (number | Walk)[] | null;
+  /**
+   * The workshop(s) these photographs are from. Only workshops that have already been held.
+   */
+  workshops?: (number | Workshop)[] | null;
   photographer?: (number | null) | Person;
   /**
    * Use when the photographer has no People profile. Every album must carry a credit.
@@ -688,6 +697,95 @@ export interface Album {
   creditOverride?: string | null;
   date?: string | null;
   publishedDate?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workshops".
+ */
+export interface Workshop {
+  id: number;
+  title: string;
+  slug?: string | null;
+  /**
+   * Start of the workshop. Enter times in SAST (the picker uses your local time).
+   */
+  date: string;
+  /**
+   * When the workshop wraps. Until then it stays on the site as the current workshop.
+   */
+  endTime?: string | null;
+  /**
+   * The venue itself, e.g. Botaki ba Afrika. Kept short for the share card.
+   */
+  venueName?: string | null;
+  /**
+   * Where the venue is, e.g. Hatfield, Pretoria.
+   */
+  venueAddress?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Short practical lines from the invite: skill levels, child friendliness, what to bring.
+   */
+  practicalInfo?:
+    | {
+        line: string;
+        id?: string | null;
+      }[]
+    | null;
+  capacity?: number | null;
+  /**
+   * One price per person, in rand. 0 means free.
+   */
+  price?: number | null;
+  /**
+   * What the price covers, e.g. All materials included.
+   */
+  priceIncludes?: string | null;
+  bookingUrl?: string | null;
+  bookingStatus?: ('open' | 'full' | 'closed') | null;
+  /**
+   * The member(s) running this workshop, in billing order.
+   */
+  facilitators?: (number | Person)[] | null;
+  /**
+   * Who answers questions about this workshop.
+   */
+  contact?: (number | null) | Person;
+  /**
+   * A partner organisation hosting or co-running the workshop.
+   */
+  partner?: {
+    name?: string | null;
+    url?: string | null;
+    logo?: (number | null) | Media;
+  };
+  heroImage?: (number | null) | Media;
+  /**
+   * Position in the published workshop programme, date order. Rendered as № 001.
+   */
+  number?: number | null;
+  albums?: {
+    docs?: (number | Album)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -787,7 +885,8 @@ export interface Order {
  */
 export interface Rsvp {
   id: number;
-  walk: number | Walk;
+  walk?: (number | null) | Walk;
+  workshop?: (number | null) | Workshop;
   /**
    * Set when a signed-in member reserves.
    */
@@ -851,6 +950,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'walks';
         value: number | Walk;
+      } | null)
+    | ({
+        relationTo: 'workshops';
+        value: number | Workshop;
       } | null)
     | ({
         relationTo: 'exhibitions';
@@ -1123,6 +1226,7 @@ export interface AlbumsSelect<T extends boolean = true> {
   intro?: T;
   images?: T;
   walks?: T;
+  workshops?: T;
   photographer?: T;
   creditOverride?: T;
   date?: T;
@@ -1154,6 +1258,45 @@ export interface WalksSelect<T extends boolean = true> {
   number?: T;
   essays?: T;
   frames?: T;
+  albums?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workshops_select".
+ */
+export interface WorkshopsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  date?: T;
+  endTime?: T;
+  venueName?: T;
+  venueAddress?: T;
+  description?: T;
+  practicalInfo?:
+    | T
+    | {
+        line?: T;
+        id?: T;
+      };
+  capacity?: T;
+  price?: T;
+  priceIncludes?: T;
+  bookingUrl?: T;
+  bookingStatus?: T;
+  facilitators?: T;
+  contact?: T;
+  partner?:
+    | T
+    | {
+        name?: T;
+        url?: T;
+        logo?: T;
+      };
+  heroImage?: T;
+  number?: T;
   albums?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1249,6 +1392,7 @@ export interface OrdersSelect<T extends boolean = true> {
  */
 export interface RsvpsSelect<T extends boolean = true> {
   walk?: T;
+  workshop?: T;
   user?: T;
   name?: T;
   email?: T;

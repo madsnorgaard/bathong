@@ -4,19 +4,35 @@ import { getContactEmail, sendSafe } from '../email/send'
 import { editorNewRsvp, rsvpConfirmed, rsvpPromoted, rsvpWaitlisted } from '../email/templates'
 
 /**
- * Walk RSVPs. Public create so a first-time visitor can reserve a place
- * without an account; read/update stay editorial (the list is personal data,
- * POPIA applies). Capacity is enforced in beforeChange with a count query -
- * a simultaneous pair of submits can in theory both pass the check, which is
- * accepted at collective scale (a walk over by one is a good problem).
+ * Event RSVPs: one row reserves a place on exactly one walk or one workshop.
+ * Public create so a first-time visitor can reserve a place without an
+ * account; read/update stay editorial (the list is personal data, POPIA
+ * applies). Capacity is enforced in beforeChange with a count query - a
+ * simultaneous pair of submits can in theory both pass the check, which is
+ * accepted at collective scale (an event over by one is a good problem).
  * afterChange sends the confirmation/waitlist email (fire-and-forget - a
  * dead SMTP hop must never fail a committed RSVP).
  */
+
+type EventKind = {
+  collection: 'walks' | 'workshops'
+  field: 'walk' | 'workshop'
+  noun: 'walk' | 'workshop'
+}
+
+const WALK: EventKind = { collection: 'walks', field: 'walk', noun: 'walk' }
+const WORKSHOP: EventKind = { collection: 'workshops', field: 'workshop', noun: 'workshop' }
+
+const eventId = (value: unknown): number | string | null | undefined =>
+  typeof value === 'object' && value !== null
+    ? (value as { id?: number | string }).id
+    : (value as number | string | null | undefined)
+
 export const Rsvps: CollectionConfig = {
   slug: 'rsvps',
   admin: {
     useAsTitle: 'email',
-    defaultColumns: ['walk', 'name', 'email', 'status', 'createdAt'],
+    defaultColumns: ['walk', 'workshop', 'name', 'email', 'status', 'createdAt'],
     group: 'Programme',
   },
   access: {
@@ -32,7 +48,8 @@ export const Rsvps: CollectionConfig = {
   },
   defaultSort: '-createdAt',
   fields: [
-    { name: 'walk', type: 'relationship', relationTo: 'walks', required: true, index: true },
+    { name: 'walk', type: 'relationship', relationTo: 'walks', index: true },
+    { name: 'workshop', type: 'relationship', relationTo: 'workshops', index: true },
     {
       name: 'user',
       type: 'relationship',
@@ -65,6 +82,18 @@ export const Rsvps: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeValidate: [
+      // An RSVP always names exactly one event, on create and on edit alike:
+      // an editor moving a booking must not leave a row with both or neither.
+      async ({ data, originalDoc }) => {
+        const walk = data && 'walk' in data ? data.walk : originalDoc?.walk
+        const workshop = data && 'workshop' in data ? data.workshop : originalDoc?.workshop
+        if (Boolean(eventId(walk)) === Boolean(eventId(workshop))) {
+          throw new APIError('An RSVP needs exactly one walk or workshop.', 400)
+        }
+        return data
+      },
+    ],
     beforeChange: [
       async ({ data, req, operation }) => {
         if (operation !== 'create') return data
@@ -75,28 +104,29 @@ export const Rsvps: CollectionConfig = {
         // The account, never the form, says who reserved.
         data.user = req.user?.id ?? null
 
-        const walkId = typeof data.walk === 'object' ? data.walk?.id : data.walk
-        const walk = await req.payload.findByID({
-          collection: 'walks',
-          id: walkId,
+        const kind = data.workshop ? WORKSHOP : WALK
+        const id = eventId(data[kind.field])
+        const event = await req.payload.findByID({
+          collection: kind.collection,
+          id: id as number | string,
           depth: 0,
           req,
         })
-        if (!walk || walk._status !== 'published') {
-          throw new APIError('This walk is not open for RSVPs.', 400)
+        if (!event || event._status !== 'published') {
+          throw new APIError(`This ${kind.noun} is not open for RSVPs.`, 400)
         }
-        if (walk.bookingStatus === 'closed') {
-          throw new APIError('Bookings for this walk have closed.', 400)
+        if (event.bookingStatus === 'closed') {
+          throw new APIError(`Bookings for this ${kind.noun} have closed.`, 400)
         }
-        if (walk.bookingUrl) {
-          throw new APIError('This walk takes bookings through its booking link.', 400)
+        if (event.bookingUrl) {
+          throw new APIError(`This ${kind.noun} takes bookings through its booking link.`, 400)
         }
 
         const duplicate = await req.payload.count({
           collection: 'rsvps',
           where: {
             and: [
-              { walk: { equals: walkId } },
+              { [kind.field]: { equals: id } },
               { email: { equals: data.email } },
               { status: { not_equals: 'cancelled' } },
             ],
@@ -104,21 +134,21 @@ export const Rsvps: CollectionConfig = {
           req,
         })
         if (duplicate.totalDocs > 0) {
-          throw new APIError('This email already has a place on this walk.', 400)
+          throw new APIError(`This email already has a place on this ${kind.noun}.`, 400)
         }
 
-        if (walk.bookingStatus === 'full') {
+        if (event.bookingStatus === 'full') {
           return { ...data, status: 'waitlist' }
         }
-        if (typeof walk.capacity === 'number') {
+        if (typeof event.capacity === 'number') {
           const confirmed = await req.payload.count({
             collection: 'rsvps',
             where: {
-              and: [{ walk: { equals: walkId } }, { status: { equals: 'confirmed' } }],
+              and: [{ [kind.field]: { equals: id } }, { status: { equals: 'confirmed' } }],
             },
             req,
           })
-          if (confirmed.totalDocs >= walk.capacity) {
+          if (confirmed.totalDocs >= event.capacity) {
             return { ...data, status: 'waitlist' }
           }
         }
@@ -135,28 +165,37 @@ export const Rsvps: CollectionConfig = {
           doc.status === 'confirmed'
         if (operation !== 'create' && !promoted) return
 
-        // The walk existed moments ago in beforeChange, so a failure here is
+        // The event existed moments ago in beforeChange, so a failure here is
         // transient - skipping the email beats failing the committed RSVP.
-        let walk
+        const kind = doc.workshop ? WORKSHOP : WALK
+        let event
         try {
-          const walkId = typeof doc.walk === 'object' ? doc.walk?.id : doc.walk
-          walk = await req.payload.findByID({ collection: 'walks', id: walkId, depth: 0, req })
+          const id = eventId(doc[kind.field])
+          event = await req.payload.findByID({
+            collection: kind.collection,
+            id: id as number | string,
+            depth: 0,
+            req,
+          })
         } catch (err) {
-          req.payload.logger.error({ err, rsvp: doc.id }, 'rsvp email skipped: walk fetch failed')
+          req.payload.logger.error(
+            { err, rsvp: doc.id },
+            `rsvp email skipped: ${kind.noun} fetch failed`,
+          )
           return
         }
 
         const contactEmail = await getContactEmail(req)
         if (operation === 'create') {
           const template = doc.status === 'waitlist' ? rsvpWaitlisted : rsvpConfirmed
-          sendSafe(req, { ...template(doc, walk), to: doc.email, replyTo: contactEmail })
+          sendSafe(req, { ...template(doc, event, kind.noun), to: doc.email, replyTo: contactEmail })
           sendSafe(req, {
-            ...editorNewRsvp(doc, walk, req.payload.config.serverURL),
+            ...editorNewRsvp(doc, event, req.payload.config.serverURL),
             to: contactEmail,
             replyTo: doc.email,
           })
         } else {
-          sendSafe(req, { ...rsvpPromoted(doc, walk), to: doc.email, replyTo: contactEmail })
+          sendSafe(req, { ...rsvpPromoted(doc, event, kind.noun), to: doc.email, replyTo: contactEmail })
         }
       },
     ],

@@ -13,6 +13,7 @@ import { Frames } from './collections/Frames'
 import { Essays } from './collections/Essays'
 import { Albums } from './collections/Albums'
 import { Walks } from './collections/Walks'
+import { Workshops } from './collections/Workshops'
 import { Exhibitions } from './collections/Exhibitions'
 import { Photocalls } from './collections/Photocalls'
 import { Submissions } from './collections/Submissions'
@@ -63,6 +64,7 @@ export default buildConfig({
     Essays,
     Albums,
     Walks,
+    Workshops,
     Exhibitions,
     Photocalls,
     Submissions,
