@@ -115,11 +115,13 @@ export const Workshops: CollectionConfig = {
       admin: { description: 'Who answers questions about this workshop.' },
     },
     {
-      name: 'partner',
-      type: 'group',
-      admin: { description: 'A partner organisation hosting or co-running the workshop.' },
+      // A workshop can be co-run by more than one organisation; each one
+      // is named, optionally linked, and its logo shows on the paper ground.
+      name: 'partners',
+      type: 'array',
+      admin: { description: 'Partner organisations hosting or co-running the workshop.' },
       fields: [
-        { name: 'name', type: 'text' },
+        { name: 'name', type: 'text', required: true },
         { name: 'url', type: 'text' },
         { name: 'logo', type: 'upload', relationTo: 'media' },
       ],

@@ -234,6 +234,46 @@ export const walkPlate = (args: {
     JACARANDA,
   )
 
+/**
+ * Workshop with an invite: the whole poster contained left (a designed
+ * thing is never cropped), the jacaranda plate right, C3's split language.
+ */
+export const workshopInviteOverlay = (args: {
+  topLine: string
+  dateLines: string[]
+  bottomLine: string
+  metaLine: string
+}) =>
+  root([
+    el('div', { display: 'flex', flexDirection: 'row', height: CARD_H, width: CARD_W }, [
+      el('div', {
+        borderRight: `${RULE}px solid ${JACARANDA}`,
+        display: 'flex',
+        height: CARD_H,
+        width: 640,
+      }),
+      el(
+        'div',
+        {
+          backgroundColor: JACARANDA,
+          display: 'flex',
+          flex: 1,
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '50px 44px',
+        },
+        [
+          mono(args.topLine, 19, 0.18, 'rgba(242,238,230,.8)'),
+          display(args.dateLines, 60, PAPER),
+          el('div', { display: 'flex', flexDirection: 'column' }, [
+            mono(args.bottomLine, 18, 0.14, PAPER, { lineHeight: 1.9 }),
+            mono(args.metaLine, 15, 0.14, 'rgba(242,238,230,.8)', { lineHeight: 1.9 }),
+          ]),
+        ],
+      ),
+    ]),
+  ])
+
 /** C5 photocall: photo top third, signal plate carrying status + title. */
 export const photocallOverlay = (args: {
   credit: string | null
@@ -312,12 +352,26 @@ export async function encodeCard(pipeline: sharp.Sharp): Promise<Buffer> {
 /** Compose photo (cover-fit into a region) under a full-card overlay PNG. */
 export async function composeCard(args: {
   overlay: Buffer
-  photo?: { buffer: Buffer; height: number; left: number; top: number; width: number }
+  photo?: {
+    buffer: Buffer
+    height: number
+    left: number
+    top: number
+    width: number
+    // 'contain' letterboxes on ink instead of cropping: for designed images
+    // (an invite poster) that must arrive whole. Photographs stay 'cover'.
+    fit?: 'cover' | 'contain'
+  }
 }): Promise<Buffer> {
   const layers: sharp.OverlayOptions[] = []
   if (args.photo) {
     const fitted = await sharp(args.photo.buffer)
-      .resize(args.photo.width, args.photo.height, { fit: 'cover', position: 'centre' })
+      .flatten({ background: INK })
+      .resize(args.photo.width, args.photo.height, {
+        fit: args.photo.fit ?? 'cover',
+        position: 'centre',
+        background: INK,
+      })
       .toBuffer()
     layers.push({ input: fitted, left: args.photo.left, top: args.photo.top })
   }

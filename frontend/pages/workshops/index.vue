@@ -5,7 +5,7 @@
  * RSVP back on ink. Workshops carry their own № series, apart from the
  * walks. Every row is a door to the workshop's own page.
  */
-import type { Workshop } from '~/types/payload-types'
+import type { Workshop, Person } from '~/types/payload-types'
 
 interface List<T> { docs: T[] }
 type WorkshopDoc = Workshop & { spotsTaken?: number }
@@ -43,6 +43,14 @@ const invite = computed(() =>
   nextWorkshop.value?.heroImage && typeof nextWorkshop.value.heroImage === 'object'
     ? nextWorkshop.value.heroImage
     : null,
+)
+
+const partners = computed(() => nextWorkshop.value?.partners ?? [])
+
+const facilitators = computed(() =>
+  (nextWorkshop.value?.facilitators ?? []).filter(
+    (f): f is Person => Boolean(f) && typeof f === 'object',
+  ),
 )
 
 const practicalLines = computed(
@@ -91,15 +99,19 @@ useShareMeta({
       </section>
 
       <!-- the practical lines answer the fear, on paper -->
-      <section v-if="practicalLines.length || nextWorkshop.partner?.name" v-reveal class="chapter chapter--paper">
+      <section v-if="practicalLines.length || partners.length || facilitators.length" v-reveal class="chapter chapter--paper">
         <ChapterHead title="What to know" />
         <div class="what">
           <p v-for="(line, i) in practicalLines" :key="i" class="b-lede">{{ line }}</p>
-          <p v-if="nextWorkshop.partner?.name" class="b-caption partner">
-            With
-            <a v-if="nextWorkshop.partner.url" :href="nextWorkshop.partner.url">{{ nextWorkshop.partner.name }}</a>
-            <template v-else>{{ nextWorkshop.partner.name }}</template>
+          <p v-if="facilitators.length" class="b-caption meta">
+            Facilitated by
+            <template v-for="(person, i) in facilitators" :key="person.id">
+              <template v-if="i > 0">{{ i === facilitators.length - 1 ? ' and ' : ', ' }}</template>
+              <NuxtLink v-if="person.slug" :to="`/photographers/${person.slug}`">{{ person.name }}</NuxtLink>
+              <template v-else>{{ person.name }}</template>
+            </template>
           </p>
+          <WorkshopPartners v-if="partners.length" :partners="partners" />
         </div>
       </section>
 
@@ -150,7 +162,7 @@ useShareMeta({
   gap: var(--space-3);
   max-width: 62ch;
 }
-.partner a {
+.meta a {
   color: var(--signal);
 }
 .row-link {

@@ -7,6 +7,7 @@ import { nextWorkshopsQuery } from '../../../utils/workshops'
  */
 interface WorkshopDoc {
   date: string
+  heroImage?: { url?: string | null } | number | null
   id: number
   number?: number | null
   title: string
@@ -23,11 +24,40 @@ export default defineEventHandler(async (event) => {
     if (!workshop) return null
 
     const d = fmtDate(workshop.date)
+    const topLine = `WORKSHOP № ${pad3(workshop.number ?? 1)}`
+    const dateLines = [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time]
+    const bottomLine = (workshop.venueName ?? workshop.title).toUpperCase()
+
+    // With an invite the whole poster travels, contained left; the query
+    // runs at depth 1 so it arrives populated. Original file, never a crop.
+    const invite = typeof workshop.heroImage === 'object' ? workshop.heroImage?.url : null
+    if (invite) {
+      const overlay = await renderOverlay(
+        workshopInviteOverlay({
+          topLine,
+          dateLines,
+          bottomLine,
+          metaLine: 'BATHONG.AFRICA/WORKSHOPS',
+        }) as never,
+      )
+      return composeCard({
+        overlay,
+        photo: {
+          buffer: await fetchPhoto(invite),
+          height: CARD_H,
+          left: 0,
+          top: 0,
+          width: 640,
+          fit: 'contain',
+        },
+      })
+    }
+
     const overlay = await renderOverlay(
       walkPlate({
-        topLine: `WORKSHOP № ${pad3(workshop.number ?? 1)}`,
-        dateLines: [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time],
-        bottomLine: (workshop.venueName ?? workshop.title).toUpperCase(),
+        topLine,
+        dateLines,
+        bottomLine,
         barLines: ['BOOK ON THE WEBSITE', 'BATHONG.AFRICA/WORKSHOPS'],
       }) as never,
     )

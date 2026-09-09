@@ -410,7 +410,7 @@ async function run() {
         bookingStatus: 'open',
         facilitators: [peopleBySlug['alet-pretorius']],
         contact: peopleBySlug['alet-pretorius'],
-        partner: { name: 'Botaki ba Afrika' },
+        partners: [{ name: 'Botaki ba Afrika' }],
         _status: 'published',
       },
     })
@@ -528,6 +528,10 @@ async function run() {
         ],
         facilitators: [peopleBySlug['alet-pretorius']],
         heroImage: demoInvite.id,
+        partners: [
+          { name: 'Demo partner one', logo: demoInvite.id },
+          { name: 'Demo partner two', url: 'https://example.org' },
+        ],
       },
       {
         title: 'Demo: small workshop',
@@ -571,6 +575,7 @@ async function run() {
             date: workshop.date,
             endTime: workshop.endTime ?? null,
             heroImage: 'heroImage' in workshop ? workshop.heroImage : undefined,
+            partners: 'partners' in workshop ? workshop.partners : undefined,
           },
         })
         continue
