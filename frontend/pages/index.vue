@@ -44,7 +44,7 @@ const [
 ] =
   await Promise.all([
     useCmsData<List<Frame>>('frames-latest', '/api/frames?limit=7&sort=-createdAt&depth=1'),
-    useCmsData<List<Essay>>('essays-feed', '/api/essays?sort=-publishedDate&limit=12&depth=2'),
+    useCmsData<List<Essay>>('essays-feed', '/api/essays?sort=-publishedDate&limit=8&depth=2'),
     useCmsData<List<Frame>>(
       'frames-top-picks',
       '/api/frames?where[topPick][equals]=true&limit=24&sort=-createdAt&depth=1',
@@ -231,7 +231,7 @@ const tickerItems = computed(() =>
             :src="mediaSrc(albumCover(album) as never)"
             :alt="albumCover(album)?.alt ?? album.title"
             :credit="albumCredit(album)"
-            sizes="xs:100vw md:40vw lg:40vw xl:560px"
+            sizes="xs:100vw md:33vw lg:33vw xl:480px"
             class="card-frame"
           />
           <h3 class="b-display-2">{{ album.title }}</h3>
