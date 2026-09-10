@@ -28,6 +28,7 @@ test.describe('home', () => {
     // workshop and the walk gets the one ruled line beneath. If the seed
     // dates ever change, this assertion follows the data, not the code.
     await expect(page.locator('.event .b-kicker')).toContainText('Next workshop')
+    await expect(page.locator('.event-title')).toHaveText('Demo: the next workshop')
     const also = page.locator('.programme-also')
     await expect(also).toBeVisible()
     await expect(also).toContainText('Demo: the next loop')
