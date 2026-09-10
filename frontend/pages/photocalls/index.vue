@@ -10,7 +10,7 @@ interface List<T> { docs: T[] }
 
 const { data } = await useCmsData<List<Photocall>>(
   'photocall-open',
-  '/api/photocalls?where[status][equals]=open&sort=-opensAt&limit=1&depth=0',
+  openPhotocallQuery(),
 )
 const call = computed(() => data.value?.docs?.[0] ?? null)
 const brief = computed(() => richTextParagraphs(call.value?.theme as never))

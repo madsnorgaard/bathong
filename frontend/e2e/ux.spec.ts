@@ -21,7 +21,7 @@ async function noHorizontalScroll(page: Page) {
 test.describe('mobile, the majority case', () => {
   test.use({ viewport: MOBILE })
 
-  test('home: no horizontal scroll, lead crops to 4/5, walk chapter directly under the lead', async ({ page }) => {
+  test('home: no horizontal scroll, lead crops to 4/5, programme chapter directly under the lead', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' })
     await noHorizontalScroll(page)
 

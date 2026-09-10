@@ -19,6 +19,15 @@ test('the page carries the signal plate and the three lines', async ({ page }) =
   await expect(page.getByText(/written response, frame by frame/).first()).toBeVisible()
 })
 
+test('the homepage signal strip is the door to the open call', async ({ page }) => {
+  await page.goto('/')
+  const signal = page.locator('.call-signal')
+  await expect(signal).toBeVisible()
+  await signal.getByRole('link', { name: /Submit/ }).click()
+  await expect(page).toHaveURL(/\/photocalls/)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Demo: open call')
+})
+
 test('an anonymous entry with two frames goes through and confirms in writing', async ({ page }) => {
   await page.goto('/photocalls', { waitUntil: 'networkidle' })
 

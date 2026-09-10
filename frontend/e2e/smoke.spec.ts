@@ -19,17 +19,36 @@ async function expectShareMeta(page: Page) {
 }
 
 test.describe('home', () => {
-  test('renders SSR with one absolute og:image and the walk chapter', async ({ page }) => {
+  test('renders SSR with one absolute og:image and the programme chapter', async ({ page }) => {
     await page.goto('/')
     await expectShareMeta(page)
     await expect(page.locator('.event')).toBeVisible()
+    // the soonest event leads the programme. Seed dates decide: the demo
+    // workshop (+10d) beats the demo walk (+14d), so the plate is the
+    // workshop and the walk gets the one ruled line beneath. If the seed
+    // dates ever change, this assertion follows the data, not the code.
+    await expect(page.locator('.event .b-kicker')).toContainText('Next workshop')
+    const also = page.locator('.programme-also')
+    await expect(also).toBeVisible()
+    await expect(also).toContainText('Demo: the next loop')
+    await expect(also.locator('.num')).toHaveText(/№ \d{3}/)
+    await expect(also.locator('a')).toHaveAttribute('href', /^\/walks\/demo-next-walk/)
+    // the open call is the page's one signal plate
+    const signal = page.locator('.call-signal')
+    await expect(signal).toBeVisible()
+    await expect(signal).toContainText('Demo: open call')
+    await expect(signal).toContainText(/Closes /)
+    await expect(signal.getByRole('link', { name: /Submit/ })).toHaveAttribute('href', '/photocalls')
+    // the record: latest albums, with the door to all of them
+    expect(await page.locator('.albums-grid .card').count()).toBeGreaterThan(0)
+    await expect(page.getByRole('link', { name: /All albums/ })).toHaveAttribute('href', '/albums')
     // the seeded price, from the membership global, not a literal in the page
     await expect(page.getByText(/R 250 to join/).first()).toBeVisible()
   })
 
   test('every feed frame carries a credit', async ({ page }) => {
     await page.goto('/')
-    const frames = page.locator('.feed .b-frame')
+    const frames = page.locator('.feed .b-frame, .albums-grid .b-frame')
     const count = await frames.count()
     expect(count).toBeGreaterThan(0)
     for (let i = 0; i < count; i++) {

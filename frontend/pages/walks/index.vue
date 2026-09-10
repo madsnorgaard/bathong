@@ -92,9 +92,11 @@ useShareMeta({
       <p class="b-lede">No walk is scheduled right now. The next date lands here first. TBC.</p>
     </section>
 
-    <section v-reveal class="chapter">
+    <!-- only real dates: with nothing scheduled beyond the next walk the
+         chapter is absent, never invented -->
+    <section v-if="futureWalks.length" v-reveal class="chapter">
       <ChapterHead title="After that" />
-      <ul v-if="futureWalks.length" class="b-ruled">
+      <ul class="b-ruled">
         <li v-for="walk in futureWalks" :key="walk.id">
           <span class="num">{{ walkNo(walk) }}</span>
           <NuxtLink :to="walkPath(walk)" class="row-link">
@@ -102,10 +104,6 @@ useShareMeta({
             <small>{{ formatWalkDate(walk.date) }} · {{ walk.meetingPoint ?? 'Meeting point TBC' }}</small>
           </NuxtLink>
         </li>
-      </ul>
-      <ul v-else class="b-ruled">
-        <li><span class="num">W/02</span><div>Rooftop session <small>TBC</small></div></li>
-        <li><span class="num">W/03</span><div>Night walk, Sunnyside <small>TBC</small></div></li>
       </ul>
     </section>
 

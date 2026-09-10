@@ -4,7 +4,7 @@
  * table, the coffee after. Plain media, credited like everything else,
  * never part of the archive. Newest first, honest at one album.
  */
-import type { Album, Media } from '~/types/payload-types'
+import type { Album } from '~/types/payload-types'
 
 useShareMeta({
   title: 'Albums',
@@ -16,18 +16,10 @@ interface List<T> { docs: T[] }
 
 const { data } = await useCmsData<List<Album>>(
   'albums-index',
-  '/api/albums?sort=-date&limit=40&depth=1',
+  latestAlbumsQuery(40),
 )
 const albums = computed(() => data.value?.docs ?? [])
 
-function cover(album: Album): Media | null {
-  const first = album.images?.[0]
-  return first && typeof first === 'object' ? first : null
-}
-function credit(album: Album): string {
-  const p = album.photographer
-  return album.creditOverride ?? (p && typeof p === 'object' ? p.name : null) ?? 'Bathong. Collective'
-}
 </script>
 
 <template>
@@ -37,9 +29,9 @@ function credit(album: Album): string {
     <div v-else class="grid">
       <NuxtLink v-for="album in albums" :key="album.id" :to="`/albums/${album.slug}`" class="card">
         <BFrame
-          :src="mediaSrc(cover(album) as never)"
-          :alt="cover(album)?.alt ?? album.title"
-          :credit="credit(album)"
+          :src="mediaSrc(albumCover(album) as never)"
+          :alt="albumCover(album)?.alt ?? album.title"
+          :credit="albumCredit(album)"
           sizes="xs:100vw md:50vw lg:50vw xl:720px"
           class="card-frame"
         />
