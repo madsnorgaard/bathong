@@ -86,6 +86,11 @@ const inProgress = computed(() => {
     <p class="b-kicker">
       {{ inProgress ? (kind === 'workshop' ? 'Happening now' : 'Walking now') : `Next ${kind}` }} · {{ walkNo(walk) }}
     </p>
+    <!-- a walk's headline is the date; a workshop is about its subject,
+         so the title carries the plate before the date -->
+    <h2 v-if="kind === 'workshop' && walk.title" class="event-title b-display-2">
+      {{ walk.title }}
+    </h2>
     <p class="when b-display-1">
       {{ formatWalkDate(walk.date) }}<br>{{ formatWalkTime(walk.date) }}
     </p>
@@ -124,6 +129,10 @@ const inProgress = computed(() => {
 }
 .event .b-kicker {
   color: color-mix(in srgb, var(--paper) 80%, transparent);
+}
+.event-title {
+  color: var(--paper);
+  max-width: 24ch;
 }
 .event .b-caption {
   color: var(--paper);

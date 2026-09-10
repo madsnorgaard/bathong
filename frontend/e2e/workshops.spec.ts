@@ -37,6 +37,8 @@ async function workshopId(request: import('@playwright/test').APIRequestContext,
 test('the workshops index is the next workshop: plate, venue, price, practical lines, RSVP', async ({ page }) => {
   await page.goto('/workshops')
   await expect(page.getByText(/Next workshop · № \d{3}/)).toBeVisible()
+  // the plate names the subject: the workshop title rides above the date
+  await expect(page.locator('.event-title')).toHaveText('Demo: the next workshop')
   await expect(page.getByText('Demo venue, Pretoria').first()).toBeVisible()
   await expect(page.getByText(/R\s?400.*per person/).first()).toBeVisible()
   await expect(page.getByText('Bring your empty tins with lids.').first()).toBeVisible()
