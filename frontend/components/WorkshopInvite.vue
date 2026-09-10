@@ -9,10 +9,16 @@ import type { Media } from '~/types/payload-types'
 const props = defineProps<{ media: Media; title?: string }>()
 
 const src = computed(() => mediaSrc(props.media as never))
+
+// The full view opens through ipx too: the raw /api/media path does not
+// exist on this origin. 2200 is the pipeline's largest step; ipx caps at
+// the original, so the poster arrives whole.
+const img = useImage()
+const fullSrc = computed(() => (src.value ? img(src.value, { width: 2200, quality: 90 }) : null))
 </script>
 
 <template>
-  <a v-if="src" :href="src" target="_blank" rel="noopener" class="invite">
+  <a v-if="src && fullSrc" :href="fullSrc" target="_blank" rel="noopener" class="invite">
     <NuxtPicture
       :src="src"
       :alt="media.alt ?? (title ? `Invite for ${title}` : 'Workshop invite')"

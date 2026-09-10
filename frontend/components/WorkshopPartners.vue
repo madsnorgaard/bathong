@@ -34,7 +34,17 @@ const entries = computed(() =>
           :rel="partner.url ? 'noopener' : undefined"
           class="partner"
         >
-          <img v-if="partner.logoSrc" :src="partner.logoSrc" :alt="partner.logoAlt" class="logo">
+          <!-- through ipx like every image: a raw /api/media src does not
+               exist on this origin (the smoke guard now watches for it) -->
+          <NuxtPicture
+            v-if="partner.logoSrc"
+            :src="partner.logoSrc"
+            :alt="partner.logoAlt"
+            sizes="xs:200px md:200px lg:200px xl:200px"
+            format="avif,webp"
+            loading="lazy"
+            :img-attrs="{ class: 'logo' }"
+          />
           <span class="b-caption name">{{ partner.name }}</span>
         </component>
       </li>
@@ -65,7 +75,10 @@ const entries = computed(() =>
   gap: var(--space-2);
   color: inherit;
 }
-.logo {
+.partner :deep(picture) {
+  display: block;
+}
+.partner :deep(.logo) {
   display: block;
   height: 56px;
   width: auto;

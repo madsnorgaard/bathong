@@ -41,10 +41,10 @@ test('the workshops index is the next workshop: plate, venue, price, practical l
   await expect(page.getByText(/R\s?400.*per person/).first()).toBeVisible()
   await expect(page.getByText('Bring your empty tins with lids.').first()).toBeVisible()
   await expect(page.locator('#rsvp')).toBeVisible()
-  // the invite card opens the full poster in its own tab
+  // the invite card opens the full poster in its own tab, through ipx
   const invite = page.locator('a.invite')
   await expect(invite).toBeVisible()
-  await expect(invite).toHaveAttribute('href', /\/api\/media\//)
+  await expect(invite).toHaveAttribute('href', /\/_ipx\//)
   await expect(invite).toHaveAttribute('target', '_blank')
   await expect(invite.getByText('Open the full invite →')).toBeVisible()
   // who runs it, and with whom: several partners, logos on the paper ground
