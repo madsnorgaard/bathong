@@ -50,8 +50,10 @@ const [
       '/api/frames?where[topPick][equals]=true&limit=24&sort=-createdAt&depth=1',
     ),
     useCmsData<List<WalkDoc>>('walks-next', nextWalksQuery(now, 1)),
-    useCmsData<List<WorkshopDoc>>('workshops-next', nextWorkshopsQuery(now, 1)),
-    useCmsData<List<Album>>('albums-home', latestAlbumsQuery(3)),
+    useCmsData<List<WorkshopDoc>>('workshops-next', nextWorkshopsQuery(now, 1, 0)),
+    // two covers: the record is a door, not the archive, and the 1MB
+    // first-view budget pays for every byte here
+    useCmsData<List<Album>>('albums-home', latestAlbumsQuery(2)),
     // shared key with /photocalls: the query builder keeps the strings identical
     useCmsData<List<Photocall>>('photocall-open', openPhotocallQuery()),
     useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
@@ -161,7 +163,7 @@ const secondaryMeta = computed(() => {
 })
 
 const call = computed(() => photocall.value?.docs?.[0] ?? null)
-const albums = computed(() => albumsData.value?.docs?.slice(0, 3) ?? [])
+const albums = computed(() => albumsData.value?.docs?.slice(0, 2) ?? [])
 const tickerItems = computed(() =>
   (settings.value?.ticker ?? []).map((t) => t.text).filter((t): t is string => Boolean(t)),
 )
@@ -229,7 +231,7 @@ const tickerItems = computed(() =>
             :src="mediaSrc(albumCover(album) as never)"
             :alt="albumCover(album)?.alt ?? album.title"
             :credit="albumCredit(album)"
-            sizes="xs:100vw md:50vw lg:50vw xl:720px"
+            sizes="xs:100vw md:40vw lg:40vw xl:560px"
             class="card-frame"
           />
           <h3 class="b-display-2">{{ album.title }}</h3>

@@ -6,12 +6,13 @@
 import { walkNumber } from './format'
 
 /**
- * Upcoming or in progress: starts later, or has not wrapped yet. Depth 1 so
- * the invite (heroImage) arrives populated on the index.
+ * Upcoming or in progress: starts later, or has not wrapped yet. Depth 1 by
+ * default so the invite (heroImage) arrives populated on the index; the
+ * homepage reads at depth 0, it renders the text plate only.
  */
-export function nextWorkshopsQuery(now: string, limit: number): string {
+export function nextWorkshopsQuery(now: string, limit: number, depth: 0 | 1 = 1): string {
   const t = encodeURIComponent(now)
-  return `/api/workshops?where[or][0][date][greater_than_equal]=${t}&where[or][1][endTime][greater_than_equal]=${t}&sort=date&limit=${limit}&depth=1`
+  return `/api/workshops?where[or][0][date][greater_than_equal]=${t}&where[or][1][endTime][greater_than_equal]=${t}&sort=date&limit=${limit}&depth=${depth}`
 }
 
 /** Started, and either has no wrap time or has wrapped. Newest first. */

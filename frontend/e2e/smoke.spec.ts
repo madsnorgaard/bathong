@@ -90,13 +90,21 @@ test.describe('home', () => {
 
   test('first view stays under the 1 MB budget', async ({ page }) => {
     let transferred = 0
+    const responses: { url: string; bytes: number }[] = []
     page.on('response', async (response) => {
       const headers = response.headers()
       const length = Number(headers['content-length'] ?? 0)
       transferred += length
+      if (length > 0) responses.push({ url: response.url(), bytes: length })
     })
     await page.goto('/', { waitUntil: 'networkidle' })
-    expect(transferred).toBeLessThan(1_000_000)
+    // On failure, name the weight: the ten heaviest responses.
+    const breakdown = responses
+      .sort((a, b) => b.bytes - a.bytes)
+      .slice(0, 10)
+      .map((r) => `${Math.round(r.bytes / 1024)}KB ${r.url.slice(0, 120)}`)
+      .join('\n')
+    expect(transferred, `heaviest responses:\n${breakdown}`).toBeLessThan(1_000_000)
   })
 })
 
