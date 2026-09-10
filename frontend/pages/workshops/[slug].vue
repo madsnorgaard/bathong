@@ -237,9 +237,6 @@ useShareMeta({
   gap: var(--space-3);
   max-width: 62ch;
 }
-.meta a {
-  color: var(--signal);
-}
 .album-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
