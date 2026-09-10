@@ -41,12 +41,22 @@ test.describe('home', () => {
     // Regression guard: when the ipx domain allowlist/alias breaks,
     // @nuxt/image silently falls back to full-res originals. Relative
     // /api/media srcs make that structurally impossible - but only if
-    // every surface actually rides /_ipx/.
-    await page.goto('/')
-    const urls = await page.$$eval('img[src], picture source[srcset]', (els) =>
-      els.flatMap((el) => [el.getAttribute('src') ?? '', el.getAttribute('srcset') ?? '']),
-    )
-    const imageUrls = urls.filter((u) => u.includes('/api/media/') || u.includes('/_ipx/'))
+    // every surface actually rides /_ipx/. One page slipping past this
+    // (the workshops partner logo, 2026-09-10) is why it crawls the whole
+    // programme now, and why raw /api/media anchors fail it too: that
+    // path does not exist on this origin.
+    const imageUrls: string[] = []
+    for (const path of ['/', '/walks', '/workshops', '/workshops/demo-past-workshop']) {
+      await page.goto(path)
+      const urls = await page.$$eval('img[src], picture source[srcset], a[href]', (els) =>
+        els.flatMap((el) => [
+          el.getAttribute('src') ?? '',
+          el.getAttribute('srcset') ?? '',
+          el.getAttribute('href') ?? '',
+        ]),
+      )
+      imageUrls.push(...urls.filter((u) => u.includes('/api/media/') || u.includes('/_ipx/')))
+    }
     expect(imageUrls.length).toBeGreaterThan(0)
     for (const u of imageUrls) {
       expect(u).toMatch(/\/_ipx\//)
