@@ -27,7 +27,7 @@
     "nuxt-security": "^2.6.0",
     "pmtiles": "^4.5.0",
     "satori": "0.12.2",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "vue": "^3.5.13",
     "vue-router": "4.5.1"
   },
