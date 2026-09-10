@@ -162,9 +162,6 @@ useShareMeta({
   gap: var(--space-3);
   max-width: 62ch;
 }
-.meta a {
-  color: var(--signal);
-}
 .row-link {
   color: inherit;
   display: block;

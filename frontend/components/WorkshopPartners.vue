@@ -59,7 +59,8 @@ const entries = computed(() =>
   gap: var(--space-2);
 }
 .partners .b-kicker {
-  color: var(--grey-ghost);
+  /* small type on paper: warm grey, per the paper chapter rules */
+  color: var(--grey-warm);
 }
 .row {
   list-style: none;
@@ -86,6 +87,7 @@ const entries = computed(() =>
   object-fit: contain;
 }
 a.partner:hover .name {
-  color: var(--signal);
+  /* paper ground: hover goes to ink, never signal (unreadable on paper) */
+  color: var(--ink);
 }
 </style>
