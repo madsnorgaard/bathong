@@ -1,5 +1,5 @@
 # Payload CMS v3 (Next.js host) - headless admin + API
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN PAYLOAD_SECRET=build-only-secret \
     PAYLOAD_PUBLIC_SERVER_URL=$PAYLOAD_PUBLIC_SERVER_URL \
     npm run build
 
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 ENV NODE_ENV=production
