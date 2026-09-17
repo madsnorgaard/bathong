@@ -34,7 +34,7 @@
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@vue/test-utils": "^2.5.0",
-    "happy-dom": "^20.11.2",
+    "happy-dom": "^20.14.5",
     "vitest": "^5.0.0"
   }
 }
