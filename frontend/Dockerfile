@@ -1,5 +1,5 @@
 # Nuxt 3 - public site
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -22,7 +22,7 @@ ARG IPX_SOURCE_URL=""
 ENV IPX_SOURCE_URL=$IPX_SOURCE_URL
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NUXT_TELEMETRY_DISABLED=1
