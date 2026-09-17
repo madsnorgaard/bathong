@@ -6,6 +6,15 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      # All Payload packages must move together. A partial bump (@payloadcms/next 3.89
+      # against payload 3.84) broke the aksel-pedersen backend image on 2026-09-17.
+      payload:
+        patterns: ["payload", "@payloadcms/*"]
+    ignore:
+      # TypeScript 7 is the new native compiler; upgrade deliberately (#109 failed the backend check).
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -13,6 +22,10 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    ignore:
+      # Nuxt 3 site; a Nuxt 4 bump is a deliberate migration, not a Dependabot merge.
+      - dependency-name: "nuxt"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/backend"
@@ -34,6 +47,11 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    ignore:
+      # A Postgres major needs a dump/restore of the data volume; postgres 18 will not
+      # start on the 16 data directory (#106). Never via Dependabot.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
