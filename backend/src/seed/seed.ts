@@ -379,12 +379,16 @@ async function run() {
   // Workshop 001 is real, straight from the October invite. Facts only:
   // no hero image is seeded because no honest photograph exists for it yet
   // (the invite poster is a designed flyer, not a content photograph).
+  // Not seeded under SEED_DEMO: the e2e specs read the demo workshop as the
+  // soonest upcoming one, and a real fixed-date workshop inside that window
+  // (001 was, from 23 Sep to 3 Oct 2026) takes the plate and fails them.
+  const seedDemo = process.env.SEED_DEMO === 'true'
   const workshop001 = await payload.find({
     collection: 'workshops',
     where: { slug: { equals: 'workshop-001-pinhole' } },
     limit: 1,
   })
-  if (!workshop001.docs.length) {
+  if (!seedDemo && !workshop001.docs.length) {
     await payload.create({
       collection: 'workshops',
       data: {
@@ -418,7 +422,7 @@ async function run() {
   }
 
   // ---- demo state fixtures (e2e): SEED_DEMO=true only ----
-  if (process.env.SEED_DEMO === 'true') {
+  if (seedDemo) {
     // Demo walks carry relative dates. The past walk is the deterministic
     // link target for essays, frames and albums; the next walk keeps a route
     // on /walks so the map and RSVP specs stay honest after Walk 001 wraps.
