@@ -4,12 +4,14 @@ import { generateExpiredPayloadCookie } from 'payload/shared'
 
 /**
  * The few things the security page needs from Payload's auth internals,
- * kept in one file: Payload 3.84 does not export its local password check
+ * kept in one file: Payload does not export its local password check
  * or its session write, so both are mirrored here (the hashing is
- * pbkdf2/sha256, 25000 rounds, 512 bytes, as in
- * payload/dist/auth/strategies/local/authenticate.js; the lockout counts
- * as payload/dist/auth/strategies/local/incrementLoginAttempts.js does).
- * A Payload upgrade that changes any of it touches this file only.
+ * pbkdf2/sha256 as in payload/dist/auth/strategies/local/authenticate.js
+ * and generatePasswordSaltHash.js: since 3.90 a `pbkdf2-sha256-v1:` prefix
+ * marks 600000 rounds / 32 bytes, and an unprefixed hash is the legacy
+ * 25000 rounds / 512 bytes that Payload re-hashes on the next sign-in; the
+ * lockout counts as payload/dist/auth/strategies/local/incrementLoginAttempts.js
+ * does). A Payload upgrade that changes any of it touches this file only.
  */
 
 export interface Session {
@@ -44,11 +46,19 @@ async function patchRaw(payload: Payload, req: PayloadRequest, user: RawUser, pa
   })
 }
 
+/** Mirrors payload's getPasswordHashParameters: the prefix picks the rounds. */
+const CURRENT_HASH_PREFIX = 'pbkdf2-sha256-v1:'
+const hashParameters = (hash: string) =>
+  hash.startsWith(CURRENT_HASH_PREFIX)
+    ? { hex: hash.slice(CURRENT_HASH_PREFIX.length), iterations: 600000, keyLength: 32 }
+    : { hex: hash, iterations: 25000, keyLength: 512 }
+
 const hashMatches = (password: string, salt: string, hash: string) =>
   new Promise<boolean>((resolve) => {
-    crypto.pbkdf2(password, salt, 25000, 512, 'sha256', (err, derived) => {
+    const { hex, iterations, keyLength } = hashParameters(hash)
+    crypto.pbkdf2(password, salt, iterations, keyLength, 'sha256', (err, derived) => {
       if (err) return resolve(false)
-      const stored = Buffer.from(hash, 'hex')
+      const stored = Buffer.from(hex, 'hex')
       resolve(derived.length === stored.length && crypto.timingSafeEqual(derived, stored))
     })
   })
