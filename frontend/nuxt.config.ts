@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+
 const cmsUrl = process.env.NUXT_PUBLIC_CMS_URL || 'http://localhost:3001'
 const cmsOrigin = new URL(cmsUrl).origin
 const analyticsOrigin = 'https://analytics.theazanianprepper.online'
@@ -67,6 +69,15 @@ export default defineNuxtConfig({
       { name: 'Space Grotesk', provider: 'google', weights: [400, 500, 700] },
       { name: 'Space Mono', provider: 'google', weights: [400], styles: ['normal', 'italic'] },
     ],
+  },
+  // satori shapes type with harfbuzzjs, which reads hb.wasm from disk at
+  // runtime. The file tracer follows imports, not fs reads, so without this
+  // the build ships without it and every share card falls back to the
+  // default.
+  nitro: {
+    externals: {
+      traceInclude: [fileURLToPath(new URL('./node_modules/harfbuzzjs/hb.wasm', import.meta.url))],
+    },
   },
   routeRules: {
     '/**': { headers: { ...baseHeaders } },
