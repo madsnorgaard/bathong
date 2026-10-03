@@ -6,8 +6,8 @@
  */
 interface FrameDoc {
   id: string | number
-  image?: { url?: string | null; alt?: string | null } | string | null
-  photographer?: { name?: string | null } | string | null
+  image?: { url?: string | null; alt?: string | null } | string | number | null
+  photographer?: { name?: string | null } | string | number | null
   creditOverride?: string | null
   caption?: string | null
   location?: string | null
