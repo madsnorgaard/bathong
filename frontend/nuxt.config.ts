@@ -44,9 +44,9 @@ export default defineNuxtConfig({
   // Spec: design-references/frontend-v2-direction.html section 06.
   // Components pass RELATIVE /api/media paths (utils/media.ts mediaSrc): ipx
   // resolves them through the alias below, so the domain allowlist can never
-  // silently fall back to serving full-res originals. In production
-  // NITRO_IPX_ALIAS/NITRO_IPX_HTTP_DOMAINS (compose) point the alias at the
-  // internal Payload hostname instead.
+  // silently fall back to serving full-res originals. In production the
+  // IPX_SOURCE_URL build arg (frontend/Dockerfile, compose) points the alias
+  // at the internal Payload hostname instead.
   image: {
     // ipx fetches sources from here server-side. In production IPX_SOURCE_URL
     // is the internal Payload hostname (baked via Docker build arg) - the
