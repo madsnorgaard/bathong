@@ -1,4 +1,5 @@
-/* Copied from backend/src/payload-types.ts by scripts/sync-payload-types.mjs.
+/* Copied from backend/src/payload-types.ts by scripts/sync-payload-types.mjs,
+ * without its `declare module 'payload'` block (the frontend has no payload).
  * Do not edit: run `npm run generate:types` in backend/, then `npm run types:sync` here. */
 /* tslint:disable */
 /* eslint-disable */
@@ -1661,9 +1662,4 @@ export interface CollectionsWidget {
  */
 export interface Auth {
   [k: string]: unknown;
-}
-
-
-declare module 'payload' {
-  export interface GeneratedTypes extends Config {}
 }

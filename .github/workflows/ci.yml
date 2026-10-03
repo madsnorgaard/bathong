@@ -24,6 +24,7 @@ jobs:
       - name: Payload types drift check
         run: npm run types:check
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
 
