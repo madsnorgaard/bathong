@@ -15,16 +15,27 @@ interface FrameDoc {
   location?: string | null
 }
 
-interface SequenceBlock {
+interface FrameBlock {
   id?: string | null
-  blockType: 'frame' | 'pair' | 'text'
+  blockType: 'frame'
   frame?: FrameDoc | number | null
+  captionOverride?: string | null
+  fullBleed?: boolean | null
+}
+interface PairBlock {
+  id?: string | null
+  blockType: 'pair'
   left?: FrameDoc | number | null
   right?: FrameDoc | number | null
   captionOverride?: string | null
-  fullBleed?: boolean | null
+}
+interface TextBlock {
+  id?: string | null
+  blockType: 'text'
   body?: unknown
 }
+// a union on blockType, so each branch below and in the template narrows
+type SequenceBlock = FrameBlock | PairBlock | TextBlock
 
 const props = defineProps<{ sequence: SequenceBlock[] }>()
 const emit = defineEmits<{ progress: [current: number, total: number] }>()
