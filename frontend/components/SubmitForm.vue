@@ -78,6 +78,10 @@ function submit() {
   // XHR for real upload progress driving the rule
   const xhr = new XMLHttpRequest()
   xhr.open('POST', `${cmsUrl.replace(/\/$/, '')}/api/photocall-entries`)
+  // The API is another host: without this the session cookie stays behind,
+  // a signed-in member enters as a stranger (nothing on their desk) and a
+  // members-only call turns everyone away. Anonymous entries are unaffected.
+  xhr.withCredentials = true
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) uploadPct.value = Math.round((e.loaded / e.total) * 100)
   }
