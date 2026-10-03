@@ -4,17 +4,20 @@ interface CmsMedia {
   credit?: string | null
 }
 
+/** A relation Payload did not populate arrives as the bare id. */
+type CmsId = string | number
+
 interface CmsFrame {
-  image?: CmsMedia | string | null
-  photographer?: { name?: string | null } | string | null
+  image?: CmsMedia | CmsId | null
+  photographer?: { name?: string | null } | CmsId | null
   creditOverride?: string | null
   caption?: string | null
   location?: string | null
 }
 
 /** Absolute URL for a Payload media doc (its url is relative to the CMS origin). */
-export function mediaUrl(media: CmsMedia | string | null | undefined, cmsUrl: string): string | null {
-  if (!media || typeof media === 'string' || !media.url) return null
+export function mediaUrl(media: CmsMedia | CmsId | null | undefined, cmsUrl: string): string | null {
+  if (!media || typeof media !== 'object' || !media.url) return null
   if (/^https?:\/\//.test(media.url)) return media.url
   return `${cmsUrl.replace(/\/$/, '')}${media.url}`
 }
@@ -30,8 +33,8 @@ export function mediaUrl(media: CmsMedia | string | null | undefined, cmsUrl: st
  * genuinely external URLs pass through. mediaUrl stays for og/share images
  * (crawlers need absolute URLs).
  */
-export function mediaSrc(media: CmsMedia | string | null | undefined): string | null {
-  if (!media || typeof media === 'string' || !media.url) return null
+export function mediaSrc(media: CmsMedia | CmsId | null | undefined): string | null {
+  if (!media || typeof media !== 'object' || !media.url) return null
   if (/^https?:\/\//.test(media.url)) {
     try {
       const path = new URL(media.url).pathname
