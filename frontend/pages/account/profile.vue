@@ -111,7 +111,7 @@ async function save() {
 <template>
   <div class="chapter account-chapter">
     <ChapterHead title="Profile" />
-    <AccountNav :show-join="!person" />
+    <AccountNav />
 
     <!-- no profile yet: it arrives with the membership -->
     <section v-if="!person" class="account-form">

@@ -1,27 +1,35 @@
 <script setup lang="ts">
 /**
  * Sticky nav on the ink ground: translucent ink with the system's 10px
- * backdrop blur, hairline below. Join is always present. At 840px the links
- * become a focus-trapped sheet (W7).
+ * backdrop blur, hairline below. Seven links, no more; Albums lives in the
+ * footer. Join shows until the visitor is an active member. At 1180px,
+ * where the bar stops fitting on one line, the links become a focus-trapped
+ * sheet (W7).
  */
+import { effectiveStatus } from '~/utils/membership'
+
 const links = [
   { to: '/stories', label: 'Stories' },
   { to: '/walks', label: 'Walks' },
   { to: '/workshops', label: 'Workshops' },
-  { to: '/albums', label: 'Albums' },
   { to: '/photocalls', label: 'Photocalls' },
+  { to: '/photographers', label: 'Photographers' },
   { to: '/archive', label: 'Archive' },
   { to: '/about', label: 'About' },
 ]
 
 // Sign in / Account sits beside Join: read from the shared session state
 // (fetched once in app.vue), so SSR and client render the same link.
-const { isSignedIn } = useAuth()
+const { user, isSignedIn } = useAuth()
 const accountLink = computed(() =>
   isSignedIn.value ? { to: '/account', label: 'Account →' } : { to: '/account/sign-in', label: 'Sign in →' },
 )
-// Join is the door: an account first, the plan from the desk.
-const joinLink = computed(() => (isSignedIn.value ? '/account' : '/account/sign-up'))
+// Join is the door: an account first, then the plan. An active member is
+// already through it, so the door goes and Account is the one link left.
+const joinLink = computed(() => {
+  if (!isSignedIn.value) return '/account/sign-up'
+  return effectiveStatus(user.value) === 'active' ? null : '/account/join'
+})
 
 const sheetOpen = ref(false)
 const sheetEl = ref<HTMLElement | null>(null)
@@ -68,7 +76,7 @@ const closeOnDesktop = () => {
 
 onMounted(() => {
   document.addEventListener('keydown', onKeydown)
-  desktopQuery = window.matchMedia('(min-width: 841px)')
+  desktopQuery = window.matchMedia('(min-width: 1181px)')
   desktopQuery.addEventListener('change', closeOnDesktop)
 })
 onBeforeUnmount(() => {
@@ -85,7 +93,7 @@ onBeforeUnmount(() => {
       <nav class="links b-kicker" aria-label="Main">
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
       </nav>
-      <BButton :to="joinLink" variant="ghost" size="sm" class="join">Join →</BButton>
+      <BButton v-if="joinLink" :to="joinLink" variant="ghost" size="sm" class="join">Join →</BButton>
       <NuxtLink :to="accountLink.to" class="account b-kicker">{{ accountLink.label }}</NuxtLink>
       <button
         ref="toggleEl"
@@ -105,7 +113,7 @@ onBeforeUnmount(() => {
       </nav>
       <!-- the doors stay in reach: pinned to the sheet's foot, never below the fold -->
       <div class="sheet-actions">
-        <BButton :to="joinLink" variant="ghost" class="sheet-join">Join →</BButton>
+        <BButton v-if="joinLink" :to="joinLink" variant="ghost" class="sheet-join">Join →</BButton>
         <NuxtLink :to="accountLink.to" class="sheet-account b-kicker">{{ accountLink.label }}</NuxtLink>
       </div>
     </div>
@@ -144,8 +152,12 @@ onBeforeUnmount(() => {
 .links a.router-link-active {
   color: var(--signal);
 }
+/* as tall as Join, so the bar keeps its height when a member has no Join */
 .account {
   color: var(--grey-fog);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .account:hover,
 .account.router-link-active {
@@ -164,7 +176,9 @@ onBeforeUnmount(() => {
 .sheet {
   display: none;
 }
-@media (max-width: 840px) {
+/* wider than the system's 840px: seven links, Join and the account link
+   need about 1160px to sit on one line */
+@media (max-width: 1180px) {
   .links,
   .join,
   .account {

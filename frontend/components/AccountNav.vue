@@ -1,8 +1,12 @@
 <script setup lang="ts">
 /**
- * The desk's own nav: mono kickers, 44px targets.
+ * The desk's own nav: mono kickers, 44px targets. Join shows on every
+ * account page until the membership is active, and never after.
  */
-defineProps<{ showJoin?: boolean }>()
+import { effectiveStatus } from '~/utils/membership'
+
+const { user } = useAuth()
+const showJoin = computed(() => effectiveStatus(user.value) !== 'active')
 </script>
 
 <template>
