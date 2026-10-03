@@ -2,13 +2,15 @@
 /**
  * An album's photographs: the feed's stagger (wide/narrow alternating, the
  * narrow one dropped) but never cropped, the frame takes whatever shape the
- * photograph has. Hairline-framed on ink, every one carries the credit;
- * the file's alt text is its caption.
+ * photograph has. Hairline-framed on ink, every one carries a credit: the
+ * file's own when it has one, else the album's. The file's alt text is its
+ * caption.
  */
 interface MediaLike {
   id: string | number
   url?: string | null
   alt?: string | null
+  credit?: string | null
   width?: number | null
   height?: number | null
 }
@@ -38,7 +40,7 @@ defineProps<{
         :loading="i === 0 ? 'eager' : 'lazy'"
         :img-attrs="{ class: 'run-img' }"
       />
-      <FrameCaption standalone :credit="credit" :index="frameIndex(i + 1, images.length)" />
+      <FrameCaption standalone :credit="albumImageCredit(image, credit)" :index="frameIndex(i + 1, images.length)" />
       <p v-if="image.alt" class="b-caption note">{{ image.alt }}</p>
     </figure>
   </div>

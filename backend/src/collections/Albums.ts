@@ -50,7 +50,7 @@ export const Albums: CollectionConfig = {
       minRows: 1,
       admin: {
         description:
-          "Plain photographs, not frames: album images never enter the archive. The caption on the site is each file's alt text.",
+          "Plain photographs, not frames: album images never enter the archive. The caption on the site is each file's alt text. A file's own credit, when set, is shown on that photograph; the others carry the album credit.",
       },
     },
     {
