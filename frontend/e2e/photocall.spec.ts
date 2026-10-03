@@ -141,9 +141,10 @@ test('a members-only call turns an anonymous entry away and takes a signed-in on
       multipart: entry('Anonymous'),
       headers: { Origin: origin },
     })
+    const refusal = await refused.text()
     await anonymous.dispose()
     expect(refused.status()).toBe(403)
-    expect(await refused.text()).toContain('members only')
+    expect(refusal).toContain('members only')
 
     // the same entry with the member's session cookie goes through
     await signUpAndVerify(page, request, email, 'E2E Member')
