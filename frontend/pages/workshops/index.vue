@@ -68,17 +68,19 @@ function produced(workshop: Workshop): string | null {
   return `${n}${join?.hasNextPage ? '+' : ''} album${n === 1 ? '' : 's'}`
 }
 
-// og:image is the generated workshop card while one is upcoming.
+// og:image is the generated workshop card while one is upcoming; between
+// workshops it is the card of the last one held.
+const cardWorkshop = nextWorkshop.value ?? pastWorkshops.value[0] ?? null
 useShareMeta({
   title: 'Workshops',
   description:
     'Bathong. workshops: learn analogue photography hands on, from pinhole cameras to the darkroom. All skill levels welcome.',
-  image: nextWorkshop.value
-    ? `/share/workshops.jpg?v=${nextWorkshop.value.updatedAt ? new Date(nextWorkshop.value.updatedAt).getTime() : 0}`
-    : undefined,
+  image: cardWorkshop ? `/share/workshops.jpg?v=${shareVersion(cardWorkshop.updatedAt)}` : undefined,
   imageAlt: nextWorkshop.value
     ? `Announcement card for the next Bathong. workshop, ${formatWalkDate(nextWorkshop.value.date)}.`
-    : undefined,
+    : cardWorkshop
+      ? `Card for Bathong. workshop ${workshopNo(cardWorkshop)}, held ${formatWalkDate(cardWorkshop.date)}.`
+      : undefined,
 })
 </script>
 

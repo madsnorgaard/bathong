@@ -1,5 +1,7 @@
 /**
- * Share-card renderer: C2 essay, C3 photographer, C4 walk, C5 photocall.
+ * Share-card renderer: C2 essay, C3 photographer, C4 walk, C5 photocall,
+ * and the C1-structure photograph cards the index pages and the record of a
+ * walk or workshop share.
  * Layouts transcribed from the spec artboards in
  * design-system/design_handoff_frontend_v2/design-references/share-cards.html
  * (and design-system/assets/share/exports.html for the shared furniture).
@@ -13,6 +15,7 @@
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 import sharp from 'sharp'
+import { isPastWalk } from '../../utils/walks'
 
 export const CARD_W = 1200
 export const CARD_H = 630
@@ -408,6 +411,7 @@ export async function fetchPhoto(url: string): Promise<Buffer> {
 }
 
 interface MediaLike {
+  credit?: string | null
   sizes?: { feature?: { url?: string | null }; hero?: { url?: string | null }; og?: { url?: string | null } }
   url?: string | null
 }
@@ -472,4 +476,214 @@ export const fmtDate = (iso: string) => {
     time: part({ hour: '2-digit', hour12: false, minute: '2-digit' }),
     weekday: part({ weekday: 'long' }),
   }
+}
+
+// ---- photographs for cards ---------------------------------------------------
+
+/** A photograph and the name that travels with it. */
+export interface CreditedPhoto {
+  credit: string | null
+  url: string
+}
+
+type PersonRef = { name?: string | null } | number | null
+
+export interface FrameLike {
+  creditOverride?: string | null
+  image?: MediaLike | number | null
+  photographer?: PersonRef
+}
+
+export interface AlbumLike {
+  creditOverride?: string | null
+  images?: Array<MediaLike | number> | null
+  photographer?: PersonRef
+}
+
+const personName = (p: PersonRef | undefined) => (p && typeof p === 'object' ? (p.name ?? null) : null)
+
+/** A frame's photograph, credited by the frame's own rule. */
+export function framePhoto(frame: FrameLike | number | null | undefined): CreditedPhoto | null {
+  if (!frame || typeof frame !== 'object') return null
+  const url = bestPhotoUrl(typeof frame.image === 'object' ? frame.image : null)
+  if (!url) return null
+  return { credit: frame.creditOverride ?? personName(frame.photographer), url }
+}
+
+/**
+ * An album's cover: its first photograph, credited to that file's own
+ * credit when it carries one, else the album's (the album page's rule).
+ */
+export function albumPhoto(album: AlbumLike | null | undefined): CreditedPhoto | null {
+  const first = album?.images?.[0]
+  const media = first && typeof first === 'object' ? first : null
+  const url = bestPhotoUrl(media)
+  if (!album || !url) return null
+  return {
+    credit: media?.credit?.trim() || album.creditOverride || personName(album.photographer),
+    url,
+  }
+}
+
+/**
+ * The photograph that stands for a walked walk or a held workshop: the lead
+ * frame of its newest essay, else its newest frame, else the cover of its
+ * newest album. Null while it has produced nothing yet.
+ */
+export async function recordPhoto(
+  kind: 'walks' | 'workshops',
+  id: number,
+): Promise<CreditedPhoto | null> {
+  if (kind === 'walks') {
+    const essays = await cmsGet<{ docs: Array<{ leadFrame?: FrameLike | number | null }> }>(
+      `/api/essays?where[walks][contains]=${id}&sort=-publishedDate&limit=1&depth=2`,
+    )
+    const lead = framePhoto(essays.docs[0]?.leadFrame)
+    if (lead) return lead
+    const frames = await cmsGet<{ docs: FrameLike[] }>(
+      `/api/frames?where[walk][equals]=${id}&sort=-createdAt&limit=1&depth=1`,
+    )
+    const frame = framePhoto(frames.docs[0])
+    if (frame) return frame
+  }
+  const albums = await cmsGet<{ docs: AlbumLike[] }>(
+    `/api/albums?where[${kind}][contains]=${id}&sort=-date&limit=1&depth=1`,
+  )
+  return albumPhoto(albums.docs[0])
+}
+
+/** A bar line, uppercased and clipped so it never runs into the wordmark. */
+export const barLine = (text: string, max = 46) => {
+  const t = text.toUpperCase()
+  return t.length > max ? `${t.slice(0, max - 3).trimEnd()}...` : t
+}
+
+/** The C1/C2 structure: the photograph, its credit chip, the ink bar. */
+export async function photoCard(args: { metaLines: string[]; photo: CreditedPhoto }): Promise<Buffer> {
+  const overlay = await renderOverlay(
+    essayOverlay({
+      credit: args.photo.credit ? `© ${args.photo.credit}` : null,
+      metaLines: args.metaLines,
+    }) as never,
+  )
+  return composeCard({
+    overlay,
+    photo: {
+      buffer: await fetchPhoto(args.photo.url),
+      height: CARD_H - BAR_H - RULE,
+      left: 0,
+      top: 0,
+      width: CARD_W,
+    },
+  })
+}
+
+// ---- walk + workshop cards (one walk's page and the index share them) --------
+
+export interface WalkCardDoc {
+  date: string
+  endTime?: string | null
+  id: number
+  meetingPoint?: string | null
+  number?: number | null
+  priceMember?: number | null
+  title: string
+}
+
+/**
+ * C4 for one walk. Upcoming: the jacaranda plate, the date enormous. Walked:
+ * a photograph from the walk on the C1 structure, as the spec asks once a
+ * walk has frames; the plate (when allowed) only while it has none.
+ */
+export async function walkCard(walk: WalkCardDoc, allowPlate = true): Promise<Buffer | null> {
+  const past = isPastWalk(walk)
+  const d = fmtDate(walk.date)
+  const no = `WALK № ${pad3(walk.number ?? 1)}`
+  if (past) {
+    const photo = await recordPhoto('walks', walk.id)
+    if (photo) {
+      return photoCard({
+        metaLines: [`${no} · WALKED ${d.shortDayMonth.toUpperCase()}`, barLine(walk.title)],
+        photo,
+      })
+    }
+    if (!allowPlate) return null
+  }
+  const suffix = past ? ' · WALKED' : walk.priceMember === 0 ? ' · FREE FOR MEMBERS' : ''
+  const overlay = await renderOverlay(
+    walkPlate({
+      topLine: `${no}${suffix}`,
+      dateLines: [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time],
+      bottomLine: (walk.meetingPoint ?? walk.title).toUpperCase(),
+    }) as never,
+  )
+  return composeCard({ overlay })
+}
+
+export interface WorkshopCardDoc {
+  date: string
+  endTime?: string | null
+  heroImage?: { url?: string | null } | number | null
+  id: number
+  number?: number | null
+  title: string
+  venueName?: string | null
+}
+
+/**
+ * The card for one workshop. With an invite (heroImage), the whole poster
+ * sits contained on the left and the jacaranda plate carries the facts on
+ * the right, the C3 split language. Without one, a held workshop leads with
+ * a photograph from its albums; the type plate (when allowed) is what is
+ * left.
+ */
+export async function workshopCard(
+  workshop: WorkshopCardDoc,
+  allowPlate = true,
+): Promise<Buffer | null> {
+  const past = isPastWalk(workshop)
+  const d = fmtDate(workshop.date)
+  const no = `WORKSHOP № ${pad3(workshop.number ?? 1)}`
+  const topLine = `${no}${past ? ' · HELD' : ''}`
+  const dateLines = [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time]
+  const bottomLine = (workshop.venueName ?? workshop.title).toUpperCase()
+
+  // The invite is the original file, never a crop: og/feature sizes are
+  // cover crops that would slice a designed poster.
+  const invite = typeof workshop.heroImage === 'object' ? workshop.heroImage?.url : null
+  if (invite) {
+    const overlay = await renderOverlay(
+      workshopInviteOverlay({
+        topLine,
+        dateLines,
+        bottomLine,
+        metaLine: 'BATHONG.AFRICA/WORKSHOPS',
+      }) as never,
+    )
+    return composeCard({
+      overlay,
+      photo: { buffer: await fetchPhoto(invite), height: CARD_H, left: 0, top: 0, width: 640, fit: 'contain' },
+    })
+  }
+
+  if (past) {
+    const photo = await recordPhoto('workshops', workshop.id)
+    if (photo) {
+      return photoCard({
+        metaLines: [`${no} · HELD ${d.shortDayMonth.toUpperCase()}`, barLine(workshop.title)],
+        photo,
+      })
+    }
+    if (!allowPlate) return null
+  }
+
+  const overlay = await renderOverlay(
+    walkPlate({
+      topLine,
+      dateLines,
+      bottomLine,
+      barLines: ['BOOK ON THE WEBSITE', 'BATHONG.AFRICA/WORKSHOPS'],
+    }) as never,
+  )
+  return composeCard({ overlay })
 }

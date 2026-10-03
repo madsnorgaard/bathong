@@ -40,17 +40,19 @@ function produced(walk: Walk): string | null {
   return parts.length ? parts.join(' · ') : null
 }
 
-// og:image is the generated C4 walk card while a walk is upcoming.
+// og:image is the generated C4 walk card while a walk is upcoming; between
+// walks it is the photograph of the last one walked.
+const cardWalk = nextWalk.value ?? pastWalks.value[0] ?? null
 useShareMeta({
   title: 'Walks & sessions',
   description:
     'Photowalks from Pretoria outward: meet at first light, shoot together, edit together at the end. No experience needed, no gear requirement, everyone welcome.',
-  image: nextWalk.value
-    ? `/share/walks.jpg?v=${nextWalk.value.updatedAt ? new Date(nextWalk.value.updatedAt).getTime() : 0}`
-    : undefined,
+  image: cardWalk ? `/share/walks.jpg?v=${shareVersion(cardWalk.updatedAt)}` : undefined,
   imageAlt: nextWalk.value
     ? `Announcement card for the next Bathong. photowalk, ${formatWalkDate(nextWalk.value.date)}.`
-    : undefined,
+    : cardWalk
+      ? `Card for Bathong. walk ${walkNo(cardWalk)}, walked ${formatWalkDate(cardWalk.date)}.`
+      : undefined,
 })
 </script>
 

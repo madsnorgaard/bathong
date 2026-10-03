@@ -1,36 +1,22 @@
-import { nextWalksQuery } from '../../../utils/walks'
+import { nextWalksQuery, pastWalksQuery } from '../../../utils/walks'
+import type { WalkCardDoc } from '../../utils/shareCards'
 
 /**
- * C4 walk card: full jacaranda plate, the next walk's date enormous.
- * The type-led plate is the spec's launch-only state (no photograph exists
- * before the first walk happens). No upcoming walk serves the C1 default.
- * "Next" follows the pages' rule: a walk stays current until it wraps.
+ * The /walks card. While a walk is upcoming: C4, the full jacaranda plate
+ * with the next walk's date enormous ("next" follows the pages' rule, a
+ * walk stays current until it wraps). Between walks: the photograph of the
+ * last one walked. Neither serves the C1 default.
  */
-interface WalkDoc {
-  date: string
-  id: number
-  meetingPoint?: string | null
-  number?: number | null
-  priceMember?: number | null
-  title: string
-}
-
 export default defineEventHandler(async (event) => {
   const version = (getQuery(event).v as string) ?? ''
   const buf = await serveCard(event, `walks:${version}`, async () => {
-    const next = await cmsGet<{ docs: WalkDoc[] }>(nextWalksQuery(new Date().toISOString(), 1))
-    const walk = next.docs[0]
-    if (!walk) return null
-
-    const d = fmtDate(walk.date)
-    const overlay = await renderOverlay(
-      walkPlate({
-        topLine: `WALK № ${pad3(walk.number ?? 1)}${walk.priceMember === 0 ? ' · FREE FOR MEMBERS' : ''}`,
-        dateLines: [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time],
-        bottomLine: (walk.meetingPoint ?? walk.title).toUpperCase(),
-      }) as never,
+    const now = new Date().toISOString()
+    const next = await cmsGet<{ docs: WalkCardDoc[] }>(nextWalksQuery(now, 1))
+    if (next.docs[0]) return walkCard(next.docs[0])
+    const past = await cmsGet<{ docs: WalkCardDoc[] }>(
+      `${pastWalksQuery(now, 1)}&joins[essays]=false&joins[albums]=false`,
     )
-    return composeCard({ overlay })
+    return past.docs[0] ? walkCard(past.docs[0], false) : null
   })
   return buf
 })

@@ -6,11 +6,6 @@
  */
 import type { Person } from '~/types/payload-types'
 
-useShareMeta({
-  title: 'Photographers',
-  description: 'The Bathong. collective roster: street and documentary photographers, starting from Pretoria.',
-})
-
 interface List<T> { docs: T[] }
 
 // The roster is a choice: only profiles whose member switched it on.
@@ -19,6 +14,19 @@ const { data } = await useCmsData<List<Person>>(
   '/api/people?where[onRoster][equals]=true&sort=order&limit=48&depth=1',
 )
 const people = computed(() => data.value?.docs ?? [])
+
+// og:image is the generated card led by a frame from the roster. Versioned
+// on the newest profile edit; the card itself re-renders hourly.
+useShareMeta({
+  title: 'Photographers',
+  description: 'The Bathong. collective roster: street and documentary photographers, starting from Pretoria.',
+  image: people.value.length
+    ? `/share/photographers.jpg?v=${Math.max(...people.value.map((p) => shareVersion(p.updatedAt)))}`
+    : undefined,
+  imageAlt: people.value.length
+    ? 'A frame by a photographer on the Bathong. roster, credited on the card.'
+    : undefined,
+})
 </script>
 
 <template>
