@@ -48,9 +48,11 @@ test('essay page shares its generated C2 card', async ({ page, request }) => {
 })
 
 test('photographer page shares its generated C3 card', async ({ page, request }) => {
-  const content = await ogImage(page, '/photographers/jacques-nelles')
-  expect(content).toMatch(/\/share\/photographer\/jacques-nelles\.jpg\?v=\d+$/)
-  await expectGeneratedCard(request, '/share/photographer/jacques-nelles.jpg')
+  // Mads has seeded frames, so with no portrait the newest frame leads. A
+  // photographer with neither (the seeded Jacques) is served the default.
+  const content = await ogImage(page, '/photographers/mads-norgaard')
+  expect(content).toMatch(/\/share\/photographer\/mads-norgaard\.jpg\?v=\d+$/)
+  await expectGeneratedCard(request, '/share/photographer/mads-norgaard.jpg')
 })
 
 test('walks page shares the C4 card while a walk is upcoming', async ({ page, request }) => {
