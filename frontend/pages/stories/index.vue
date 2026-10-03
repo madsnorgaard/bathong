@@ -7,12 +7,6 @@
  */
 import type { Essay } from '~/types/payload-types'
 
-useShareMeta({
-  title: 'Stories',
-  description:
-    'Photo essays from the Bathong. collective: 12 to 20 sequenced frames, edited as a body, published as a story.',
-})
-
 interface List<T> { docs: T[] }
 const route = useRoute()
 
@@ -20,6 +14,20 @@ const { data } = await useCmsData<List<Essay>>(
   'essays-index',
   '/api/essays?sort=-publishedDate&limit=40&depth=2',
 )
+
+// og:image is the generated card led by the newest essay's lead frame.
+const newest = data.value?.docs?.[0]
+const newestLead = newest && typeof newest.leadFrame === 'object' ? newest.leadFrame : null
+useShareMeta({
+  title: 'Stories',
+  description:
+    'Photo essays from the Bathong. collective: 12 to 20 sequenced frames, edited as a body, published as a story.',
+  image: newest ? `/share/stories.jpg?v=${shareVersion(newest.updatedAt)}` : undefined,
+  imageAlt: newest
+    ? ((newestLead && typeof newestLead.image === 'object' ? newestLead.image?.alt : null) ??
+      `The lead frame of the essay ${newest.title}.`)
+    : undefined,
+})
 
 const activeTag = computed(() => (route.query.tag as string) ?? null)
 

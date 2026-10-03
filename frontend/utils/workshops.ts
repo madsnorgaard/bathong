@@ -16,9 +16,9 @@ export function nextWorkshopsQuery(now: string, limit: number, depth: 0 | 1 = 1)
 }
 
 /** Started, and either has no wrap time or has wrapped. Newest first. */
-export function pastWorkshopsQuery(now: string, limit: number): string {
+export function pastWorkshopsQuery(now: string, limit: number, depth: 0 | 1 = 0): string {
   const t = encodeURIComponent(now)
-  return `/api/workshops?where[and][0][date][less_than]=${t}&where[and][1][or][0][endTime][exists]=false&where[and][1][or][1][endTime][less_than]=${t}&sort=-date&limit=${limit}&depth=0`
+  return `/api/workshops?where[and][0][date][less_than]=${t}&where[and][1][or][0][endTime][exists]=false&where[and][1][or][1][endTime][less_than]=${t}&sort=-date&limit=${limit}&depth=${depth}`
 }
 
 /** "№ 001" from the workshop's virtual number; one with no number is the first. */

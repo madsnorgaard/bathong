@@ -8,12 +8,6 @@
  */
 import type { ArchiveResponse } from '~/utils/archive'
 
-useShareMeta({
-  title: 'Archive',
-  description:
-    'Every published frame from the Bathong. collective, filterable by photographer, place, year and tag.',
-})
-
 const route = useRoute()
 const filters = computed(() => archiveFilters(route.query))
 const hasFilters = computed(() => Object.keys(filters.value).length > 0)
@@ -34,6 +28,17 @@ const facets = computed(
 const page = computed(() => data.value?.page ?? 1)
 const totalPages = computed(() => data.value?.totalPages ?? 1)
 const totalDocs = computed(() => data.value?.totalDocs ?? 0)
+
+// og:image is the generated card led by the archive's lead frame. Every
+// filtered view shares it; the count is only there to move the URL when
+// frames are added. An empty archive is served the default card.
+useShareMeta({
+  title: 'Archive',
+  description:
+    'Every published frame from the Bathong. collective, filterable by photographer, place, year and tag.',
+  image: `/share/archive.jpg?v=${totalDocs.value}`,
+  imageAlt: 'A frame from the Bathong. archive, credited on the card.',
+})
 const tags = computed(() => facets.value.tags.slice(0, 12))
 
 const searchText = ref(filters.value.q ?? '')

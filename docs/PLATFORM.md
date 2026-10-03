@@ -403,15 +403,34 @@ share-cards.html): C2 essay (lead frame + index/frame count in the bar),
 C3 photographer (portrait, member number, body of work), C4 walk (jacaranda
 plate, the date enormous; `/share/walks.jpg` for the next walk and
 `/share/walk/<slug>.jpg` for any walk, "WALKED" in the top line once it
-has), C5 photocall (signal plate while a call is open), C6 album (the C2
-structure with the first photograph and count). Rendered on request by Nitro server routes
+has, and a photograph from the walk in place of the plate as soon as it
+has produced one: newest essay's lead frame, else newest frame, else newest
+album cover), C5 photocall (signal plate while a call is open), C6 album
+(the C2 structure with the first photograph and count; the chip names that
+file's own credit when it has one). A workshop shares its invite poster
+beside the plate, or a photograph from its albums once held without one.
+The index pages share the C1 structure led by their newest work:
+`/share/stories.jpg` (newest essay's lead frame), `/share/albums.jpg`
+(newest album's cover), `/share/archive.jpg` (the homepage lead frame
+rule: newest top pick, else newest frame), `/share/photographers.jpg`
+(newest frame by the first roster member who has one); `/walks` and
+`/workshops` fall back to the last one walked or held between events.
+Home, About, Privacy and the account pages keep the C1 default, as the
+spec asks. Rendered on request by Nitro server routes
 (`frontend/server/routes/share/`) with satori + resvg + sharp - fonts are
 vendored TTF buffers in `frontend/server/assets/fonts/` (OFL), so no
 system fonts are needed in the container. JPEG q82, quality steps down to
 stay under the 300 KB WhatsApp ceiling; any missing entity or failed
 render serves the static C1 default (`frontend/public/share/default.jpg`),
 never an error. Pages append `?v=<updatedAt>` so crawler caches bust on
-republish. Covered by `frontend/e2e/share-cards.spec.ts`.
+republish. satori shapes type with harfbuzzjs, which reads `hb.wasm` from
+disk; the Nitro tracer does not follow that read, so `nuxt.config.ts`
+lists the file under `nitro.externals.traceInclude`. Without it every card
+silently falls back to the default (production did after the satori 0.33
+bump of 16 Sep 2026).
+Covered by `frontend/e2e/share-cards.spec.ts`, which fails a generated
+card that is byte-identical to the default, and
+`tests/unit/share-cards.spec.ts`.
 
 The share row (`frontend/components/ShareRow.vue`) sits on essays, walks,
 albums, photographer pages and an open photocall: a word and typographic

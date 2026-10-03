@@ -17,6 +17,11 @@ const DEFAULT_IMAGE = '/share/default.jpg'
 const DEFAULT_IMAGE_ALT =
   'A car raised on a workshop lift, a man walking past beneath it. Black and white street photograph.'
 
+/** The ?v= on a generated card URL: the document's last edit, so an edit moves the URL. */
+export function shareVersion(updatedAt: string | null | undefined): number {
+  return updatedAt ? new Date(updatedAt).getTime() : 0
+}
+
 /**
  * Sets the full share meta block for a page: exactly one og:image, absolute
  * HTTPS URLs from runtimeConfig.public.siteUrl, twitter summary_large_image.

@@ -6,12 +6,6 @@
  */
 import type { Album } from '~/types/payload-types'
 
-useShareMeta({
-  title: 'Albums',
-  description:
-    'Albums from the Bathong. photowalks: the group, the edit table, the streets between frames. Every photograph credited.',
-})
-
 interface List<T> { docs: T[] }
 
 const { data } = await useCmsData<List<Album>>(
@@ -19,6 +13,18 @@ const { data } = await useCmsData<List<Album>>(
   latestAlbumsQuery(40),
 )
 const albums = computed(() => data.value?.docs ?? [])
+
+// og:image is the generated card led by the newest album's first photograph.
+const newest = albums.value[0]
+useShareMeta({
+  title: 'Albums',
+  description:
+    'Albums from the Bathong. photowalks: the group, the edit table, the streets between frames. Every photograph credited.',
+  image: newest ? `/share/albums.jpg?v=${shareVersion(newest.updatedAt)}` : undefined,
+  imageAlt: newest
+    ? (albumCover(newest)?.alt ?? `A photograph from the album ${newest.title}.`)
+    : undefined,
+})
 
 </script>
 

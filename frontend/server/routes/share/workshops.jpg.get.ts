@@ -1,67 +1,23 @@
-import { nextWorkshopsQuery } from '../../../utils/workshops'
+import { nextWorkshopsQuery, pastWorkshopsQuery } from '../../../utils/workshops'
+import type { WorkshopCardDoc } from '../../utils/shareCards'
 
 /**
- * Workshop card: full jacaranda plate, the next workshop's date enormous,
- * the venue as the bottom line. No upcoming workshop serves the C1 default.
- * "Next" follows the pages' rule: a workshop stays current until it wraps.
+ * The /workshops card. While one is upcoming: the next workshop's card
+ * ("next" follows the pages' rule, a workshop stays current until it
+ * wraps). Between workshops: the last one held, by its invite or a
+ * photograph from it. Neither serves the C1 default.
  */
-interface WorkshopDoc {
-  date: string
-  heroImage?: { url?: string | null } | number | null
-  id: number
-  number?: number | null
-  title: string
-  venueName?: string | null
-}
-
 export default defineEventHandler(async (event) => {
   const version = (getQuery(event).v as string) ?? ''
   const buf = await serveCard(event, `workshops:${version}`, async () => {
-    const next = await cmsGet<{ docs: WorkshopDoc[] }>(
-      nextWorkshopsQuery(new Date().toISOString(), 1),
+    const now = new Date().toISOString()
+    // depth 1 so the invite arrives populated
+    const next = await cmsGet<{ docs: WorkshopCardDoc[] }>(nextWorkshopsQuery(now, 1))
+    if (next.docs[0]) return workshopCard(next.docs[0])
+    const past = await cmsGet<{ docs: WorkshopCardDoc[] }>(
+      `${pastWorkshopsQuery(now, 1, 1)}&joins[albums]=false`,
     )
-    const workshop = next.docs[0]
-    if (!workshop) return null
-
-    const d = fmtDate(workshop.date)
-    const topLine = `WORKSHOP № ${pad3(workshop.number ?? 1)}`
-    const dateLines = [d.weekday.toUpperCase(), d.dayMonth.toUpperCase(), d.time]
-    const bottomLine = (workshop.venueName ?? workshop.title).toUpperCase()
-
-    // With an invite the whole poster travels, contained left; the query
-    // runs at depth 1 so it arrives populated. Original file, never a crop.
-    const invite = typeof workshop.heroImage === 'object' ? workshop.heroImage?.url : null
-    if (invite) {
-      const overlay = await renderOverlay(
-        workshopInviteOverlay({
-          topLine,
-          dateLines,
-          bottomLine,
-          metaLine: 'BATHONG.AFRICA/WORKSHOPS',
-        }) as never,
-      )
-      return composeCard({
-        overlay,
-        photo: {
-          buffer: await fetchPhoto(invite),
-          height: CARD_H,
-          left: 0,
-          top: 0,
-          width: 640,
-          fit: 'contain',
-        },
-      })
-    }
-
-    const overlay = await renderOverlay(
-      walkPlate({
-        topLine,
-        dateLines,
-        bottomLine,
-        barLines: ['BOOK ON THE WEBSITE', 'BATHONG.AFRICA/WORKSHOPS'],
-      }) as never,
-    )
-    return composeCard({ overlay })
+    return past.docs[0] ? workshopCard(past.docs[0], false) : null
   })
   return buf
 })
