@@ -19,3 +19,11 @@ export function albumCredit(album: Album): string {
   const p = album.photographer
   return album.creditOverride ?? (p && typeof p === 'object' ? p.name : null) ?? 'Bathong. Collective'
 }
+
+/**
+ * The credit on one album photograph: the file's own credit when it carries
+ * one (a shared album, several photographers), else the album's.
+ */
+export function albumImageCredit(image: { credit?: string | null }, albumCredit: string): string {
+  return image.credit?.trim() || albumCredit
+}
