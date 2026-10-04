@@ -650,6 +650,46 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   `frontend/e2e/helpers/images.ts`), so a slow or failed encode cannot fail
   an unrelated test.
 
+### Page budgets
+
+The market is South Africa, phone first, on paid mobile data, so the first
+view of a page (everything it transfers before any scroll) has a ceiling,
+and the e2e suite fails a change that breaks it.
+
+- The budget is 1 MB (1,000,000 bytes) of first-view transfer.
+  `e2e/budgets.spec.ts` holds the photographer page, an album, the essay
+  reader, the stories index and the archive to it on a phone profile:
+  390x844 at device pixel ratio 2. `smoke.spec.ts` holds the homepage to
+  it and `reader.spec.ts` the reader on a desktop viewport.
+- Weight is the sum of the `content-length` every response declares, the
+  same in all three specs, so the numbers compare. The phone spec waits
+  for the first view to settle (every image the browser has started on is
+  complete, none in flight), never for `networkidle` and never for a
+  decode: an encode that fails in CI makes the page lighter, so the
+  budget still holds. A failure prints the total, images, script and the
+  three heaviest responses.
+- How it was chosen: 1 MB is the homepage budget from Phase 1, extended
+  unchanged. Measured on the live site on 4 Oct 2026 at that phone
+  profile: photographer page 407 to 480 KB, album 486 KB, essay reader
+  473 KB, archive 407 KB, stories index 793 KB. The ceiling sits at about
+  twice what the pages weigh: room for a heavier frame or a new feature,
+  not for a wrong rendition or an eager gallery. It is a ceiling, not a
+  target. CI serves the built Nuxt app directly, with no nginx in front,
+  so HTML and scripts go uncompressed there and the same page weighs more
+  than it does live: the gate is the stricter of the two.
+- Largest contentful paint is measured per page on a throttled connection
+  and printed, not asserted. The profile is slow 4G as Lighthouse and
+  DevTools define it: 1.6 Mbit/s down and 750 kbit/s up, each scaled by
+  0.9 (184,320 and 84,375 bytes per second), and a 150 ms round trip
+  scaled by 3.75 (562.5 ms per request). A timing gate would be flaky
+  while image encodes in CI can time out; the limit is chosen from the
+  printed numbers once the CI stack is stable (#170).
+- What the stories index taught: `xs` is 480, so `xs:100vw` alone offers
+  480w and 960w, and a 390px phone at 2x (asking for 780) takes 960w for
+  a 344px box. `390:100vw` in the `sizes` string adds the 780w that fits
+  it. On that page it took the four lead frames in the first view from
+  594 KB to 400 KB with nothing softer.
+
 ## Migrations (Postgres + Payload)
 
 - Migrations are the source of truth everywhere; Drizzle push is dev-only and

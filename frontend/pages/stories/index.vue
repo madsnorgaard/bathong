@@ -89,13 +89,17 @@ function frameCount(essay: Essay): number {
       story. TBC.
     </p>
 
-    <!-- the newest essay leads, asymmetric -->
+    <!-- the newest essay leads, asymmetric. sizes: each key adds its width at
+         1x and 2x to the srcset, and xs is 480, so without the 390 key a
+         390px phone at 2x (asking for 780) finds nothing between 504w and
+         960w and takes 960w for a 344px box. 390:100vw adds the 780w that
+         fits it; lg and xl carry the 60vw column past 1008w on desktop. -->
     <NuxtLink v-if="hero" :to="`/stories/${hero.slug}`" class="hero">
       <BFrame
         :src="leadSrc(hero)"
         :alt="hero.title"
         :credit="leadCredit(hero)"
-        sizes="xs:100vw md:60vw"
+        sizes="390:100vw xs:100vw md:60vw lg:60vw xl:60vw"
         class="hero-frame"
       />
       <div class="hero-meta">
@@ -116,7 +120,7 @@ function frameCount(essay: Essay): number {
           :src="leadSrc(essay)"
           :alt="essay.title"
           :credit="leadCredit(essay)"
-          sizes="xs:100vw md:33vw"
+          sizes="390:100vw xs:100vw md:33vw lg:33vw xl:33vw"
           class="card-frame"
         />
         <h3 class="b-display-2">{{ essay.title }}</h3>
