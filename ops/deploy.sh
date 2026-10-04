@@ -46,3 +46,11 @@ for _ in $(seq 1 12); do
 done
 echo "https://${site}/ -> ${code}"
 [ "${code}" = "200" ]
+
+# The image cache reads its config at start. Test the pulled config inside the
+# running container and reload gracefully; a config that fails the test fails
+# the deploy here and the running one keeps serving.
+ipx_container="${site}_ipx_cache"
+docker exec "${ipx_container}" nginx -t
+docker exec "${ipx_container}" nginx -s reload
+echo "image cache: config reloaded"

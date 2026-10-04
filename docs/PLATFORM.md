@@ -34,8 +34,33 @@ the Actions tab (`workflow_dispatch`) if needed.
 `ops/deploy.sh` is the whole deploy and can be run by hand on the server:
 it dumps the database to `~/backups` (last 20 kept), fast-forwards the
 checkout, rebuilds both images, restarts the platform profile, waits for
-Payload (which applies pending migrations before serving) and checks the
-site answers 200. It prints the rollback commit first.
+Payload (which applies pending migrations before serving), checks the
+site answers 200, then tests and reloads the image cache config. It prints
+the rollback commit first.
+
+### Image cache
+
+Every photograph is requested through `/_ipx/` and Traefik sends that
+prefix to a small nginx container (`bathong_ipx_cache`) in front of Nuxt,
+because ipx has no result cache of its own and an AVIF encode costs
+seconds. The config is `ops/nginx/ipx-cache.conf`; the directory is mounted
+as `/etc/nginx/conf.d` so the running container sees a pulled change.
+
+- Each variant is encoded once and kept on the `ipx_cache` volume. Only 200
+  responses are cached, and upstream cache headers are ignored.
+- After 30 days an entry is stale, not gone: the visitor gets the stale copy
+  at once and nginx refreshes it in the background
+  (`proxy_cache_background_update`). Before this, the first visitor after
+  expiry waited for the re-encode, 5 to 13 seconds per image on the essay
+  reader. The 30 days only bound how long a file replaced under the same
+  name can stay stale.
+- Entries nobody requests for a year are dropped; `max_size=5g` evicts the
+  least recently used first.
+- `X-Cache-Status` on the response says what happened: `HIT`, `STALE`,
+  `UPDATING`, `MISS` (a first encode, about 2 seconds) or `EXPIRED`.
+- CI runs `nginx -t` on the config (job `ops`): an invalid config would take
+  every photograph down. The deploy script runs the same test inside the
+  container before it reloads.
 
 ```bash
 # by hand, on the server
@@ -511,15 +536,15 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   upload whose file already sits in `./media`, so the seed keeps media ids
   in memory rather than looking files up twice by name.
 - Frontend: `npm run dev` on port 3000. Checks: `npm run lint`,
+  `npm run typecheck` (`nuxt typecheck` with `vue-tsc`),
   `npm run tokens:check` (design-system drift), `npm run types:check`
   (payload-types drift), `npm test` (unit), `npm run test:e2e` (Playwright,
   needs the seeded stack).
 - CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
-  frontend lint, both drift checks, unit tests and the build; backend
-  `npx tsc --noEmit` and unit tests; then the Playwright suite against a
-  seeded stack. The backend `tsc` is the only typecheck in CI: the frontend
-  `npm run typecheck` (`nuxt typecheck`) is not part of it and does not run
-  today, because `vue-tsc` is not installed.
+  frontend lint, typecheck, both drift checks, unit tests and the build;
+  backend `npx tsc --noEmit` and unit tests; `ops`, an `nginx -t` of the
+  image cache config in the official image; then the Playwright suite
+  against a seeded stack.
 
 ## Migrations (Postgres + Payload)
 

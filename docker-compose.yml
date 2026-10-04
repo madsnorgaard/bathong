@@ -130,7 +130,9 @@ services:
     container_name: ${SITE_DOMAIN}_ipx_cache
     restart: always
     volumes:
-      - ./ops/ipx-cache.conf:/etc/nginx/conf.d/default.conf:ro
+      # the directory, not the file: a single-file mount pins the old inode
+      # and the container never sees a pulled change
+      - ./ops/nginx:/etc/nginx/conf.d:ro
       - ipx_cache:/var/cache/nginx/ipx
     depends_on:
       - bathong_nuxt
