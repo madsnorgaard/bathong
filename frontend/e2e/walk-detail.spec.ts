@@ -62,7 +62,7 @@ test('the record shares its own C4 card', async ({ page }) => {
   await page.goto(PAST)
   const og = page.locator('meta[property="og:image"]')
   await expect(og).toHaveCount(1)
-  expect(await og.getAttribute('content')).toMatch(/\/share\/walk\/demo-past-walk\.jpg\?v=\d+$/)
+  expect(await og.getAttribute('content')).toMatch(/\/share\/walk\/demo-past-walk\.jpg\?v=\d+&c=\d+$/)
 })
 
 test('an upcoming walk is the event: the plate, the route and the RSVP', async ({ page }) => {

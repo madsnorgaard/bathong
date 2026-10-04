@@ -41,7 +41,7 @@ export function useShareMeta(input: ShareMetaInput) {
     : `${SITE_NAME} - Street and documentary photography, from Pretoria outward`
   const ogTitle = input.title ?? SITE_NAME
   const url = `${siteUrl}${route.path === '/' ? '/' : route.path}`
-  const image = absolute(input.image ?? DEFAULT_IMAGE)
+  const image = absolute(withCardRevision(input.image ?? DEFAULT_IMAGE))
   // Alt always travels with the card (spec section 04) - a page-specific
   // description when given, the site card's description otherwise.
   const imageAlt = input.imageAlt ?? DEFAULT_IMAGE_ALT
