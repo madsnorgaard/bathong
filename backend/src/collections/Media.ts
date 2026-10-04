@@ -1,38 +1,11 @@
-import type { Access, CollectionConfig, Where } from 'payload'
+import type { CollectionConfig } from 'payload'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { hasEditorRole, isMember } from '../access'
+import { isMember } from '../access'
+import { canManageMedia, canReadMedia } from '../access/media'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-
-/**
- * Public files are visible to everyone; restricted files (e.g. photocall
- * submissions under judging) are visible to their uploader and editors only.
- */
-const canReadMedia: Access = ({ req: { user } }) => {
-  if (hasEditorRole(user)) return true
-  if (user) {
-    const ownOrPublic: Where = {
-      or: [{ visibility: { equals: 'public' } }, { uploadedBy: { equals: user.id } }],
-    }
-    return ownOrPublic
-  }
-  return { visibility: { equals: 'public' } }
-}
-
-/**
- * Editors manage everything. Uploaders may only touch their own files while
- * those files are still restricted - once public, a frame may be in use.
- */
-const canManageMedia: Access = ({ req: { user } }) => {
-  if (!user) return false
-  if (hasEditorRole(user)) return true
-  const ownWhileRestricted: Where = {
-    and: [{ uploadedBy: { equals: user.id } }, { visibility: { equals: 'restricted' } }],
-  }
-  return ownWhileRestricted
-}
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -68,8 +41,8 @@ export const Media: CollectionConfig = {
     // The hook receives headers only (no doc), so per-visibility values are
     // impossible. A global public TTL is safe while nothing shared caches in
     // this stack (Traefik does not cache; browser caches are per-user and
-    // restricted files only ever 200 for their uploader/editors). Revisit
-    // before ever putting a CDN in front of the api host.
+    // restricted files only ever 200 for their uploader, their entrant and
+    // editors). Revisit before ever putting a CDN in front of the api host.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('cache-control', 'public, max-age=86400')
       return headers

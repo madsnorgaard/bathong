@@ -23,6 +23,23 @@ export const isEditor: Access = ({ req: { user } }) => hasEditorRole(user)
 /** Field-level editor guard. */
 export const isEditorField: FieldAccess = ({ req: { user } }) => hasEditorRole(user)
 
+/**
+ * Field-level guard for the relationship that names the account a document
+ * belongs to (people.owner): editors read it, and so does that account on
+ * its own document. Asked without a document, which is how Payload decides
+ * whether a field may appear in a where or a sort, only editors pass, so
+ * the field cannot be probed through queries either.
+ */
+export const isEditorOrOwnerField =
+  (field: string): FieldAccess =>
+  ({ req: { user }, doc }) => {
+    if (hasEditorRole(user)) return true
+    if (!user || !doc) return false
+    const value: unknown = doc[field]
+    const owner = value && typeof value === 'object' ? (value as { id?: unknown }).id : value
+    return owner != null && String(owner) === String(user.id)
+  }
+
 /** Any authenticated user (admin, editor or member). */
 export const isMember: Access = ({ req: { user } }) => Boolean(user)
 
