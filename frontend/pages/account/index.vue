@@ -101,7 +101,7 @@ async function signOut() {
 <template>
   <div class="chapter account-chapter">
     <ChapterHead title="Desk" />
-    <AccountNav :show-join="status !== 'active'" />
+    <AccountNav />
 
     <section v-if="user" class="card-block">
       <MemberCard

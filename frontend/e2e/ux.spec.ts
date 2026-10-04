@@ -49,6 +49,17 @@ test.describe('mobile, the majority case', () => {
     const sheet = page.getByRole('dialog', { name: 'Menu' })
     await expect(sheet).toBeVisible()
 
+    // the same seven as the desktop bar, the roster among them
+    await expect(sheet.locator('nav[aria-label="Main"] a')).toHaveText([
+      'Stories',
+      'Walks',
+      'Workshops',
+      'Photocalls',
+      'Photographers',
+      'Archive',
+      'About',
+    ])
+
     for (const link of await sheet.getByRole('link').all()) {
       const b = await link.boundingBox()
       expect(b!.height, 'sheet link hit target').toBeGreaterThanOrEqual(44)

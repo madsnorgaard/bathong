@@ -26,12 +26,15 @@ test('a member fills in their profile, adds a portrait, and joins the roster', a
   await gotoHydrated(page, '/account/profile')
   await expect(page.getByText('Your profile arrives with your membership.')).toBeVisible()
   await expect(page.getByRole('main').getByRole('link', { name: 'Join →' })).toBeVisible()
+  const accountNav = page.locator('nav[aria-label="Account"] a')
+  await expect(accountNav).toHaveText(['Desk', 'Profile', 'Security', 'Join'])
 
   await joinAndActivate(page, request)
 
   // the roster switch waits for a portrait
   await gotoHydrated(page, '/account/profile')
   await expect(page.getByText(/Member № \d{4}/)).toBeVisible()
+  await expect(accountNav).toHaveText(['Desk', 'Profile', 'Security'])
   const roster = page.getByLabel(/Show me on the roster/)
   await expect(roster).toBeDisabled()
   await expect(page.getByText('Add a portrait first.')).toBeVisible()

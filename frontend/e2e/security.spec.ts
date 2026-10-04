@@ -61,6 +61,8 @@ test('password: the current one is checked, the change signs other devices out, 
   await gotoHydrated(page, '/account/security')
   await expect(page.getByText(/This device/)).toBeVisible()
   await expect(page.getByText(/Another device/)).toBeVisible()
+  // not a member yet: the desk's nav offers Join here too
+  await expect(page.locator('nav[aria-label="Account"] a')).toHaveText(['Desk', 'Profile', 'Security', 'Join'])
 
   await page.getByLabel(/^Current password/).fill('not the password at all')
   await page.getByLabel(/^New password/).fill(NEW_PASSWORD)
@@ -216,6 +218,8 @@ test('closing the account: the password is checked, the person goes, the work st
   leftovers.rsvps.push(`deleted-${user.id}@example.invalid`)
 
   await gotoHydrated(page, '/account/security')
+  // an active member is never offered Join
+  await expect(page.locator('nav[aria-label="Account"] a')).toHaveText(['Desk', 'Profile', 'Security'])
   await page.getByLabel(/^Your password/).last().fill('wrong password here')
   await page.getByRole('button', { name: /Delete my account/ }).click()
   await page.getByRole('button', { name: /Yes, delete my account/ }).click()

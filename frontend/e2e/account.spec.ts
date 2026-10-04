@@ -30,10 +30,16 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
   await expect(page.locator('.b-card--member')).toContainText('Monthly')
   await expect(page.locator('.b-card--member')).toContainText(/Member № \d{4}/)
   await expect(page.getByRole('link', { name: /Account/ }).first()).toBeVisible()
+  // an active member is through the door: Account is the one link, no Join
+  // in the header or on the desk's own nav
+  await expect(page.locator('header.nav').getByRole('link', { name: /Join/ })).toHaveCount(0)
+  await expect(page.locator('nav[aria-label="Account"] a')).toHaveText(['Desk', 'Profile', 'Security'])
 
   await page.getByRole('button', { name: /Sign out/ }).click()
   await expect(page).toHaveURL(/\/$/)
   await expect(page.getByRole('link', { name: /Sign in/ }).first()).toBeVisible()
+  // anonymous again: Join is back and leads to making an account
+  await expect(page.locator('header.nav').getByRole('link', { name: /Join/ })).toHaveAttribute('href', '/account/sign-up')
 
   await page.goto('/account')
   await expect(page).toHaveURL(/\/account\/sign-in/)

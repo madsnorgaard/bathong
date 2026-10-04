@@ -16,6 +16,14 @@ test('the roster lists members with real member numbers', async ({ page }) => {
   await expect(page.getByText('Member № 0004')).toBeVisible()
 })
 
+test('the header nav holds seven links, the roster among them', async ({ page }) => {
+  await page.goto('/')
+  const links = page.locator('header nav[aria-label="Main"] a')
+  // the programme pair leads, then the call, the people, the record
+  await expect(links).toHaveText(['Stories', 'Walks', 'Workshops', 'Photocalls', 'Photographers', 'Archive', 'About'])
+  await expect(links.filter({ hasText: 'Photographers' })).toHaveAttribute('href', '/photographers')
+})
+
 test('a photographer page: header, honest counts, copyright plate', async ({ page }) => {
   await page.goto('/photographers/mads-norgaard')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mads Nørgaard')

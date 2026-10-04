@@ -24,6 +24,10 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
 
   // no card yet: the desk offers the door
   await expect(page.locator('.b-card--member')).toContainText('No card yet')
+  // signed in but not a member yet: Account, and Join straight to the plan
+  const headerJoin = page.locator('header.nav').getByRole('link', { name: /Join/ })
+  await expect(headerJoin).toHaveAttribute('href', '/account/join')
+  await expect(page.locator('header.nav').getByRole('link', { name: /Account/ })).toHaveAttribute('href', '/account')
   await page.getByRole('link', { name: /^Join$/ }).click()
   await expect(page).toHaveURL(/\/account\/join$/)
   await expect(page.getByRole('heading', { name: /Choose a plan/ })).toBeVisible()
@@ -64,6 +68,9 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   const card = page.locator('.b-card--member')
   await expect(card).toContainText(/Member № \d{4}/)
   await expect(card).toContainText('Annual')
+  // active now: Join leaves the header and the desk's nav
+  await expect(headerJoin).toHaveCount(0)
+  await expect(page.locator('nav[aria-label="Account"] a')).toHaveText(['Desk', 'Profile', 'Security'])
   await expect(card).toContainText(/since /)
   await expect(page.getByText(/Runs until/)).toBeVisible()
   await expect(page.getByText(/Welcome|Payments/).first()).toBeVisible()
