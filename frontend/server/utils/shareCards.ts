@@ -15,6 +15,7 @@
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 import sharp from 'sharp'
+import type { OverlayOptions, Sharp } from 'sharp'
 import { isPastWalk } from '../../utils/walks'
 
 export const CARD_W = 1200
@@ -316,9 +317,9 @@ const loadFonts = () => {
     fontsPromise = (async () => {
       const storage = useStorage('assets:server')
       const read = async (key: string) => {
-        const raw = await storage.getItemRaw(key)
+        const raw = await storage.getItemRaw<Buffer<ArrayBuffer> | Uint8Array<ArrayBuffer>>(key)
         if (!raw) throw new Error(`server asset missing: ${key}`)
-        const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(raw as Uint8Array)
+        const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(raw)
         return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
       }
       return [
@@ -341,7 +342,7 @@ export async function renderOverlay(node: never): Promise<Buffer> {
 }
 
 /** JPEG q82, stepping down until under the 300 KB WhatsApp ceiling. */
-export async function encodeCard(pipeline: sharp.Sharp): Promise<Buffer> {
+export async function encodeCard(pipeline: Sharp): Promise<Buffer> {
   // Explicit intermediate format: a created image without one outputs raw
   // pixel data that the encode pass cannot identify.
   const base = await pipeline.png().toBuffer()
@@ -366,7 +367,7 @@ export async function composeCard(args: {
     fit?: 'cover' | 'contain'
   }
 }): Promise<Buffer> {
-  const layers: sharp.OverlayOptions[] = []
+  const layers: OverlayOptions[] = []
   if (args.photo) {
     const fitted = await sharp(args.photo.buffer)
       .flatten({ background: INK })
@@ -397,7 +398,11 @@ export function cmsOrigin(): { fetchBase: string; publicBase: string } {
 
 export async function cmsGet<T>(path: string): Promise<T> {
   const { fetchBase } = cmsOrigin()
-  return $fetch<T>(`${fetchBase}${path}`)
+  // Nitro types $fetch against its own route table, which leaves the result
+  // an unresolved conditional for a generic T. A CMS URL is never a Nitro
+  // route, so the response is plainly T.
+  const get: <R>(url: string) => Promise<R> = $fetch
+  return get<T>(`${fetchBase}${path}`)
 }
 
 /** Fetch a media file; API URLs are public-origin, rewritten to internal. */

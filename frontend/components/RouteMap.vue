@@ -15,6 +15,8 @@ import type { Map as MapLibreMap } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { ParsedRoute } from '~/utils/geo'
 
+type MapLibre = typeof import('maplibre-gl')
+
 const props = defineProps<{
   route: ParsedRoute
   meetingPoint?: string | null
@@ -61,7 +63,8 @@ async function init() {
       import('maplibre-gl/dist/maplibre-gl.css'),
     ])
     // v6 ships pure named ESM exports; older builds hang them off default.
-    const maplibregl = maplibreModule.default ?? maplibreModule
+    const interop: MapLibre & { default?: MapLibre } = maplibreModule
+    const maplibregl = interop.default ?? interop
 
     const res = await fetch(TILES_PATH)
     if (!res.ok) throw new Error(`basemap fetch: ${res.status}`)
