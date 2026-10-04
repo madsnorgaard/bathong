@@ -569,7 +569,22 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   frontend lint, typecheck, both drift checks, unit tests and the build;
   backend `npx tsc --noEmit` and unit tests; `ops`, an `nginx -t` of the
   image cache config in the official image; then the Playwright suite
-  against a seeded stack.
+  against a seeded stack. The `e2e` job runs that stack built, as production
+  does, not the dev servers used locally: a Postgres 16 service, then in
+  `backend/` `npm run build` (`next build`, which opens no database
+  connection), `npm run migrate`, `npm run seed` with `SEED_DEMO=true`, and
+  `npm run start` (`next start` on 3001) in the background with its output
+  in a log file that a failed run prints. `wait-on` holds the job until
+  `/api/access` answers; Playwright then builds and serves Nuxt itself
+  (`frontend/playwright.config.ts`). `E2E_HOOKS` and `MEDIA_DIR` (repo
+  `media/`, shared by the seed and the server) are read when the server
+  starts. `IPX_SOURCE_URL=http://127.0.0.1:3001` makes ipx fetch by address:
+  a lookup of `localhost` queues on the same four threads as the sharp
+  encodes and, behind a backlog of them, outlasts the 10 s connect timeout,
+  so the image answers 500. Specs do not wait for a photograph to load
+  (`gotoHydrated`, never `networkidle`; helpers in
+  `frontend/e2e/helpers/images.ts`), so a slow or failed encode cannot fail
+  an unrelated test.
 
 ## Migrations (Postgres + Payload)
 

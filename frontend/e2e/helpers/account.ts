@@ -26,6 +26,11 @@ export const PASSWORD = 'a long enough e2e password'
  */
 export async function gotoHydrated(page: Page, path: string) {
   await page.goto(path)
+  await hydrated(page)
+}
+
+/** The wait itself, for a page reached by a reload or a click and not by a goto. */
+export async function hydrated(page: Page) {
   await page.waitForFunction(() => {
     const root = document.querySelector('#__nuxt') as (Element & { __vue_app__?: unknown }) | null
     const nuxt = (window as unknown as { useNuxtApp?: () => { isHydrating?: boolean } }).useNuxtApp?.()
@@ -76,8 +81,9 @@ export async function deleteUserByEmail(request: APIRequestContext, email: strin
 }
 
 /**
- * The Next dev server (local and CI) now and then resets a connection right
- * after an image upload has kept sharp busy. One retry on that, nothing else.
+ * The Next dev server (a local run; CI runs the built server) now and then
+ * resets a connection right after an image upload has kept sharp busy. One
+ * retry on that, nothing else.
  */
 export async function retryOnReset<T>(call: () => Promise<T>): Promise<T> {
   try {

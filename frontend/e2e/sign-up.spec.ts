@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { API, PASSWORD, deleteUserByEmail, freshEmail, gotoHydrated, verificationToken } from './helpers/account'
+import { API, PASSWORD, deleteUserByEmail, freshEmail, gotoHydrated, hydrated, verificationToken } from './helpers/account'
 
 /**
  * Making an account (anyone can join): the form, the same answer for a known
@@ -39,7 +39,10 @@ test('sign up, confirm the email, sign in to the desk', async ({ page, request }
   await page.goto(`/account/verify?token=${encodeURIComponent(token)}`)
   await expect(page.getByText('Confirmed.', { exact: true })).toBeVisible({ timeout: 15_000 })
   await page.getByRole('link', { name: /Sign in/ }).first().click()
-  await page.waitForLoadState('networkidle')
+  // the form must be Vue's before it is typed into, whether the click was a
+  // client-side move or, before hydration, a full page load
+  await page.waitForURL(/\/account\/sign-in/)
+  await hydrated(page)
   await page.getByLabel(/^Email/).fill(email)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()

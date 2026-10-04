@@ -6,7 +6,7 @@ import { gotoHydrated } from './helpers/account'
  * counter doubles as the progress rule, frames sit whole in the viewport
  * (82vh cap, never cropped), keyboard and tap advance, the end is a door.
  * And its weight: one eager frame, every frame holding its place before its
- * file arrives, a desktop first view under 1 MB.
+ * file arrives and when it never does, a desktop first view under 1 MB.
  * Runs against the SEED_DEMO essay.
  */
 
@@ -67,6 +67,61 @@ test('the pair renders side by side on desktop', async ({ page }) => {
   const right = await page.locator('[data-frame-index="4"]').boundingBox()
   expect(Math.abs(left!.y - right!.y), 'paired frames share a row').toBeLessThan(10)
   expect(right!.x).toBeGreaterThan(left!.x)
+})
+
+test('when no photograph arrives, every frame keeps its box and the pair stays in a row', async ({ page }) => {
+  // Every rendition is refused, and each frame is walked to, so its lazy file
+  // is asked for and fails: these are failed images, not ones still waiting.
+  // That is what CI saw on 4 Oct 2026 when ipx could not reach the CMS, and
+  // the pair came apart because the failed half lost its shape.
+  await page.route('**/_ipx/**', (route) => route.abort())
+  await gotoHydrated(page, READER)
+  const frames = page.locator('[data-frame-index]')
+  await expect(frames).toHaveCount(6)
+  for (let i = 0; i < 6; i += 1) {
+    const img = frames.nth(i).locator('img')
+    await img.scrollIntoViewIfNeeded()
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 0), {
+        message: `frame ${i + 1} has failed`,
+      })
+      .toBe(true)
+  }
+
+  const view = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    height: window.innerHeight,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }))
+  const boxes = await frames.evaluateAll((els) =>
+    els.map((el) => {
+      const img = el.querySelector('img')!
+      const frame = el.getBoundingClientRect()
+      const box = img.getBoundingClientRect()
+      return {
+        bleed: el.classList.contains('bleed'),
+        top: frame.top + window.scrollY,
+        left: frame.left + window.scrollX,
+        right: frame.right + window.scrollX,
+        width: box.width,
+        height: box.height,
+        file: Number(img.getAttribute('width')) / Number(img.getAttribute('height')),
+      }
+    }),
+  )
+  for (const [i, f] of boxes.entries()) {
+    const name = `frame ${i + 1}`
+    expect(f.height, `${name} holds its height with a failed file`).toBeGreaterThan(view.height * 0.2)
+    expect(Math.abs(f.width / f.height - f.file), `${name} holds the file's shape`).toBeLessThan(0.02)
+    if (!f.bleed) expect(f.height, `${name} stays under the 82vh cap`).toBeLessThanOrEqual(view.height * 0.82 + 2)
+    expect(f.left, `${name} stays on the page`).toBeGreaterThanOrEqual(-1)
+    expect(f.right, `${name} stays on the page`).toBeLessThanOrEqual(view.width + 1)
+  }
+  expect(view.overflow, 'the page must not scroll sideways').toBeLessThanOrEqual(0)
+
+  const [left, right] = [boxes[2]!, boxes[3]!]
+  expect(Math.abs(left.top - right.top), 'paired frames share a row').toBeLessThan(10)
+  expect(right.left, 'the right half sits beside the left').toBeGreaterThanOrEqual(left.right)
 })
 
 test('the end is a door, never a grid: credit and one onward link', async ({ page }) => {

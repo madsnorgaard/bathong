@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * Security headers (#37): the CSP is nonce-based with no unsafe-inline for
@@ -73,7 +74,12 @@ for (const path of [
       if (/Content Security Policy|Refused to/i.test(text)) violations.push(text)
     })
     page.on('pageerror', (err) => violations.push(err.message))
-    await page.goto(path, { waitUntil: 'networkidle' })
+    // A refusal is reported when the request is made, not when it would
+    // have finished, so nothing has to arrive: the page has loaded, Vue has
+    // taken it over and made its own requests, and the fonts are in. Waiting
+    // for the network to go quiet instead waited on every cold ipx encode.
+    await gotoHydrated(page, path)
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
     expect(violations).toEqual([])
   })
 }

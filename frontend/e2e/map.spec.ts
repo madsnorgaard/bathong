@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * The route map earns its place only if the walks page stays light: nothing
@@ -24,7 +25,13 @@ test.describe('the route map', () => {
       if (/\.pmtiles|maplibre/i.test(req.url())) mapRequests.push(req.url())
     })
 
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/walks')
+    // The map decides when it mounts: a map that loaded too early would ask
+    // for its chunk within a frame of hydration and for its tiles right
+    // after. A second is ample for that to show, and unlike a wait for the
+    // network to go quiet it does not depend on how long the page's
+    // photographs take to encode.
+    await page.waitForTimeout(1000)
     expect(mapRequests, 'no basemap bytes before the section is near the viewport').toHaveLength(0)
 
     await page.locator('.route-map').scrollIntoViewIfNeeded()
@@ -46,7 +53,7 @@ test.describe('the route map', () => {
 
   test('mobile: 4/5 stage, no horizontal scroll', async ({ page }) => {
     await page.setViewportSize(MOBILE)
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/walks')
     await page.locator('.route-map').scrollIntoViewIfNeeded()
     await expect(page.locator('.route-map canvas')).toBeVisible({ timeout: 15_000 })
     await noHorizontalScroll(page)
@@ -57,7 +64,7 @@ test.describe('the route map', () => {
 
   test('reduced motion: the route arrives fully drawn, no animation loop', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/walks')
     await page.locator('.route-map').scrollIntoViewIfNeeded()
     await expect(page.locator('.route-map canvas')).toBeVisible({ timeout: 15_000 })
   })

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * UX verification against the direction doc's explicit rules:
@@ -22,7 +23,7 @@ test.describe('mobile, the majority case', () => {
   test.use({ viewport: MOBILE })
 
   test('home: no horizontal scroll, lead crops to 4/5, programme chapter directly under the lead', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/')
     await noHorizontalScroll(page)
 
     const lead = page.locator('.lead-frame')
@@ -39,7 +40,7 @@ test.describe('mobile, the majority case', () => {
   })
 
   test('sheet menu: opens, traps focus, closes on Escape, targets are 44px', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/')
     const toggle = page.getByRole('button', { name: /menu/i })
     const toggleBox = await toggle.boundingBox()
     expect(toggleBox!.width, 'menu toggle hit target').toBeGreaterThanOrEqual(44)
@@ -80,7 +81,7 @@ test.describe('mobile, the majority case', () => {
     // A short portrait phone: the sheet's fluid rhythm must fit every link
     // and the pinned Join / Sign in row without scrolling.
     await page.setViewportSize({ width: 360, height: 640 })
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/')
     await page.getByRole('button', { name: /menu/i }).click()
     const sheet = page.getByRole('dialog', { name: 'Menu' })
     await expect(sheet).toBeVisible()
@@ -105,7 +106,7 @@ test.describe('mobile, the majority case', () => {
   })
 
   test('walks: the RSVP form is usable with 44px targets and readable states', async ({ page }) => {
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/walks')
     await noHorizontalScroll(page)
 
     // the honeypot is intentionally not a user control; everything else must hit 44px
@@ -121,7 +122,7 @@ test.describe('mobile, the majority case', () => {
 
 test.describe('keyboard and focus', () => {
   test('focus is a visible jacaranda outline, never removed', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/')
     await page.keyboard.press('Tab')
     const outline = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement
@@ -135,7 +136,7 @@ test.describe('keyboard and focus', () => {
   })
 
   test('the walks CTA anchor lands on the form', async ({ page }) => {
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/walks')
     await page.getByRole('link', { name: /Reserve a place/ }).first().click()
     await expect(page).toHaveURL(/#rsvp/)
     await expect(page.locator('#rsvp')).toBeInViewport()
@@ -145,7 +146,7 @@ test.describe('keyboard and focus', () => {
 test.describe('reduced motion', () => {
   test('the ticker stops and reveals are visible without scrolling', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/', { waitUntil: 'networkidle' })
+    await gotoHydrated(page, '/')
     const emulated = await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)
     expect(emulated, 'reduced-motion emulation must be active').toBe(true)
     // motion.css collapses every animation to 0s under reduced motion; the

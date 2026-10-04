@@ -42,7 +42,7 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   await expect(page.getByText(/R 250 of that is the joining fee/)).toBeVisible()
 
   // one open order: the page shows the same reference again
-  await page.reload({ waitUntil: 'networkidle' })
+  await page.reload()
   await expect(page.locator('.reference')).toHaveText(reference)
 
   // changing plan moves the open order: same reference, new amount
@@ -50,7 +50,7 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   const moved = await page.request.post(`${API}/api/account/join`, { data: { plan: 'monthly' }, headers: origin })
   expect(moved.status()).toBe(200)
   expect(await moved.json()).toMatchObject({ reference, plan: 'monthly', amount: 350, joiningFee: 250 })
-  await page.reload({ waitUntil: 'networkidle' })
+  await page.reload()
   await expect(page.locator('.amount')).toHaveText('R 350')
   const back = await page.request.post(`${API}/api/account/join`, { data: { plan: 'annual' }, headers: origin })
   expect(await back.json()).toMatchObject({ reference, plan: 'annual', amount: 1250 })
@@ -64,7 +64,7 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   const until = new Date(order.coveredUntil)
   expect(until.getUTCFullYear()).toBe(from.getUTCFullYear() + 1)
 
-  await page.goto('/account', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account')
   const card = page.locator('.b-card--member')
   await expect(card).toContainText(/Member № \d{4}/)
   await expect(card).toContainText('Annual')
@@ -77,7 +77,7 @@ test('a new member joins on the annual plan, pays by reference, and gets a card 
   await expect(page.locator('.list', { hasText: 'Payments' })).toContainText('Paid')
 
   // renewal waits for the last 30 days
-  await page.goto('/account/join', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account/join')
   await expect(page.getByText(/Your membership runs until/)).toBeVisible()
   await expect(page.getByText(/Renewal opens 30 days before/)).toBeVisible()
 
@@ -118,6 +118,6 @@ test('a signed-in RSVP lands on the desk', async ({ page, request }) => {
   await expect(page.getByLabel(/^Email/)).toHaveValue(email)
   await page.getByRole('button', { name: /Reserve a place/ }).click()
   await expect(page.getByText(/on the list|waitlist/)).toBeVisible()
-  await page.goto('/account', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account')
   await expect(page.locator('.list', { hasText: 'Your RSVPs' })).toContainText('Demo: the next loop')
 })
