@@ -63,9 +63,6 @@ async function copy() {
   gap: var(--space-3) var(--space-4);
   color: inherit;
 }
-.share-label {
-  opacity: 0.6;
-}
 .share-row a {
   min-height: 44px;
   display: inline-flex;

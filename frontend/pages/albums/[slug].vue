@@ -103,8 +103,11 @@ useShareMeta({
 .from-walk {
   margin: 0;
 }
+/* a 44px target without moving the line: block padding on an inline link
+   widens what a thumb can hit and leaves the line box alone */
 .from-walk a {
   color: var(--signal);
+  padding-block: var(--space-3);
 }
 .run-chapter {
   padding-top: 0;
@@ -114,6 +117,7 @@ useShareMeta({
 }
 .back a {
   color: var(--grey-ghost);
+  padding-block: var(--space-3);
 }
 .back a:hover {
   color: var(--signal);

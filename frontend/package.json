@@ -32,6 +32,7 @@
     "vue-router": "5.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^20.14.5",
