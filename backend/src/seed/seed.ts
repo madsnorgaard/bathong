@@ -5,8 +5,9 @@
  * Content rules apply to fixtures too: no invented prices or dates. The only
  * real programme item is Walk № 001 (Saturday 29 August 2026, Church Square).
  * State-testing fixtures (a past walk to link work to, a next walk with a
- * route, a full walk, a bookingUrl walk, an album) are clearly marked demo
- * content and only created with SEED_DEMO=true. Their dates are relative to
+ * route, a full walk, a bookingUrl walk, an album, an exhibition) are
+ * clearly marked demo content and only created with SEED_DEMO=true. Their
+ * dates are relative to
  * the seed run by design, so the e2e suite never ages out; rerunning the
  * seed moves them forward.
  *
@@ -744,6 +745,71 @@ async function run() {
         },
       })
       console.log(`  album (demo): ${album.title}`)
+    }
+
+    // A demo exhibition so /exhibitions, its share card and the photographer
+    // page's exhibitions section are testable. SEED_DEMO only, like
+    // everything in this block. It hangs the six demo frames (all credited
+    // to Mads) and links the demo essay. No hero image, so the first frame
+    // leads the page and the card. Dates are relative and refreshed on
+    // rerun, so the fixture is always on now.
+    const wallOpens = daysFromNow(-7, 10)
+    const wallCloses = daysFromNow(21, 17)
+    const existingExhibition = await payload.find({
+      collection: 'exhibitions',
+      where: { slug: { equals: 'demo-first-hang' } },
+      limit: 1,
+      depth: 0,
+    })
+    if (existingExhibition.docs[0]) {
+      await payload.update({
+        collection: 'exhibitions',
+        id: existingExhibition.docs[0].id,
+        data: { startDate: wallOpens, endDate: wallCloses, status: 'current' },
+      })
+    } else {
+      // The demo frames in the order the seed made them, found by their
+      // media so a rerun or a renamed upload still lands on the same frames.
+      const wallFrames: number[] = []
+      for (const frame of demoFrames) {
+        const media = mediaByFile[frame.file]
+        if (!media) continue
+        const found = await payload.find({
+          collection: 'frames',
+          where: { image: { equals: media.id } },
+          limit: 1,
+          depth: 0,
+        })
+        if (found.docs[0]) wallFrames.push(found.docs[0].id)
+      }
+      const wallEssay = await payload.find({
+        collection: 'essays',
+        where: { slug: { equals: 'demo-reader-essay' } },
+        limit: 1,
+        depth: 0,
+      })
+      if (wallFrames.length) {
+        await payload.create({
+          collection: 'exhibitions',
+          data: {
+            title: 'Demo: the first hang',
+            slug: 'demo-first-hang',
+            venue: 'Demo venue, Pretoria',
+            startDate: wallOpens,
+            endDate: wallCloses,
+            description: lex([
+              'Six demo frames standing in for the first exhibition. PHOTO SLOT throughout.',
+              'An essay earns a wall. This one exists so the wall is ready before the first real hang is.',
+            ]),
+            frames: wallFrames,
+            relatedEssays: wallEssay.docs[0] ? [wallEssay.docs[0].id] : [],
+            partners: 'Demo partner line. TBC.',
+            status: 'current',
+            _status: 'published',
+          },
+        })
+        console.log('  exhibition (demo): the first hang')
+      }
     }
 
     // A demo photocall so the entry flow is testable end to end. SEED_DEMO

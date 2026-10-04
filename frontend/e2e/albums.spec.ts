@@ -63,13 +63,14 @@ test('an album shares its generated C6 card', async ({ page }) => {
   await expect(page.locator('meta[name="copyright"]')).toHaveAttribute('content', /© Mads Nørgaard/)
 })
 
-test('Albums is linked from the footer, with About and Privacy, and not from the main nav', async ({ page }) => {
+test('Albums is linked from the footer, with Exhibitions, About and Privacy, and not from the main nav', async ({ page }) => {
   await page.goto('/')
   const site = page.locator('footer nav[aria-label="Site"] a')
-  await expect(site).toHaveText(['Albums →', 'About →', 'Privacy →'])
+  await expect(site).toHaveText(['Albums →', 'Exhibitions →', 'About →', 'Privacy →'])
   await expect(site.nth(0)).toHaveAttribute('href', '/albums')
-  await expect(site.nth(1)).toHaveAttribute('href', '/about')
-  await expect(site.nth(2)).toHaveAttribute('href', '/privacy')
+  await expect(site.nth(1)).toHaveAttribute('href', '/exhibitions')
+  await expect(site.nth(2)).toHaveAttribute('href', '/about')
+  await expect(site.nth(3)).toHaveAttribute('href', '/privacy')
   await expect(page.locator('header nav[aria-label="Main"] a', { hasText: 'Albums' })).toHaveCount(0)
 })
 

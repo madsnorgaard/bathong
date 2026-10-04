@@ -16,6 +16,7 @@ import * as migration_20260903_171106_phase7_walk_leaders from './20260903_17110
 import * as migration_20260909_174002_phase8_workshops from './20260909_174002_phase8_workshops';
 import * as migration_20260909_192337_phase9_workshop_partners from './20260909_192337_phase9_workshop_partners';
 import * as migration_20261002_193121_payload_3_90_reset_password_requested_at from './20261002_193121_payload_3_90_reset_password_requested_at';
+import * as migration_20261004_180000_phase10_exhibition_status_values from './20261004_180000_phase10_exhibition_status_values';
 
 export const migrations = [
   {
@@ -106,6 +107,11 @@ export const migrations = [
   {
     up: migration_20261002_193121_payload_3_90_reset_password_requested_at.up,
     down: migration_20261002_193121_payload_3_90_reset_password_requested_at.down,
-    name: '20261002_193121_payload_3_90_reset_password_requested_at'
+    name: '20261002_193121_payload_3_90_reset_password_requested_at',
+  },
+  {
+    up: migration_20261004_180000_phase10_exhibition_status_values.up,
+    down: migration_20261004_180000_phase10_exhibition_status_values.down,
+    name: '20261004_180000_phase10_exhibition_status_values'
   },
 ];
