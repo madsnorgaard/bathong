@@ -10,8 +10,10 @@ import { bad } from './respond'
  *  - file count capped by the call's maxImagesPerSubmission
  *  - per-file and total size caps well under the global upload limit
  *  - content sniffing via sharp: the declared mimetype is never trusted
- *  - media created restricted, credited to the entrant, editor-only until
- *    published (the existing submission hooks keep that contract)
+ *  - media created restricted, credited to the entrant, with no uploader:
+ *    until it is published only editors see it, and a signed-in entrant
+ *    through their submission (view only, see access/media.ts); the
+ *    existing submission hooks keep that contract
  * Traefik rate-limits this path alongside login and RSVPs.
  */
 
@@ -142,6 +144,9 @@ export const photocallEntry: Endpoint = {
       },
       overrideAccess: true,
       req,
+      // these frames were made right here, for this entry: the submissions
+      // hook need not ask whose uploads they are
+      context: { photocallEntry: true },
     })
 
     return Response.json({ id: submission.id, frames: imageIds.length }, { status: 201 })

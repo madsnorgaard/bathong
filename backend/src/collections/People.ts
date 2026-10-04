@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
-import { anyone, hasEditorRole, isAdmin, isEditor, isEditorField } from '../access'
+import { anyone, hasEditorRole, isAdmin, isEditor, isEditorField, isEditorOrOwnerField } from '../access'
 import { instagramUrl, webLinkProblem } from '../lib/links'
 import { BIO_MAX, lexicalLength } from '../lib/lexical'
 
@@ -55,7 +55,11 @@ export const People: CollectionConfig = {
       index: true,
       // never populate: profiles are public, accounts are not
       maxDepth: 0,
-      access: { update: isEditorField },
+      // nor is the account's id anyone else's to read, filter or sort by:
+      // editors and the owner only. The update rule above still matches on
+      // it: Payload holds the where a client sends to field read access,
+      // not the constraint an access function returns.
+      access: { read: isEditorOrOwnerField('owner'), update: isEditorField },
       admin: { description: 'The account that edits this profile. Set on activation; editors can link by hand.' },
     },
     {
@@ -196,11 +200,13 @@ export const People: CollectionConfig = {
           req,
         })
         if (!old || rel(old.uploadedBy) !== owner) return
-        const [frames, people] = await Promise.all([
+        // a frame of a photocall entry is never removed from here either
+        const [frames, people, entries] = await Promise.all([
           payload.count({ collection: 'frames', where: { image: { equals: before } }, overrideAccess: true, req }),
           payload.count({ collection: 'people', where: { portrait: { equals: before } }, overrideAccess: true, req }),
+          payload.count({ collection: 'submissions', where: { images: { in: [before] } }, overrideAccess: true, req }),
         ])
-        if (frames.totalDocs || people.totalDocs) return
+        if (frames.totalDocs || people.totalDocs || entries.totalDocs) return
         try {
           await payload.delete({ collection: 'media', id: before, overrideAccess: true, req })
         } catch (err) {
