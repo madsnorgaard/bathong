@@ -1,7 +1,8 @@
-# PRODUCTION compose - deployed manually for now: git pull on the server,
-# then `docker compose up -d`. Mirrors the aksel-pedersen / cosycreator
-# pattern: web (Traefik) + internal networks, ${SITE_DOMAIN}_<svc> names,
-# lets-encrypt resolver.
+# PRODUCTION compose - deployed on merge to main: once CI passes,
+# .github/workflows/deploy.yml runs ops/deploy.sh on the server over SSH
+# (the script can also be run by hand there). Mirrors the aksel-pedersen /
+# cosycreator pattern: web (Traefik) + internal networks,
+# ${SITE_DOMAIN}_<svc> names, lets-encrypt resolver.
 #
 # Required in .env next to this file:
 #   SITE_DOMAIN=bathong.africa

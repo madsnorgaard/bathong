@@ -1,13 +1,15 @@
 # Bathong. - platform architecture
 
 The platform behind bathong.africa. Status: v1 site live (M3 cutover done);
-members, payments and the archive still ahead. This document is the reference
-for how the pieces fit, how data is modelled and how deploys happen.
+member accounts, joining by EFT and the archive are live, a payment gateway
+is still ahead. This document is the reference for how the pieces fit, how
+data is modelled and how deploys happen.
 
 ## Stack
 
 - **Backend:** Payload CMS 3.x on Next, `@payloadcms/db-postgres`
-  (postgres:16-alpine). Admin UI + REST/GraphQL API on `api.bathong.africa`.
+  (postgres:16-alpine). Admin UI + REST API on `api.bathong.africa`;
+  GraphQL is disabled (`backend/src/payload.config.ts`).
 - **Frontend:** Nuxt 3, server-rendered, consuming the design system
   (`design-system/styles.css`) and the Payload API.
 - **Holding page:** `holding/index.html` served by nginx:alpine - retired at
@@ -55,7 +57,7 @@ git):
 
 | Key | Stage |
 |---|---|
-| `SITE_DOMAIN`, `ALT_DOMAIN` | holding (now) |
+| `SITE_DOMAIN`, `ALT_DOMAIN` | always (container names, Traefik routers) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
 | `SITE_URL` | optional; where password-reset links point (defaults to the first CORS origin) |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
@@ -131,25 +133,27 @@ unit; everything else feeds it or shows it.
 
 | Collection | Purpose | Notes |
 |---|---|---|
-| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`plan` monthly/annual, `status`, `expires`) are admin-only, filled by future payments. |
+| `users` (auth) | Accounts | roles `admin`/`editor`/`member`; admin panel gated to admin+editor; members sign in via REST from the frontend (`/account`, #13). Membership fields (`membershipPlan` none/monthly/annual, `membershipStatus`, `membershipExpires`, `memberSince`) are admin-only, set by the Orders hooks when an order is marked paid. |
 | `people` | Public profiles | founding circle + members + guests; may exist without an account; optional `basedIn` city, shown only when the photographer names one |
 | `media` (upload) | File library | `visibility` public/restricted + `uploadedBy`; member uploads stay restricted until published. Raster-only, sharp sizes, `./media` bind mount |
-| `frames` | The atomic editorial unit | wraps one media item; `photographer` relationship **required** - the credit rule enforced structurally; reusable across essays, exhibitions and the archive; optional `walk` (single, past walks only) says which walk it was made on |
+| `frames` | The atomic editorial unit | wraps one media item; `photographer` (a People profile) or `creditOverride` is **required** - the credit rule, enforced by a `beforeValidate` hook on the merged state, so a partial update cannot clear it; reusable across essays, exhibitions and the archive; optional `walk` (single, past walks only) says which walk it was made on |
 | `essays` | Photo stories | drafts on; ordered sequence of frame refs with optional caption override; 12-20 soft validation; sequence and lead frame edited visually (see below); `walks` (hasMany, past walks only) says which walk(s) it came out of |
-| `albums` | The softer record of a walk | drafts on; plain `media` (hasMany upload), never frames, so nothing in an album enters the archive or the essay picker; `walks` (hasMany, past walks only); credit rule as on frames (`photographer` or `creditOverride`); caption on the site is each file's alt text; a file's own `credit`, when set, is shown on that photograph on the album page, the rest carry the album credit |
+| `albums` | The softer record of a walk | drafts on; plain `media` (hasMany upload), never frames, so nothing in an album enters the archive or the essay picker; `walks` and `workshops` (both hasMany, past events only); credit rule as on frames (`photographer` or `creditOverride`); caption on the site is each file's alt text; a file's own `credit`, when set, is shown on that photograph on the album page, the rest carry the album credit |
 | `walks` | Photowalks/events | pricing display fields + external `bookingUrl` until payments land; virtual `number` (position in the published programme, date order, rendered as № 001); the reverse side of the links above is three `join` fields (`essays`, `frames`, `albums`) - virtual, no columns, no sync hook, and they run the joined collection's read access so anonymous readers only see published work |
+| `workshops` | Taught sessions | drafts on; venue, `facilitators`, `partners`, one flat `price` per person + external `bookingUrl`; booked through the same RSVPs as walks; virtual `number` in its own series; an `albums` join (virtual, published albums only for anonymous readers); no route, no frames or essays |
 | `exhibitions` | Walls | frames + venue + dates; NPC partnership line |
 | `photocalls` | Open calls | includes `terms` rich text (photographer keeps copyright, non-exclusive licence - the brief requires this in writing) |
 | `submissions` | Member responses | status pipeline submitted -> shortlisted -> published/rejected; `reviewNotes` visible to the submitter ("here is why, frame by frame"), `internalNotes` editor-only; hooks keep attached media restricted until published |
-| `orders` | Payments-shaped hole | hidden, empty until a provider is chosen; type/amount/status/provider/ref/raw - a future gateway webhook writes here and flips membership fields, nothing restructures |
+| `orders` | Membership payments | live for the EFT join flow (see Joining and orders); shown to editors and admins in the admin, hidden from everyone else; collection create is closed, rows come from `POST /api/account/join`; type/plan/amount/joiningFee/reference/status/provider/providerRef/raw - an editor marking an order `paid` activates the membership through hooks, and a later gateway webhook flips the same status, nothing restructures |
+| `rsvps` | Places on a walk or workshop | exactly one of `walk`/`workshop` per row (hook); public create behind a honeypot, no account needed; a full event puts new rows on the waitlist; `user` is set when a signed-in member reserves; read is editors plus the member's own rows |
 
 Globals: `site-settings` (ticker, socials, newsletter URL), `manifesto`
 (dictionary card + manifesto text), `membership` (benefits, `joiningFee`,
 `priceMonthly`, `priceAnnual`, `priceNote`, `openDoorNote`, `joinUrl`; empty
 prices render the honest `R -`).
 
-Drafts/versions only on essays, albums, walks, exhibitions, photocalls and
-the manifesto/membership globals.
+Drafts/versions only on essays, albums, walks, workshops, exhibitions,
+photocalls and the manifesto/membership globals.
 
 ## Walk links and albums
 
@@ -480,9 +484,9 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
 | people | R | R, U own profile (portrait, bio, city, links, contact, roster) | CRU | CRUD |
 | media | R public | R pub+own, C, U/D own restricted | CRU all | CRUD |
 | frames | R | R | CRU | CRUD |
-| essays/albums/walks/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
-| submissions | - | C, R own, U own while submitted | R all, U status/notes | CRUD |
-| orders | - | R own (created via /api/account/join) | R all, U status/paidAt/note | CRUD |
+| essays/albums/walks/workshops/exhibitions/photocalls | R published | R published | CRU + drafts | CRUD |
+| submissions | C via /api/photocall-entries | C, R own, U own while submitted | R all, U status/notes | CRUD |
+| orders | - | R own (created via /api/account/join) | R all, U status/paidAt/note | RUD (no create outside the join endpoint) |
 | rsvps | C | C, R own | R all, U | CRUD |
 | globals | R | R | U | U |
 | /admin panel | - | - | yes | yes |
@@ -505,8 +509,12 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   `npm run tokens:check` (design-system drift), `npm run types:check`
   (payload-types drift), `npm test` (unit), `npm run test:e2e` (Playwright,
   needs the seeded stack).
-- CI (`.github/workflows/ci.yml`) runs lint, typecheck, both drift checks,
-  unit tests, builds and the e2e smoke on every push and PR.
+- CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
+  frontend lint, both drift checks, unit tests and the build; backend
+  `npx tsc --noEmit` and unit tests; then the Playwright suite against a
+  seeded stack. The backend `tsc` is the only typecheck in CI: the frontend
+  `npm run typecheck` (`nuxt typecheck`) is not part of it and does not run
+  today, because `vue-tsc` is not installed.
 
 ## Migrations (Postgres + Payload)
 
@@ -534,21 +542,25 @@ Pricing was decided on 29 August 2026 (#17): one membership, no tiers.
 R250 to join, then R100 a month or R1000 a year. The card and the member
 number are the kicker and belong to subscribing (monthly or annual)
 members only, not to a once-off joiner. The numbers live in the `membership` global and render on
-`/` and `/about`; `Join` goes to `joinUrl` or the contact mailbox. The open
+`/` and `/about`; `Join` goes to sign-up on the site (`/account/sign-up`,
+or the desk at `/account` when signed in, and from the desk to
+`/account/join`). `joinUrl` is meant to stay empty; when set, the Join
+button on `/about` goes there instead. The open
 door stays without a tier: `openDoorNote` invites anyone the fee would keep
 out to write anyway.
 
 No gateway is integrated yet (#18): the shortlist is local (Payfast for
-in-platform membership/recurring; Quicket links for event ticketing). The
-`orders` collection, `membershipPlan`/`membershipStatus`/`membershipExpires`
-on `users` and `bookingUrl` on walks are the prepared seams; integrating
-later is additive.
+in-platform membership/recurring; Quicket links for event ticketing). Until
+then membership is paid by EFT and an editor marks the order paid (see
+Joining and orders). The `orders` collection (a webhook would find the order
+by its `reference`) and `bookingUrl` on walks and workshops are the seams;
+integrating later is additive.
 
 ## Roadmap milestones
 
 - **M1 Holding live** - holding page on bathong.africa (done)
-- **M2 Platform scaffold** - backend boots, admin gated, initial migration
-- **M3 v1 site headless** - Nuxt + content, cutover from holding page
-- **M4 Members** - sign-in from the frontend (done, #13), photocall submissions, SMTP (done)
-- **M5 Payments** - pricing decided (#17), provider decision open (#18)
+- **M2 Platform scaffold** - backend boots, admin gated, initial migration (done)
+- **M3 v1 site headless** - Nuxt + content, cutover from holding page (done, #12)
+- **M4 Members** - sign-in from the frontend (done, #13), open sign-up (done, #40), photocall submissions (v1 shipped), SMTP (done)
+- **M5 Payments** - pricing decided (#17), joining by EFT live (an editor confirms each payment), provider decision open (#18)
 - **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)
