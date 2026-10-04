@@ -122,6 +122,13 @@ function essayLeadSrc(essay: Essay): string | null {
   const lead = essay.leadFrame
   return lead && typeof lead === 'object' ? mediaSrc(lead.image as never) : null
 }
+// The card's link is named by the title under the frame. The frame adds its
+// own description when the file has one, and stays silent otherwise: the
+// title as alt text would only say the name twice.
+function essayLeadAlt(essay: Essay): string {
+  const lead = essay.leadFrame
+  return lead && typeof lead === 'object' ? (frameMedia(lead)?.alt ?? '') : ''
+}
 const licensingLine = computed(() =>
   person.value?.showContact && person.value?.contactEmail
     ? 'Licensing enquiries go directly to the photographer.'
@@ -163,6 +170,16 @@ const openRatio = computed(() => {
   return m?.width && m?.height ? m.width / m.height : 1.5
 })
 
+// What a screen reader hears after a step: the counter, then the frame's own
+// description. Empty until the first step, so opening is not said twice.
+const viewerStatus = ref('')
+function announce() {
+  const frame = openFrame.value
+  if (!frame || openIndex.value === null) return
+  const alt = frameAlt(frame)
+  viewerStatus.value = `Frame ${openIndex.value + 1} of ${frames.value.length}${alt ? `: ${alt}` : ''}`
+}
+
 function openViewer(i: number) {
   openIndex.value = i
   if (!viewer.value?.open) viewer.value?.showModal()
@@ -170,7 +187,13 @@ function openViewer(i: number) {
 function step(direction: 1 | -1) {
   if (openIndex.value === null) return
   const next = openIndex.value + direction
-  if (next >= 0 && next < frames.value.length) openIndex.value = next
+  if (next < 0 || next >= frames.value.length) return
+  openIndex.value = next
+  announce()
+}
+function onViewerClose() {
+  openIndex.value = null
+  viewerStatus.value = ''
 }
 function onViewerKey(e: KeyboardEvent) {
   if (e.key === 'ArrowRight') {
@@ -207,7 +230,7 @@ function onViewerKey(e: KeyboardEvent) {
         <NuxtLink v-for="essay in essays" :key="essay.id" :to="`/stories/${essay.slug}`" class="card">
           <BFrame
             :src="essayLeadSrc(essay)"
-            :alt="essay.title"
+            :alt="essayLeadAlt(essay)"
             sizes="xs:100vw md:33vw lg:33vw xl:480px"
             class="card-frame"
           />
@@ -231,6 +254,7 @@ function onViewerKey(e: KeyboardEvent) {
             target="_blank"
             rel="noopener"
             class="open"
+            aria-haspopup="dialog"
             :aria-label="frameAlt(frame) ? `Open the frame: ${frameAlt(frame)}` : 'Open the frame'"
             @click.exact.prevent="openViewer(i)"
           >
@@ -267,7 +291,7 @@ function onViewerKey(e: KeyboardEvent) {
           <figure v-if="mediaSrc(albumCover(album) as never)" class="album-cover">
             <NuxtPicture
               :src="mediaSrc(albumCover(album) as never)!"
-              :alt="albumCover(album)?.alt ?? album.title"
+              :alt="albumCover(album)?.alt ?? ''"
               :width="albumCover(album)?.width ?? undefined"
               :height="albumCover(album)?.height ?? undefined"
               sizes="xs:100vw md:60vw lg:60vw xl:900px"
@@ -329,7 +353,7 @@ function onViewerKey(e: KeyboardEvent) {
       ref="viewer"
       class="viewer"
       aria-label="Frame, full view"
-      @close="openIndex = null"
+      @close="onViewerClose"
       @click.self="viewer?.close()"
       @keydown="onViewerKey"
     >
@@ -353,19 +377,29 @@ function onViewerKey(e: KeyboardEvent) {
         />
         <p v-if="openFrame.caption" class="b-caption note">{{ openFrame.caption }}</p>
       </figure>
+      <!-- stepping keeps focus on its button, so the new frame is said here: heard, not seen -->
+      <p class="viewer-status" role="status">{{ viewerStatus }}</p>
       <nav class="viewer-nav b-kicker" aria-label="Frames">
         <!-- aria-disabled, not disabled: a disabled button drops focus and the arrow keys with it -->
-        <button type="button" :aria-disabled="openIndex === 0" @click="step(-1)">← Previous</button>
-        <button type="button" @click="viewer?.close()">Close</button>
-        <button type="button" :aria-disabled="openIndex === frames.length - 1" @click="step(1)">Next →</button>
+        <button type="button" :aria-disabled="openIndex === 0" @click="step(-1)">
+          <span aria-hidden="true">←</span> Previous
+        </button>
+        <!-- focus opens here: on the first frame Previous is off, and Close is never the wrong answer -->
+        <button type="button" autofocus @click="viewer?.close()">Close</button>
+        <button type="button" :aria-disabled="openIndex === frames.length - 1" @click="step(1)">
+          Next <span aria-hidden="true">→</span>
+        </button>
       </nav>
     </dialog>
   </div>
 </template>
 
 <style scoped>
+/* a 44px target without moving the row: block padding on an inline link
+   widens what a thumb can hit and leaves the line box alone */
 .counts a {
   color: inherit;
+  padding-block: var(--space-3);
 }
 .counts a:hover {
   color: var(--signal);
@@ -445,9 +479,12 @@ function onViewerKey(e: KeyboardEvent) {
   margin-top: var(--space-2);
   color: var(--grey-ghost);
 }
+/* 44px to the thumb, the same line to the eye: the padding is taken back in margin */
 .more {
   display: inline-block;
-  margin-top: var(--space-5);
+  padding-block: var(--space-3);
+  margin-top: calc(var(--space-5) - var(--space-3));
+  margin-bottom: calc(-1 * var(--space-3));
   color: var(--signal);
 }
 .albums {
@@ -541,6 +578,14 @@ function onViewerKey(e: KeyboardEvent) {
   height: auto;
   border: 1px solid var(--grey-line);
   border-bottom: 0;
+}
+.viewer-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 .viewer-nav {
   display: flex;

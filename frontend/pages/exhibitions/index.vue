@@ -58,7 +58,7 @@ useShareMeta({
 <template>
   <div>
     <section class="chapter head">
-      <ChapterHead title="Exhibitions" />
+      <ChapterHead title="Exhibitions" :level="1" />
       <p class="b-lede">An essay earns a wall. A wall makes a photographer.</p>
       <p v-if="past.length && !live.length" class="b-caption between">
         Nothing is on the wall right now. The next dates land here first. TBC.

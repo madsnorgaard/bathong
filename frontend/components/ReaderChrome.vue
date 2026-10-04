@@ -45,10 +45,14 @@ const progress = computed(() =>
   padding: var(--space-2) var(--space-4);
   min-height: 44px;
 }
+/* a 44px target in the bar; the type does not move */
 .mark:deep(),
 .chrome-bar :deep(.b-mark) {
   font-size: 1.1rem;
   color: var(--paper);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .counter {
   font-family: var(--font-mono);
@@ -57,12 +61,15 @@ const progress = computed(() =>
   color: var(--grey-ghost);
   flex: 1;
 }
+/* 44px both ways: without the word the mark alone is 11px wide. It stays on the right edge. */
 .close {
   color: var(--grey-ghost);
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   min-height: 44px;
+  min-width: 44px;
 }
 .close:hover {
   color: var(--signal);

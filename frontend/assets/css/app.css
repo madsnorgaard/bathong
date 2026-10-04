@@ -9,8 +9,10 @@
   background: var(--paper);
   color: var(--ink);
 }
+/* grey-warm on paper is 3.05:1; grey-ink, the paper plate's other quiet
+   text, is 7.78:1 */
 .chapter--paper .b-caption {
-  color: var(--grey-warm);
+  color: var(--grey-ink);
 }
 /* a paper chapter sits inside the on-ink page; undo the dark-surface rules */
 .chapter--paper .b-ruled,
@@ -24,7 +26,7 @@
   color: var(--jacaranda-deep);
 }
 .chapter--paper .b-label {
-  color: var(--grey-warm);
+  color: var(--grey-ink);
 }
 .chapter--paper a {
   color: var(--jacaranda-deep);
@@ -54,6 +56,36 @@
 /* labels and fields on the ink ground */
 .on-ink .b-label {
   color: var(--grey-ghost);
+}
+
+/* a field is paper wherever it stands: its placeholder takes the paper
+   plate's quiet text, not grey-warm (3.05:1) */
+.b-field::placeholder {
+  color: var(--grey-ink);
+}
+
+/* the focus ring is jacaranda, which cannot be seen on its own plate:
+   paper there (4.18:1) */
+.on-jacaranda :focus-visible {
+  outline-color: var(--paper);
+}
+
+/* the skip link lands on main; a ring around the whole page says nothing */
+main:focus {
+  outline: none;
+}
+
+/* a control that focus scrolls into view stops clear of the sticky bar, not
+   under it (tabbing backwards up the archive hid the search field) */
+main :is(a, button, input, select, textarea) {
+  scroll-margin-top: var(--space-6);
+}
+
+/* base.css scrolls smoothly; with reduced motion asked for, a jump is a jump */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 /* hit targets never below 44px (W7) */

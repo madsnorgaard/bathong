@@ -4,7 +4,8 @@
  * backdrop blur, hairline below. Seven links, no more; Albums lives in the
  * footer. Join shows until the visitor is an active member. At 1180px,
  * where the bar stops fitting on one line, the links become a focus-trapped
- * sheet (W7).
+ * sheet (W7). The first stop on every page is the skip link, seen only when
+ * the keyboard lands on it.
  */
 import { effectiveStatus } from '~/utils/membership'
 
@@ -33,6 +34,7 @@ const joinLink = computed(() => {
 
 const sheetOpen = ref(false)
 const sheetEl = ref<HTMLElement | null>(null)
+const headerEl = ref<HTMLElement | null>(null)
 const toggleEl = ref<HTMLElement | null>(null)
 const route = useRoute()
 
@@ -47,9 +49,10 @@ function onKeydown(e: KeyboardEvent) {
     toggleEl.value?.focus()
     return
   }
-  if (e.key !== 'Tab' || !sheetEl.value) return
-  const focusables = sheetEl.value.querySelectorAll<HTMLElement>('a, button')
-  if (!focusables.length) return
+  if (e.key !== 'Tab' || !sheetEl.value || !toggleEl.value) return
+  // The toggle is the sheet's only close control, so it is part of the loop:
+  // without it a keyboard has Escape and nothing to see.
+  const focusables = [toggleEl.value, ...sheetEl.value.querySelectorAll<HTMLElement>('a, button')]
   const first = focusables[0]
   const last = focusables[focusables.length - 1]
   if (e.shiftKey && document.activeElement === first) {
@@ -65,7 +68,26 @@ watch(sheetOpen, (open) => {
   if (open) nextTick(() => sheetEl.value?.querySelector<HTMLElement>('a, button')?.focus())
   // The sheet owns the viewport while open: the page behind must not scroll.
   if (import.meta.client) document.documentElement.style.overflow = open ? 'hidden' : ''
+  setPageInert(open)
 })
+
+// What the sheet covers is out of reach for every input, a screen reader's
+// cursor included: the header's siblings (main, footer) go inert. The bar
+// stays live, so Close is always there to be found.
+function setPageInert(on: boolean) {
+  if (!import.meta.client || !headerEl.value?.parentElement) return
+  for (const el of headerEl.value.parentElement.children) {
+    if (el !== headerEl.value && el instanceof HTMLElement) el.inert = on
+  }
+}
+
+// The layout owns <main> and gives it no id, so the skip link finds it.
+function skipToMain() {
+  const main = document.querySelector<HTMLElement>('main')
+  if (!main) return
+  main.tabIndex = -1
+  main.focus()
+}
 
 // Rotating past the breakpoint hides the sheet by CSS; the state (and the
 // scroll lock with it) must follow, or the page stays frozen.
@@ -83,11 +105,13 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
   desktopQuery?.removeEventListener('change', closeOnDesktop)
   document.documentElement.style.overflow = ''
+  setPageInert(false)
 })
 </script>
 
 <template>
-  <header class="nav">
+  <header ref="headerEl" class="nav">
+    <a href="#main" class="skip b-kicker" @click.prevent="skipToMain">Skip to content</a>
     <div class="nav-inner">
       <Wordmark />
       <nav class="links b-kicker" aria-label="Main">
@@ -102,10 +126,12 @@ onBeforeUnmount(() => {
         aria-controls="sheet-menu"
         @click="sheetOpen = !sheetOpen"
       >
-        {{ sheetOpen ? 'Close ✕' : 'Menu ≡' }}
+        <!-- the glyphs are drawing, not words: a screen reader gets Menu and Close -->
+        <span>{{ sheetOpen ? 'Close' : 'Menu' }} <span aria-hidden="true">{{ sheetOpen ? '✕' : '≡' }}</span></span>
       </button>
     </div>
-    <div v-if="sheetOpen" id="sheet-menu" ref="sheetEl" class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
+    <!-- not aria-modal: that would cut a screen reader off from the Close control in the bar -->
+    <div v-if="sheetOpen" id="sheet-menu" ref="sheetEl" class="sheet" role="dialog" aria-label="Menu">
       <nav class="sheet-links" aria-label="Main">
         <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="b-display-2">
           {{ link.label }}
@@ -136,17 +162,42 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
 }
+/* the mark is a 44px target in the bar; the type does not move */
 .nav-inner :deep(.b-mark) {
   font-size: 1.5rem;
   color: var(--paper);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+/* off the page until the keyboard lands on it, then a paper tab on the bar */
+.skip {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-2);
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  transform: translateY(-200%);
+}
+.skip,
+.skip:hover {
+  color: var(--ink);
+}
+.skip:focus {
+  transform: none;
 }
 .links {
   display: flex;
   gap: var(--space-4);
   flex: 1;
 }
+/* as tall as Join beside them: a 44px target, the bar's height unchanged */
 .links a {
   color: var(--grey-fog);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .links a:hover,
 .links a.router-link-active {
