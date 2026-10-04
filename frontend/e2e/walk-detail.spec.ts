@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * A walk's own page. Walked, it is the record: the facts, the route as it
@@ -66,7 +67,7 @@ test('the record shares its own C4 card', async ({ page }) => {
 })
 
 test('an upcoming walk is the event: the plate, the route and the RSVP', async ({ page }) => {
-  await page.goto('/walks/demo-next-walk', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/walks/demo-next-walk')
   await expect(page.locator('.event')).toBeVisible()
   await expect(page.getByText(/Next walk · № \d{3}/)).toBeVisible()
   await expect(page.locator('.route-map')).toBeVisible()

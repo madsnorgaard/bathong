@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { expectUncropped } from './helpers/images'
 
 /**
  * Albums: the softer record of a walk, plain media, still credited on every
@@ -18,7 +19,7 @@ test('the albums index lists the demo album, credited', async ({ page }) => {
 })
 
 test('an album: every photograph credited, uncropped, through ipx, with the walk as a door', async ({ page }) => {
-  await page.goto(ALBUM, { waitUntil: 'networkidle' })
+  await page.goto(ALBUM)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Demo: behind the walk')
   await expect(page.getByText(/Photographs ©/)).toBeVisible()
 
@@ -30,13 +31,7 @@ test('an album: every photograph credited, uncropped, through ipx, with the walk
   }
 
   // never cropped: the rendered ratio is the file's own
-  const first = cells.first().locator('img')
-  await first.scrollIntoViewIfNeeded()
-  const ratios = await first.evaluate((img: HTMLImageElement) => ({
-    natural: img.naturalWidth / img.naturalHeight,
-    rendered: img.clientWidth / img.clientHeight,
-  }))
-  expect(Math.abs(ratios.natural - ratios.rendered)).toBeLessThan(0.02)
+  await expectUncropped(cells.first().locator('img'))
 
   // the ipx guard from the smoke suite: relative sources, every one through /_ipx/
   const urls = await page.$$eval('.run img[src], .run picture source[srcset]', (els) =>

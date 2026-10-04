@@ -85,6 +85,20 @@ jobs:
       SEED_MEMBER_PASSWORD: ci-only-member-password
       # admin-only test doors that read verification tokens (sign-up.spec.ts)
       E2E_HOOKS: 'true'
+      # Where uploads are written and read. This is the directory the backend
+      # falls back to anyway (repo /media); it is spelled out so the seed
+      # (tsx), the built server and the photocall uploads cannot disagree
+      # about it, whatever a bundler makes of the fallback path.
+      MEDIA_DIR: ${{ github.workspace }}/media
+      # ipx fetches its sources by address, not by name. Resolving
+      # "localhost" goes through Node's four-thread pool, the same pool every
+      # sharp encode runs on; behind a queue of cold encodes the lookup waits
+      # past undici's 10 s connect timeout and the image answers 500
+      # (ConnectTimeoutError ... localhost:3001), however fast the backend
+      # is. An address needs no lookup. Production sets the same variable to
+      # the internal Payload host (nuxt.config.ts).
+      IPX_SOURCE_URL: http://127.0.0.1:3001
+      NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -93,15 +107,28 @@ jobs:
       - name: Install backend
         working-directory: backend
         run: npm ci --legacy-peer-deps
+      # The suite runs against the built backend, as production does
+      # (backend/Dockerfile: next build, then migrate, then next start). The
+      # dev server compiled each route on its first hit, in the middle of the
+      # run, on the same two cores the photographs are encoded on: four runs
+      # failed on 4 Oct 2026, none from a regression. The build reads the job
+      # env but opens no database connection; E2E_HOOKS and MEDIA_DIR are
+      # read when the server starts, not baked in here.
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      # Before the server starts: both talk to Postgres directly (the seed
+      # through Payload's local API, no HTTP), and the server then only ever
+      # sees a migrated, fully seeded database.
       - name: Migrate and seed
         working-directory: backend
         run: |
           npm run migrate
           npm run seed
-      - name: Start backend
+      - name: Start backend (built)
         working-directory: backend
         run: |
-          npm run dev &
+          npm run start > "$RUNNER_TEMP/backend.log" 2>&1 &
           # http-get:// - wait-on's default HEAD probe 404s on this endpoint
           npx wait-on -t 120000 http-get://localhost:3001/api/access
       - name: Install frontend
@@ -117,6 +144,16 @@ jobs:
       - name: Playwright smoke
         working-directory: frontend
         run: npm run test:e2e
+      # The server writes to a file, not to the job log, so a failed run says
+      # what the backend saw: a boot that never answered, or a 500 in a test.
+      - name: Backend log
+        if: failure()
+        run: |
+          if [ -f "$RUNNER_TEMP/backend.log" ]; then
+            cat "$RUNNER_TEMP/backend.log"
+          else
+            echo "The backend never started: no log was written."
+          fi
       - name: Upload Playwright results
         if: failure()
         uses: actions/upload-artifact@v7

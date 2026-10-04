@@ -4,7 +4,10 @@ import { defineConfig } from '@playwright/test'
  * Expects the local stack to be up:
  *   docker compose -f ../docker-compose.dev.yml up -d
  *   (cd ../backend && npm run migrate && SEED_DEMO=true npm run seed && npm run dev)
- *   frontend dev server boots via webServer below.
+ *   the frontend is built and served by webServer below.
+ * CI runs the same suite against the built backend (`npm run build` and
+ * `npm run start` in ../backend, see .github/workflows/ci.yml); either
+ * backend on port 3001 will do.
  */
 export default defineConfig({
   testDir: './e2e',

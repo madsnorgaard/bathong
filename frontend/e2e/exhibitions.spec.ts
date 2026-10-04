@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import sharp from 'sharp'
 import { gotoHydrated } from './helpers/account'
+import { expectUncropped } from './helpers/images'
 
 /**
  * Exhibitions: the wall. Runs against the SEED_DEMO exhibition
@@ -103,14 +104,7 @@ test('an exhibition: frames uncropped and credited through ipx, venue, dates, pa
   // never cropped: the rendered ratio is the file's own, in the opening
   // slot and in the run
   for (const cell of [cells.first(), cells.nth(1)]) {
-    const img = cell.locator('img')
-    await img.scrollIntoViewIfNeeded()
-    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0)
-    const ratios = await img.evaluate((el: HTMLImageElement) => ({
-      natural: el.naturalWidth / el.naturalHeight,
-      rendered: el.clientWidth / el.clientHeight,
-    }))
-    expect(Math.abs(ratios.natural - ratios.rendered)).toBeLessThan(0.02)
+    await expectUncropped(cell.locator('img'))
   }
 
   await expectThroughIpx(page, 'main')

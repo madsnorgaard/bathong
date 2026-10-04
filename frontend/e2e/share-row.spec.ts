@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * The share row: a word and typographic links, no icons. WhatsApp and mail
@@ -57,7 +58,8 @@ test('copy link puts the canonical URL on the clipboard and says so', async ({ p
       },
     })
   })
-  await page.goto('/walks/demo-past-walk', { waitUntil: 'networkidle' })
+  // hydrated: before Vue takes the row over there is no copy button to click
+  await gotoHydrated(page, '/walks/demo-past-walk')
   const row = page.getByRole('navigation', { name: 'Share' })
   // the row has one button, and its accessible name changes on click
   const copy = row.getByRole('button')
