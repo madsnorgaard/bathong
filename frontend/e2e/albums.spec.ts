@@ -59,7 +59,7 @@ test('an album shares its generated C6 card', async ({ page }) => {
   await page.goto(ALBUM)
   const og = page.locator('meta[property="og:image"]')
   await expect(og).toHaveCount(1)
-  expect(await og.getAttribute('content')).toMatch(/\/share\/album\/demo-behind-the-walk\.jpg\?v=\d+$/)
+  expect(await og.getAttribute('content')).toMatch(/\/share\/album\/demo-behind-the-walk\.jpg\?v=\d+&c=\d+$/)
   await expect(page.locator('meta[name="copyright"]')).toHaveAttribute('content', /© Mads Nørgaard/)
 })
 

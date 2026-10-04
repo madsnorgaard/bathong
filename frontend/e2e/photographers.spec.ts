@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * The photographer page (W4): built to be sent to a curator on its own.
@@ -49,9 +50,10 @@ test('a photographer page: header, honest counts, copyright plate', async ({ pag
 })
 
 test('the newest frames: uncropped, credited, through ipx, and each one opens', async ({ page }) => {
-  // networkidle: a click before hydration takes the link's own target (the
-  // larger rendition in a new tab) instead of the viewer
-  await page.goto(MADS, { waitUntil: 'networkidle' })
+  // hydrated, not network-idle: a click before hydration takes the link's
+  // own target (the larger rendition in a new tab) instead of the viewer,
+  // and twelve cold ipx encodes can keep the network busy past the timeout
+  await gotoHydrated(page, MADS)
   // named for what it is until a member's own selection exists
   await expect(page.getByRole('heading', { name: /^Newest frames/ })).toBeVisible()
   await expect(page.getByText('Selected frames')).toHaveCount(0)

@@ -452,7 +452,12 @@ system fonts are needed in the container. JPEG q82, quality steps down to
 stay under the 300 KB WhatsApp ceiling; any missing entity or failed
 render serves the static C1 default (`frontend/public/share/default.jpg`),
 never an error. Pages append `?v=<updatedAt>` so crawler caches bust on
-republish. satori shapes type with harfbuzzjs, which reads `hb.wasm` from
+republish, and `useShareMeta` adds `&c=<CARD_REVISION>` (`frontend/utils/
+share.ts`) to every generated card URL. Platforms cache a card by its URL
+(Facebook documents it: a changed image needs a new URL), so bump the
+revision when the cards change how they look or after an outage served the
+wrong image; every `og:image` then moves at once. The routes answer GET and
+HEAD (crawlers and validators probe with HEAD) and refuse other methods. satori shapes type with harfbuzzjs, which reads `hb.wasm` from
 disk; the Nitro tracer does not follow that read, so `nuxt.config.ts`
 lists the file under `nitro.externals.traceInclude`. Without it every card
 silently falls back to the default (production did after the satori 0.33
