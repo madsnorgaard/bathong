@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Footer on ink: wordmark, contact, social links as mono text (no icon set
- * by design), the NPC line. Data from the site-settings global.
+ * Footer on ink: wordmark, the site links the header has no room for,
+ * contact, social links as mono text (no icon set by design), the NPC line.
+ * Data from the site-settings global.
  */
 interface SiteSettings {
   contactEmail?: string | null
@@ -22,6 +23,13 @@ const socials = computed(() => {
   ].filter(Boolean) as { label: string; href: string }[]
 })
 
+// The header holds seven links; what does not fit there is reachable here.
+const siteLinks = [
+  { to: '/albums', label: 'Albums' },
+  { to: '/about', label: 'About' },
+  { to: '/privacy', label: 'Privacy' },
+]
+
 const email = computed(() => settings.value?.contactEmail || null)
 const year = new Date().getFullYear()
 </script>
@@ -31,6 +39,10 @@ const year = new Date().getFullYear()
     <div class="footer-inner">
       <Wordmark />
       <div class="cols">
+        <nav class="col" aria-label="Site">
+          <p class="b-caption">The site</p>
+          <NuxtLink v-for="link in siteLinks" :key="link.to" :to="link.to" class="b-kicker">{{ link.label }} →</NuxtLink>
+        </nav>
         <div class="col">
           <p class="b-caption">Contact</p>
           <a v-if="email" :href="`mailto:${email}`" class="b-kicker">{{ email }}</a>
@@ -45,7 +57,6 @@ const year = new Date().getFullYear()
         <div class="col">
           <p class="b-caption">The collective</p>
           <p class="npc b-kicker">Bathong. Collective NPC · Pretoria</p>
-          <NuxtLink to="/privacy" class="b-kicker">Privacy →</NuxtLink>
         </div>
       </div>
       <p class="legal b-caption">© {{ year }} Bathong. Collective. Photographers keep their copyright. Always.</p>

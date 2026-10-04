@@ -41,8 +41,8 @@ export interface ArchiveResponse {
 }
 
 /** Keep only the known filter keys, as plain strings. */
-export function archiveFilters(raw: Record<string, unknown>): ArchiveQuery {
-  const out: ArchiveQuery = {}
+export function archiveFilters(raw: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {}
   for (const key of FILTER_KEYS) {
     const v = raw[key]
     const s = Array.isArray(v) ? v[0] : v

@@ -63,14 +63,14 @@ test('an album shares its generated C6 card', async ({ page }) => {
   await expect(page.locator('meta[name="copyright"]')).toHaveAttribute('content', /© Mads Nørgaard/)
 })
 
-test('Albums sits in the main nav, after Walks and Workshops', async ({ page }) => {
+test('Albums is linked from the footer, with About and Privacy, and not from the main nav', async ({ page }) => {
   await page.goto('/')
-  const labels = await page.locator('header nav[aria-label="Main"] a').allTextContents()
-  const trimmed = labels.map((l) => l.trim())
-  // the programme pair leads: Walks, then Workshops, then the work
-  expect(trimmed.indexOf('Workshops')).toBe(trimmed.indexOf('Walks') + 1)
-  expect(trimmed.indexOf('Albums')).toBe(trimmed.indexOf('Workshops') + 1)
-  await expect(page.locator('header nav[aria-label="Main"] a', { hasText: 'Albums' }).first()).toHaveAttribute('href', '/albums')
+  const site = page.locator('footer nav[aria-label="Site"] a')
+  await expect(site).toHaveText(['Albums →', 'About →', 'Privacy →'])
+  await expect(site.nth(0)).toHaveAttribute('href', '/albums')
+  await expect(site.nth(1)).toHaveAttribute('href', '/about')
+  await expect(site.nth(2)).toHaveAttribute('href', '/privacy')
+  await expect(page.locator('header nav[aria-label="Main"] a', { hasText: 'Albums' })).toHaveCount(0)
 })
 
 test('an unknown album is a 404', async ({ page }) => {
