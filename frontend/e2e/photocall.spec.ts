@@ -44,7 +44,7 @@ test('the homepage signal strip is the door to the open call', async ({ page }) 
 })
 
 test('an anonymous entry with two frames goes through and confirms in writing', async ({ page }) => {
-  await page.goto('/photocalls', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/photocalls')
 
   await page.getByLabel(/^Name/).fill('Playwright Entrant')
   await page.getByLabel(/^Email/).fill(`entry-${Date.now()}@example.org`)
@@ -61,7 +61,7 @@ test('an anonymous entry with two frames goes through and confirms in writing', 
 })
 
 test('the send button stays disabled until the terms are agreed', async ({ page }) => {
-  await page.goto('/photocalls', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/photocalls')
   await page.getByLabel(/^Name/).fill('No Terms')
   await page.getByLabel(/^Email/).fill('noterms@example.org')
   await page.locator('#frames').setInputFiles([path.join(FIXTURES, 'entry-1.jpg')])

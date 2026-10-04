@@ -1,6 +1,7 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 import { APIError } from 'payload'
 import { hasEditorRole, isAdmin, isEditorField, isMember } from '../access'
+import { uploadedThemselves } from '../access/media'
 import { richTextParagraphs } from '../email/lexical'
 import { getContactEmail, sendSafe } from '../email/send'
 import { editorNewEntry, entryReceipt, entryVerdict } from '../email/templates'
@@ -26,6 +27,11 @@ const relationId = (value: unknown): number | string | undefined => {
   if (value && typeof value === 'object') return (value as { id?: number | string }).id
   return value as number | string | undefined
 }
+
+const relationIds = (value: unknown): (number | string)[] =>
+  (Array.isArray(value) ? value : []).map(relationId).filter((id): id is number | string => id != null)
+
+const notYourUpload = () => new APIError('Enter photographs you uploaded yourself.', 400)
 
 export const Submissions: CollectionConfig = {
   slug: 'submissions',
@@ -140,10 +146,18 @@ export const Submissions: CollectionConfig = {
             throw new APIError('This photocall has closed.', 400)
           }
 
+          const imageIds = relationIds(data.images)
+
+          // A member who enters through the collection brings photographs
+          // they uploaded themselves, never a file picked by id: the entry
+          // lets its submitter view the frames, and the loop below takes
+          // them out of public view. The entry endpoint makes its own frames
+          // and says so; editors and the seed are trusted.
+          if (req.user && !hasEditorRole(req.user) && !context?.photocallEntry) {
+            if (!(await uploadedThemselves(req.payload, req.user.id, imageIds))) throw notYourUpload()
+          }
+
           // Keep submitted images out of public view until they are published.
-          const imageIds = (Array.isArray(data.images) ? data.images : [])
-            .map(relationId)
-            .filter((id): id is number | string => id !== undefined)
           for (const id of imageIds) {
             await req.payload.update({
               collection: 'media',
@@ -158,6 +172,14 @@ export const Submissions: CollectionConfig = {
           // The submitter is immutable after creation; only a closing
           // account (accountSecurity.ts) unlinks it.
           data.submitter = relationId(originalDoc.submitter) ?? originalDoc.submitter
+        }
+
+        // The same rule while a submitter edits an entry that is still
+        // 'submitted': a frame added now is their own upload.
+        if (operation === 'update' && req.user && !hasEditorRole(req.user) && Array.isArray(data.images)) {
+          const had = new Set(relationIds(originalDoc?.images).map(String))
+          const added = relationIds(data.images).filter((id) => !had.has(String(id)))
+          if (!(await uploadedThemselves(req.payload, req.user.id, added))) throw notYourUpload()
         }
 
         return data

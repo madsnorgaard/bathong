@@ -6,6 +6,9 @@
  * server-side; the search form is a plain GET so it works without JS.
  * Thumbnails only - the data budget is the design.
  */
+// Imported, not resolved by name: resolveComponent('NuxtLink') in the template
+// found nothing and the frame rendered as an unknown <NuxtLink> element, no link.
+import { NuxtLink } from '#components'
 import type { ArchiveResponse } from '~/utils/archive'
 
 const route = useRoute()
@@ -53,7 +56,7 @@ function thumbSrc(url: string | null): string | null {
 <template>
   <div class="chapter">
     <div class="head-row">
-      <ChapterHead title="Archive" />
+      <ChapterHead title="Archive" :level="1" />
       <form class="search" method="get" action="/archive" @submit.prevent="navigateTo({ path: '/archive', query: archiveQuery(route.query, { q: searchText }) })">
         <BField v-model="searchText" label="Search" name="q" placeholder="caption, place, tag" />
         <input v-if="filters.photographer" type="hidden" name="photographer" :value="filters.photographer">
@@ -65,12 +68,13 @@ function thumbSrc(url: string | null): string | null {
     </div>
 
     <nav v-if="facets.photographers.length" class="filters b-kicker" aria-label="Filter by photographer">
-      <NuxtLink :to="{ path: '/archive', query: archiveQuery(route.query, { photographer: undefined }) }" :class="{ active: !filters.photographer }">all</NuxtLink>
+      <NuxtLink :to="{ path: '/archive', query: archiveQuery(route.query, { photographer: undefined }) }" :class="{ active: !filters.photographer }" :aria-current="!filters.photographer ? 'true' : undefined">all</NuxtLink>
       <NuxtLink
         v-for="p in facets.photographers"
         :key="p.slug"
         :to="{ path: '/archive', query: archiveQuery(route.query, { photographer: filters.photographer === p.slug ? undefined : p.slug }) }"
         :class="{ active: filters.photographer === p.slug }"
+        :aria-current="filters.photographer === p.slug ? 'true' : undefined"
       >
         {{ p.name }}
       </NuxtLink>
@@ -81,6 +85,7 @@ function thumbSrc(url: string | null): string | null {
         :key="w.slug"
         :to="{ path: '/archive', query: archiveQuery(route.query, { walk: filters.walk === w.slug ? undefined : w.slug }) }"
         :class="{ active: filters.walk === w.slug }"
+        :aria-current="filters.walk === w.slug ? 'true' : undefined"
       >
         {{ walkNumber(w.number ?? 1) }} · {{ w.title }}
       </NuxtLink>
@@ -91,6 +96,7 @@ function thumbSrc(url: string | null): string | null {
         :key="y.year"
         :to="{ path: '/archive', query: archiveQuery(route.query, { year: filters.year === String(y.year) ? undefined : String(y.year) }) }"
         :class="{ active: filters.year === String(y.year) }"
+        :aria-current="filters.year === String(y.year) ? 'true' : undefined"
       >
         {{ y.year }}
       </NuxtLink>
@@ -101,13 +107,15 @@ function thumbSrc(url: string | null): string | null {
         :key="t.tag"
         :to="{ path: '/archive', query: archiveQuery(route.query, { tag: filters.tag === t.tag ? undefined : t.tag }) }"
         :class="{ active: filters.tag === t.tag }"
+        :aria-current="filters.tag === t.tag ? 'true' : undefined"
       >
         {{ t.tag }}
       </NuxtLink>
     </nav>
 
+    <!-- a filter changes the shelf without a page load: the new count is said, not only shown -->
     <p class="count b-caption">
-      {{ totalDocs }} frame{{ totalDocs === 1 ? '' : 's' }}<template v-if="hasFilters"> · <NuxtLink to="/archive">clear filters</NuxtLink></template>
+      <span role="status">{{ totalDocs }} frame{{ totalDocs === 1 ? '' : 's' }}</span><template v-if="hasFilters"> · <NuxtLink to="/archive">clear filters</NuxtLink></template>
     </p>
 
     <p v-if="!docs.length" class="b-lede empty">
@@ -116,9 +124,14 @@ function thumbSrc(url: string | null): string | null {
 
     <div v-else class="grid">
       <article v-for="frame in docs" :key="frame.id" class="cell">
+        <!-- the credit below is the same door with a name on it: the frame is the
+             larger target for a pointer and stays out of the tab order, so a
+             keyboard meets each photographer once per frame, not twice -->
         <component
-          :is="frame.photographerSlug ? resolveComponent('NuxtLink') : 'div'"
+          :is="frame.photographerSlug ? NuxtLink : 'div'"
           :to="frame.photographerSlug ? `/photographers/${frame.photographerSlug}` : undefined"
+          :tabindex="frame.photographerSlug ? -1 : undefined"
+          :aria-label="frame.photographerSlug && !(frame.alt ?? frame.caption) ? `Photographs by ${frame.credit}` : undefined"
           class="cell-link"
         >
           <BFrame
@@ -243,6 +256,23 @@ function thumbSrc(url: string | null): string | null {
 @media (max-width: 840px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+/* under a thumb every filter, walk link and the pager are 44px targets (W7);
+   the rows carry the rhythm the gaps did. The credit stays a line of text:
+   the frame above it is the same door at full size. */
+@media (max-width: 840px), (pointer: coarse) {
+  .filters {
+    row-gap: 0;
+    margin-bottom: 0;
+  }
+  .filters a,
+  .meta a,
+  .pager a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 }
 </style>

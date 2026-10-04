@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
 
 /**
  * Member sign-in from the site (#13). Runs against the SEED_DEMO member
@@ -15,8 +16,8 @@ test('the account page sends anonymous visitors to sign in, and back again', asy
 })
 
 test('a member signs in, lands on the account page, and can sign out', async ({ page }) => {
-  // networkidle: typing before hydration is lost when Vue takes the form over
-  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
+  // hydrated: typing before hydration is lost when Vue takes the form over
+  await gotoHydrated(page, '/account/sign-in')
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
@@ -46,18 +47,18 @@ test('a member signs in, lands on the account page, and can sign out', async ({ 
 })
 
 test('a wrong password shows an error and stays on the page', async ({ page }) => {
-  // networkidle: typing before hydration is lost when Vue takes the form over
-  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
+  // hydrated: typing before hydration is lost when Vue takes the form over
+  await gotoHydrated(page, '/account/sign-in')
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill('not-the-password')
   await page.getByRole('button', { name: /Sign in/ }).click()
-  await expect(page.getByRole('alert')).toContainText(/do not match/)
+  await expect(page.getByRole('alert').filter({ hasText: /do not match/ })).toBeVisible()
   await expect(page).toHaveURL(/\/account\/sign-in/)
 })
 
 test('the session survives a full reload (SSR reads the cookie)', async ({ page }) => {
-  // networkidle: typing before hydration is lost when Vue takes the form over
-  await page.goto('/account/sign-in', { waitUntil: 'networkidle' })
+  // hydrated: typing before hydration is lost when Vue takes the form over
+  await gotoHydrated(page, '/account/sign-in')
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()

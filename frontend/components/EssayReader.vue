@@ -5,7 +5,7 @@
  * tap advance, and the streaming loader: frame 1 eager, the rest on
  * approach. Nothing autoplays, ever. Frames are never cropped: width follows
  * from height and ratio, and every frame holds its place before its file
- * arrives.
+ * arrives, and keeps it if the file never does.
  */
 interface MediaDoc {
   url?: string | null
@@ -228,20 +228,29 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
-function advance(direction: 1 | -1) {
+/** Move to the next or previous frame; false when there is none that way. */
+function advance(direction: 1 | -1): boolean {
   const els = frameEls()
   const target = els.find((el) => Number(el.dataset.frameIndex) === current.value + direction)
-  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  // no behaviour named: the page's own scroll-behavior applies, which is
+  // smooth unless the reader asked for reduced motion
+  target?.scrollIntoView({ block: 'center' })
+  return Boolean(target)
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-    e.preventDefault()
-    advance(1)
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-    e.preventDefault()
-    advance(-1)
-  }
+  // a key with a modifier is the browser's (Alt+Left is back), not ours
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+  const direction =
+    e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown'
+      ? 1
+      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp'
+        ? -1
+        : 0
+  if (!direction) return
+  // Past the last frame the key is left alone and scrolls the page, which
+  // is how the door below the sequence is reached by keyboard.
+  if (advance(direction)) e.preventDefault()
 }
 </script>
 
@@ -350,11 +359,15 @@ function onKeydown(e: KeyboardEvent) {
 }
 /* A file that knows its size holds its place before it arrives: the width is
    spelled out from the 82vh cap and the file's ratio, never past the file's
-   own pixels, and the height follows from the width and height attributes.
-   A file without them is sized on arrival, as before. */
+   own pixels, and the height follows from the ratio. The ratio is stated
+   here, on the frame, and not left to the width and height attributes: a
+   file that fails to arrive is no longer an image to the browser, and the
+   box has to stand all the same. `auto` keeps a file that did arrive at its
+   own shape. A file without a size is sized on arrival, as before. */
 .frame-unit .frame-img[width],
 .pair-half .frame-img[width] {
   width: min(82vh * var(--ratio), var(--file-width));
+  aspect-ratio: auto var(--ratio);
 }
 .frame-unit .capsule {
   width: auto;
@@ -366,9 +379,13 @@ function onKeydown(e: KeyboardEvent) {
   max-width: 100%;
   width: 100vw;
 }
+/* minmax(0, 1fr), not 1fr: a column must not grow to fit what is in it. A
+   frame whose file failed is an ordinary box of the width spelled out above,
+   and a bare 1fr column would widen to hold it and push the pair off the
+   page. */
 .pair-unit {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-3);
   align-items: end;
   padding: 0 var(--space-4);
@@ -396,7 +413,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 @media (max-width: 840px) {
   .pair-unit {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .frame-unit .frame-img {
     max-width: 100%;

@@ -74,16 +74,19 @@ const progress = ref({ current: 1, total: 0 })
   <div v-if="essay" class="essay">
     <ReaderChrome :current="progress.current" :total="progress.total" close-to="/stories" />
 
-    <header class="essay-head">
-      <p class="b-kicker">{{ formatWalkDate(essay.publishedDate).replace('TBC', '') }}</p>
-      <h1 class="b-display-1">{{ essay.title }}</h1>
-      <p v-if="essay.deck" class="deck">{{ essay.deck }}</p>
-    </header>
+    <!-- the reader layout has no main of its own: the essay is the page's main content -->
+    <main>
+      <header class="essay-head">
+        <p class="b-kicker">{{ formatWalkDate(essay.publishedDate).replace('TBC', '') }}</p>
+        <h1 class="b-display-1">{{ essay.title }}</h1>
+        <p v-if="essay.deck" class="deck">{{ essay.deck }}</p>
+      </header>
 
-    <EssayReader
-      :sequence="(essay.sequence ?? []) as never"
-      @progress="(c, t) => (progress = { current: c, total: t })"
-    />
+      <EssayReader
+        :sequence="(essay.sequence ?? []) as never"
+        @progress="(c, t) => (progress = { current: c, total: t })"
+      />
+    </main>
 
     <!-- pass it on: the share row sits on ink, before the door -->
     <aside class="share">
@@ -129,8 +132,11 @@ const progress = ref({ current: 1, total: 0 })
   padding: var(--space-5) var(--space-4);
   color: var(--grey-ghost);
 }
+/* 44px to the thumb, the same line to the eye: the padding is taken back in margin */
 .from-walk {
   color: var(--jacaranda-deep);
+  padding-block: var(--space-3);
+  margin-block: calc(-1 * var(--space-3));
 }
 /* paper returns at the essay's end card */
 .door {
@@ -148,9 +154,13 @@ const progress = ref({ current: 1, total: 0 })
 }
 .door-credit a {
   color: var(--jacaranda-deep);
+  padding-block: var(--space-3);
+  margin-block: calc(-1 * var(--space-3));
 }
 .next {
   color: var(--ink);
+  padding-block: var(--space-2);
+  margin-block: calc(-1 * var(--space-2));
 }
 .next:hover {
   color: var(--jacaranda-deep);

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { gotoHydrated } from './helpers/account'
+import { expectUncropped } from './helpers/images'
 
 /**
  * The photographer page (W4): built to be sent to a curator on its own.
@@ -68,14 +69,7 @@ test('the newest frames: uncropped, credited, through ipx, and each one opens', 
   }
 
   // never cropped: the rendered ratio is the file's own
-  const first = cells.first().locator('img')
-  await first.scrollIntoViewIfNeeded()
-  await expect.poll(() => first.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
-  const ratios = await first.evaluate((img: HTMLImageElement) => ({
-    natural: img.naturalWidth / img.naturalHeight,
-    rendered: img.clientWidth / img.clientHeight,
-  }))
-  expect(Math.abs(ratios.natural - ratios.rendered)).toBeLessThan(0.02)
+  await expectUncropped(cells.first().locator('img'))
 
   // NuxtPicture with a candidate per screen key, every one through /_ipx/
   const srcsets = await page.$$eval('.run picture source[srcset]', (els) =>

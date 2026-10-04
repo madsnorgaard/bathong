@@ -103,4 +103,17 @@ const year = new Date().getFullYear()
   border-top: var(--hairline);
   padding-top: var(--space-3);
 }
+/* under a thumb every link is a 44px target (W7). Each takes half the
+   column gap back on either side, so the rows meet and nothing else moves. */
+@media (max-width: 840px), (pointer: coarse) {
+  .footer-inner :deep(.b-mark),
+  .col a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .col a {
+    margin-block: calc(-1 * var(--space-1));
+  }
+}
 </style>

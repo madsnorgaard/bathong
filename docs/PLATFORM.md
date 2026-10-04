@@ -63,12 +63,15 @@ as `/etc/nginx/conf.d` so the running container sees a pulled change.
   container before it reloads.
 - The deploy ends with `ops/warm-images.sh` (#167), so a visitor does not
   pay for the first encode: it reads the entry pages (home, the index
-  pages, the newest essay, album and walk, every photographer), picks from
-  each AVIF `srcset` the one candidate a phone (390px, ratio 2) and a
-  desktop (1440px, ratio 1) would take, and requests those two at a time.
-  The home page rotates its photographs per visit, so it is read up to 80
-  times to collect them. The last line is the result, for example
-  `250 variants requested from 13 pages: 9 MISS, 240 HIT, 1 STALE, 0 failed`;
+  pages, every essay listed on `/stories`, the newest album and walk, every
+  photographer), picks from each AVIF `srcset` the one candidate a phone
+  (390 by 844px, ratio 2) and a desktop (1440 by 900px, ratio 1) would
+  take, and requests those two at a time. The choice follows `sizes` as a
+  browser does: media conditions, `vw`, `px`, and the essay reader's
+  `min()` and `vh` (#183), which is why each device has a height. The home
+  page rotates its photographs per visit, so it is read up to 80 times to
+  collect them. The last line is the result, for example
+  `309 variants requested from 16 pages: 0 MISS, 309 HIT, 0 STALE, 0 failed`;
   it cannot fail the deploy, and `ops/warm-images.sh https://bathong.africa`
   runs it by hand (`--list` prints the choices and requests no image).
 
@@ -102,6 +105,67 @@ git):
 The rest of the SMTP settings (`SMTP_HOST`/`PORT`/`USER`/`FROM`) are fixed in
 the compose file. With `SMTP_HOST` unset (local dev, e2e) Payload logs
 would-be emails to the console instead of sending.
+
+### Monitoring
+
+`.github/workflows/monitor.yml` (#81) reads the live site every two hours
+and fails when what it serves is wrong, not only when it is down. The case
+for it: from 16 Sep to 3 Oct 2026 every generated share card fell back to
+the default image while the site answered 200 throughout, and nobody saw it
+for 17 days. It is one job with no checkout and no secret, GET and HEAD
+only, and takes a few seconds. Each check prints one line (`ok`, `skip` or
+`FAIL`), all of them run, and the job fails at the end if any did:
+
+- **site**: `https://bathong.africa/` answers 200 and the HTML carries an
+  `og:image`.
+- **api**: `https://api.bathong.africa/api/frames?limit=1&depth=0` answers
+  200 with JSON that has a document in `docs` and a `totalDocs`. Frames are
+  readable by anyone and nothing caches a Payload find, so this cannot be
+  answered without Postgres.
+- **share card**: the first album linked from `/albums` (or the first essay
+  from `/stories`; no slug is written down) is read for its `og:image`. The
+  card must answer 200 to GET and to HEAD, be a JPEG, and not be
+  byte-identical to `/share/default.jpg`.
+- **image**: the first `/_ipx/` URL in a `src` on that page answers 200 with
+  an `image/` content type. The line prints its `X-Cache-Status`.
+- **preview**: `https://next.bathong.africa/` answers 401. A 200 would mean
+  the basic auth is gone.
+
+With no published album or essay the card and image checks say `skip` and
+do not fail; an index or entity page that does not answer 200 is a `FAIL`
+of its own. `000` in a line means the request got no answer at all.
+
+Cost: the repository is private and every run of a scheduled workflow is
+billed as at least one whole minute. Every two hours is 12 runs a day, about
+360 minutes a month (372 in a 31 day month); hourly would be about 720. Do
+that sum again before shortening the interval. Each request gives up after
+10 seconds and is retried once, so a run against a site that hangs ends
+inside four minutes, and the job is cut off at five.
+
+How a failure reaches a person: GitHub mails the run to whoever created the
+workflow or last changed its `cron` line, and only if that person has
+notifications for failed Actions runs switched on (Settings, Notifications,
+Actions). Nobody else is told, so check that setting when the file changes
+hands. The red run in the Actions tab names the check that failed; run it
+again from there (`workflow_dispatch`) once the cause is fixed. A run that
+lands on the restart during a deploy can fail once for no other reason.
+GitHub may start a scheduled run late, so the worst case to notice a fault
+is a little over two hours.
+
+Not watched:
+
+- Container health. Only `db` has a healthcheck in `docker-compose.yml`.
+  Healthchecks on the other containers are left out on purpose for now:
+  Traefik stops routing to a container that reports unhealthy, so a wrong
+  check would take the site down, and it has to be tried on a machine with
+  Docker first.
+- Backups: whether the dump in `~/backups` was written and can be restored.
+- The deploy job. A failed Deploy run is a red run in the Actions tab; this
+  workflow does not report it, it only sees the site afterwards.
+- Anything behind sign-in: the admin, member accounts, joining, RSVPs,
+  orders and outgoing mail.
+- Certificate expiry ahead of time, and the redirects from `www.` and the
+  alternate domain.
 
 ## Security headers (#37)
 
@@ -569,7 +633,73 @@ keeps its URL-driven state (`frontend/utils/archive.ts`) untouched.
   frontend lint, typecheck, both drift checks, unit tests and the build;
   backend `npx tsc --noEmit` and unit tests; `ops`, an `nginx -t` of the
   image cache config in the official image; then the Playwright suite
-  against a seeded stack.
+  against a seeded stack. The `e2e` job runs that stack built, as production
+  does, not the dev servers used locally: a Postgres 16 service, then in
+  `backend/` `npm run build` (`next build`, which opens no database
+  connection), `npm run migrate`, `npm run seed` with `SEED_DEMO=true`, and
+  `npm run start` (`next start` on 3001) in the background with its output
+  in a log file that a failed run prints. `wait-on` holds the job until
+  `/api/access` answers; Playwright then builds and serves Nuxt itself
+  (`frontend/playwright.config.ts`). `E2E_HOOKS` and `MEDIA_DIR` (repo
+  `media/`, shared by the seed and the server) are read when the server
+  starts. `IPX_SOURCE_URL=http://127.0.0.1:3001` makes ipx fetch by address:
+  a lookup of `localhost` queues on the same four threads as the sharp
+  encodes and, behind a backlog of them, outlasts the 10 s connect timeout,
+  so the image answers 500. Specs do not wait for a photograph to load
+  (`gotoHydrated`, never `networkidle`; helpers in
+  `frontend/e2e/helpers/images.ts`), so a slow or failed encode cannot fail
+  an unrelated test.
+
+### Page budgets
+
+The market is South Africa, phone first, on paid mobile data, so the first
+view of a page (everything it transfers before any scroll) has a ceiling,
+and the e2e suite fails a change that breaks it.
+
+- The budget is 1 MB (1,000,000 bytes) of first-view transfer.
+  `e2e/budgets.spec.ts` holds the photographer page, an album, the essay
+  reader, the stories index and the archive to it on a phone profile:
+  390x844 at device pixel ratio 2. `smoke.spec.ts` holds the homepage to
+  it and `reader.spec.ts` the reader on a desktop viewport.
+- Weight is the sum of the `content-length` every response declares, the
+  same in all three specs, so the numbers compare. The phone spec waits
+  for the first view to settle (every image the browser has started on is
+  complete, none in flight), never for `networkidle` and never for a
+  decode: an encode that fails in CI makes the page lighter, so the
+  budget still holds. A failure prints the total, images, script and the
+  three heaviest responses.
+- How it was chosen: 1 MB is the homepage budget from Phase 1, extended
+  unchanged. Measured on the live site on 4 Oct 2026 at that phone
+  profile: photographer page 407 to 480 KB, album 486 KB, essay reader
+  473 KB, archive 407 KB, stories index 793 KB. The ceiling sits at about
+  twice what the pages weigh: room for a heavier frame or a new feature,
+  not for a wrong rendition or an eager gallery. It is a ceiling, not a
+  target. CI serves the built Nuxt app directly, with no nginx in front,
+  so HTML and scripts go uncompressed there and the same page weighs more
+  than it does live: the gate is the stricter of the two.
+- Largest contentful paint is measured per page on a throttled connection
+  and printed, not asserted. The profile is slow 4G as Lighthouse and
+  DevTools define it: 1.6 Mbit/s down and 750 kbit/s up, each scaled by
+  0.9 (184,320 and 84,375 bytes per second), and a 150 ms round trip
+  scaled by 3.75 (562.5 ms per request). A timing gate would be flaky
+  while image encodes in CI can time out; the limit is chosen from the
+  printed numbers once the CI stack is stable (#170).
+- What the stories index taught: `xs` is 480, so `xs:100vw` alone offers
+  480w and 960w, and a 390px phone at 2x (asking for 780) takes 960w for
+  a 344px box. `390:100vw` in the `sizes` string adds the 780w that fits
+  it. On that page it took the four lead frames in the first view from
+  594 KB to 400 KB with nothing softer.
+
+### Accessibility
+
+The image pages are checked by `e2e/a11y.spec.ts`: axe at WCAG 2.1 A and AA
+on the photographer page, an album, the reader and the archive, plus the
+frame viewer by keyboard (#172). Every page starts with a skip link to
+`main`, and a client-side move announces the new title. Small type on
+jacaranda cannot reach 4.5:1 with the palette (paper 4.18, signal 4.33), so
+the copyright plate is excluded from the contrast rule there, with the
+reason in the spec. Missing alt text is fixed in the CMS, never invented in
+code.
 
 ## Migrations (Postgres + Payload)
 

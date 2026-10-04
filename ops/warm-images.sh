@@ -5,8 +5,9 @@
 #
 # For every page it reads the HTML, and for each <picture> works out which
 # candidate of the AVIF srcset a browser picks at each viewport from its
-# sizes attribute. That one URL is requested, never the whole srcset: encodes
-# run inside the Nuxt process and are expensive.
+# sizes attribute (media conditions, vw, vh, px and min() of those). That one
+# URL is requested, never the whole srcset: encodes run inside the Nuxt
+# process and are expensive.
 #
 # ops/deploy.sh runs this last. By hand, against any origin:
 #   ops/warm-images.sh https://bathong.africa
@@ -23,8 +24,9 @@
 # No `set -e`: one page or image that fails must not stop the rest.
 set -uo pipefail
 
-# name:CSS width:device pixel ratio
-viewports="phone:390:2 desktop:1440:1"
+# name:CSS width:CSS height:device pixel ratio. The height counts too: the
+# essay reader sizes its frames in vh.
+viewports="phone:390:844:2 desktop:1440:900:1"
 # Index pages, always walked. /walks is here because no other page links to
 # a single walk.
 index_pages="/ /stories /albums /walks /photographers /archive"
@@ -97,10 +99,33 @@ links() {
 # choices <file>: one "viewport<TAB>url" line per image and viewport.
 choices() {
   awk -v viewports="${viewports}" "${awk_lib}"'
-    # The length a sizes attribute resolves to at this viewport width, in CSS
-    # px. Forms in use: "(max-width: 839px) 100vw, 33vw" and fixed "720px".
-    function source_px(sizes, vw,    n, part, i, s, close_at, cond, len, limit) {
-      n = split(sizes, part, ",")
+    # One length in CSS px at this viewport: "60vw", "159.94vh" or "720px".
+    # -1 for anything else.
+    function length_px(len, vw, vh) {
+      if (len ~ /^[0-9.]+vw$/) return (len + 0) * vw / 100
+      if (len ~ /^[0-9.]+vh$/) return (len + 0) * vh / 100
+      if (len ~ /^[0-9.]+px$/) return len + 0
+      return -1
+    }
+
+    # The length a sizes attribute resolves to at this viewport, in CSS px.
+    # Forms in use: "(max-width: 839px) 100vw, 33vw", fixed "720px", and from
+    # the essay reader "min(100vw, 1440px, 159.94vh, 2000px)", alone or after
+    # a condition. The list is cut at the commas outside brackets only, since
+    # min() has commas of its own.
+    function source_px(sizes, vw, vh,    n, part, i, c, depth, from, s, close_at, cond, len, limit, k, term, j, px, least) {
+      n = 0
+      depth = 0
+      from = 1
+      for (i = 1; i <= length(sizes) + 1; i++) {
+        c = substr(sizes, i, 1)
+        if (c == "(") depth++
+        else if (c == ")") depth--
+        if (c == "" || (c == "," && depth == 0)) {
+          part[++n] = substr(sizes, from, i - from)
+          from = i + 1
+        }
+      }
       for (i = 1; i <= n; i++) {
         s = trim(part[i])
         len = s
@@ -115,15 +140,23 @@ choices() {
           else if (cond ~ /^[ \t]*min-width[ \t]*:/) { if (vw < limit) continue }
           else continue
         }
-        if (len ~ /^[0-9.]+vw$/) return (len + 0) * vw / 100
-        if (len ~ /^[0-9.]+px$/) return len + 0
-        return vw
+        if (len ~ /^min\(.*\)$/) {
+          # the least of its terms; one that cannot be read spoils the lot
+          k = split(substr(len, 5, length(len) - 5), term, ",")
+          least = -1
+          for (j = 1; j <= k; j++) {
+            px = length_px(trim(term[j]), vw, vh)
+            if (px < 0) { least = -1; break }
+            if (least < 0 || px < least) least = px
+          }
+        } else least = length_px(len, vw, vh)
+        return (least < 0) ? vw : least
       }
       return vw   # no sizes, or nothing matched: 100vw, as the browser does
     }
 
     # Print the candidate of one srcset a browser takes at each viewport.
-    function choose(srcset, sizes,    n, cand, field, k, m, i, j, v, t, vw, dpr, px, swap, cur, nxt) {
+    function choose(srcset, sizes,    n, cand, field, k, m, i, j, v, t, vw, vh, dpr, px, swap, cur, nxt) {
       gsub(/&amp;/, "\\&", srcset)
       n = split(srcset, cand, /,[ \t\r\n]+/)
       m = 0
@@ -138,8 +171,9 @@ choices() {
       for (v = 1; v <= nv; v++) {
         split(vp[v], t, ":")
         vw = t[2] + 0
-        dpr = t[3] + 0
-        px = source_px(sizes, vw)
+        vh = t[3] + 0
+        dpr = t[4] + 0
+        px = source_px(sizes, vw, vh)
         if (px <= 0) px = vw
         for (i = 1; i <= m; i++) {
           density[i] = (desc[i] ~ /w$/) ? (desc[i] + 0) / px : desc[i] + 0
@@ -246,8 +280,8 @@ walk() {
 
 echo "== image warm-up ${origin}"
 
-# Entry pages: the index pages, then the newest essay, album and walk and
-# every photographer, found from the links on the index pages (the first
+# Entry pages: the index pages, then every essay, the newest album and walk
+# and every photographer, found from the links on the index pages (the first
 # link is the newest, the lists are sorted that way).
 chosen="${work}/chosen.txt"
 found="${work}/found.txt"
@@ -256,8 +290,8 @@ found="${work}/found.txt"
 for path in ${index_pages}; do
   walk "${path}" || continue
   case "${path}" in
-    /stories | /albums | /walks) links "${work}/page.html" "^${path}/[^/]+\$" 1 >> "${found}" ;;
-    /photographers) links "${work}/page.html" "^${path}/[^/]+\$" >> "${found}" ;;
+    /albums | /walks) links "${work}/page.html" "^${path}/[^/]+\$" 1 >> "${found}" ;;
+    /stories | /photographers) links "${work}/page.html" "^${path}/[^/]+\$" >> "${found}" ;;
   esac
 done
 while read -r path; do

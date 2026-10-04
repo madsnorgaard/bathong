@@ -66,5 +66,8 @@ const ratioClass = computed(() => ({
   inset: 0;
   display: grid;
   place-items: center;
+  /* the slot is a paper panel wherever the frame stands: its label takes the
+     paper plate's quiet text, not the ink page's (2.14:1 on paper-dim) */
+  color: var(--grey-ink);
 }
 </style>

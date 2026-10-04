@@ -148,7 +148,7 @@ test('a signed-in workshop RSVP lands on the desk', async ({ page, request }) =>
   await expect(page.getByLabel(/^Email/)).toHaveValue(email)
   await page.getByRole('button', { name: /Reserve a place/ }).click()
   await expect(page.getByText(/on the list|waitlist/)).toBeVisible()
-  await page.goto('/account', { waitUntil: 'networkidle' })
+  await gotoHydrated(page, '/account')
   await expect(page.locator('.list', { hasText: 'Your RSVPs' })).toContainText(
     'Demo: the next workshop',
   )

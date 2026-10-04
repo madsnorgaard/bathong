@@ -67,7 +67,7 @@ test('password: the current one is checked, the change signs other devices out, 
   await page.getByLabel(/^Current password/).fill('not the password at all')
   await page.getByLabel(/^New password/).fill(NEW_PASSWORD)
   await page.getByRole('button', { name: /Change password/ }).click()
-  await expect(page.getByRole('alert')).toContainText('That is not your current password.')
+  await expect(page.getByRole('alert').filter({ hasText: 'That is not your current password.' })).toBeVisible()
 
   await page.getByLabel(/^Current password/).fill(PASSWORD)
   await page.getByLabel(/^New password/).fill(NEW_PASSWORD)
@@ -104,7 +104,7 @@ test('email: the change waits for the new address; then the old one is out and t
   await page.getByLabel(/^New email/).fill(newEmail)
   await page.getByLabel(/^Your password/).first().fill('wrong password here')
   await page.getByRole('button', { name: /Change email/ }).click()
-  await expect(page.getByRole('alert')).toContainText('That is not your current password.')
+  await expect(page.getByRole('alert').filter({ hasText: 'That is not your current password.' })).toBeVisible()
 
   await page.getByLabel(/^Your password/).first().fill(PASSWORD)
   await page.getByRole('button', { name: /Change email/ }).click()
@@ -223,7 +223,7 @@ test('closing the account: the password is checked, the person goes, the work st
   await page.getByLabel(/^Your password/).last().fill('wrong password here')
   await page.getByRole('button', { name: /Delete my account/ }).click()
   await page.getByRole('button', { name: /Yes, delete my account/ }).click()
-  await expect(page.getByRole('alert')).toContainText('That is not your current password.')
+  await expect(page.getByRole('alert').filter({ hasText: 'That is not your current password.' })).toBeVisible()
 
   await page.getByLabel(/^Your password/).last().fill(PASSWORD)
   await page.getByRole('button', { name: /Delete my account/ }).click()

@@ -41,7 +41,8 @@ defineProps<{
         :img-attrs="{ class: 'run-img' }"
       />
       <FrameCaption standalone :credit="albumImageCredit(image, credit)" :index="frameIndex(i + 1, images.length)" />
-      <p v-if="image.alt" class="b-caption note">{{ image.alt }}</p>
+      <!-- the same words are the photograph's alt text: shown here, said once there -->
+      <p v-if="image.alt" class="b-caption note" aria-hidden="true">{{ image.alt }}</p>
     </figure>
   </div>
 </template>

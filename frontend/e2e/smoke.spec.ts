@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
+import { gotoHydrated } from './helpers/account'
+import { firstViewSettled } from './helpers/images'
 
 /**
  * Phase 1 smoke suite against the seeded local stack (SEED_DEMO=true):
@@ -98,7 +100,12 @@ test.describe('home', () => {
       transferred += length
       if (length > 0) responses.push({ url: response.url(), bytes: length })
     })
-    await page.goto('/', { waitUntil: 'networkidle' })
+    // This one does need the photographs: the budget is their bytes. It
+    // waits for the first view to settle, not for the network to go quiet,
+    // so an encode that fails in CI is counted as what it sent and the test
+    // does not hang on it.
+    await gotoHydrated(page, '/')
+    await firstViewSettled(page)
     // On failure, name the weight: the ten heaviest responses.
     const breakdown = responses
       .sort((a, b) => b.bytes - a.bytes)
@@ -111,7 +118,8 @@ test.describe('home', () => {
 
 test.describe('walks', () => {
   test('shows the next walk and accepts an RSVP', async ({ page }) => {
-    await page.goto('/walks', { waitUntil: 'networkidle' })
+    // hydrated: typing before Vue takes the form over is lost
+    await gotoHydrated(page, '/walks')
     await expectShareMeta(page)
     await expect(page.getByText(/№ \d{3}/).first()).toBeVisible()
 
@@ -124,7 +132,7 @@ test.describe('walks', () => {
   test('rejects a duplicate RSVP with a readable error', async ({ page }) => {
     const email = `pw-dup-${Date.now()}@example.org`
     for (const _ of [1, 2]) {
-      await page.goto('/walks', { waitUntil: 'networkidle' })
+      await gotoHydrated(page, '/walks')
       await page.getByLabel(/^Name/).fill('Playwright Dup')
       await page.getByLabel(/^Email/).fill(email)
       await page.getByRole('button', { name: /Reserve a place/ }).click()
