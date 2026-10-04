@@ -61,6 +61,16 @@ as `/etc/nginx/conf.d` so the running container sees a pulled change.
 - CI runs `nginx -t` on the config (job `ops`): an invalid config would take
   every photograph down. The deploy script runs the same test inside the
   container before it reloads.
+- The deploy ends with `ops/warm-images.sh` (#167), so a visitor does not
+  pay for the first encode: it reads the entry pages (home, the index
+  pages, the newest essay, album and walk, every photographer), picks from
+  each AVIF `srcset` the one candidate a phone (390px, ratio 2) and a
+  desktop (1440px, ratio 1) would take, and requests those two at a time.
+  The home page rotates its photographs per visit, so it is read up to 80
+  times to collect them. The last line is the result, for example
+  `250 variants requested from 13 pages: 9 MISS, 240 HIT, 1 STALE, 0 failed`;
+  it cannot fail the deploy, and `ops/warm-images.sh https://bathong.africa`
+  runs it by hand (`--list` prints the choices and requests no image).
 
 ```bash
 # by hand, on the server
