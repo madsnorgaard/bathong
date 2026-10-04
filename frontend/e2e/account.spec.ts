@@ -52,7 +52,7 @@ test('a wrong password shows an error and stays on the page', async ({ page }) =
   await page.getByLabel(/^Email/).fill(EMAIL)
   await page.getByLabel(/^Password/).fill('not-the-password')
   await page.getByRole('button', { name: /Sign in/ }).click()
-  await expect(page.getByRole('alert')).toContainText(/do not match/)
+  await expect(page.getByRole('alert').filter({ hasText: /do not match/ })).toBeVisible()
   await expect(page).toHaveURL(/\/account\/sign-in/)
 })
 

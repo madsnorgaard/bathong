@@ -31,7 +31,7 @@ test('sign up, confirm the email, sign in to the desk', async ({ page, request }
   await page.getByLabel(/^Email/).fill(email)
   await page.getByLabel(/^Password/).fill(PASSWORD)
   await page.getByRole('button', { name: /Sign in/ }).click()
-  await expect(page.getByRole('alert')).toContainText(/Confirm your email first/)
+  await expect(page.getByRole('alert').filter({ hasText: /Confirm your email first/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Send it again/ })).toBeVisible()
 
   // confirm through the emailed token (read via the test door), then in
