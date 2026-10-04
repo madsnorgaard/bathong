@@ -63,12 +63,15 @@ as `/etc/nginx/conf.d` so the running container sees a pulled change.
   container before it reloads.
 - The deploy ends with `ops/warm-images.sh` (#167), so a visitor does not
   pay for the first encode: it reads the entry pages (home, the index
-  pages, the newest essay, album and walk, every photographer), picks from
-  each AVIF `srcset` the one candidate a phone (390px, ratio 2) and a
-  desktop (1440px, ratio 1) would take, and requests those two at a time.
-  The home page rotates its photographs per visit, so it is read up to 80
-  times to collect them. The last line is the result, for example
-  `250 variants requested from 13 pages: 9 MISS, 240 HIT, 1 STALE, 0 failed`;
+  pages, every essay listed on `/stories`, the newest album and walk, every
+  photographer), picks from each AVIF `srcset` the one candidate a phone
+  (390 by 844px, ratio 2) and a desktop (1440 by 900px, ratio 1) would
+  take, and requests those two at a time. The choice follows `sizes` as a
+  browser does: media conditions, `vw`, `px`, and the essay reader's
+  `min()` and `vh` (#183), which is why each device has a height. The home
+  page rotates its photographs per visit, so it is read up to 80 times to
+  collect them. The last line is the result, for example
+  `309 variants requested from 16 pages: 0 MISS, 309 HIT, 0 STALE, 0 failed`;
   it cannot fail the deploy, and `ops/warm-images.sh https://bathong.africa`
   runs it by hand (`--list` prints the choices and requests no image).
 
