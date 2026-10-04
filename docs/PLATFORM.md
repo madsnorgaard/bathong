@@ -61,6 +61,16 @@ as `/etc/nginx/conf.d` so the running container sees a pulled change.
 - CI runs `nginx -t` on the config (job `ops`): an invalid config would take
   every photograph down. The deploy script runs the same test inside the
   container before it reloads.
+- The deploy ends with `ops/warm-images.sh` (#167), so a visitor does not
+  pay for the first encode: it reads the entry pages (home, the index
+  pages, the newest essay, album and walk, every photographer), picks from
+  each AVIF `srcset` the one candidate a phone (390px, ratio 2) and a
+  desktop (1440px, ratio 1) would take, and requests those two at a time.
+  The home page rotates its photographs per visit, so it is read up to 80
+  times to collect them. The last line is the result, for example
+  `250 variants requested from 13 pages: 9 MISS, 240 HIT, 1 STALE, 0 failed`;
+  it cannot fail the deploy, and `ops/warm-images.sh https://bathong.africa`
+  runs it by hand (`--list` prints the choices and requests no image).
 
 ```bash
 # by hand, on the server
@@ -84,7 +94,7 @@ git):
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | always (container names, Traefik routers) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
-| `SITE_URL` | optional; where password-reset links point (defaults to the first CORS origin) |
+| `SITE_URL` | optional override; the compose file passes `https://$SITE_DOMAIN` to Payload by default. The origin for links in mail (verify, reset, membership) |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
 | `NUXT_PUBLIC_SITE_URL` | optional override; defaults to `https://$SITE_DOMAIN` |
 | `SMTP_PASS` | platform - the noreply@ mailbox password (mail repo's `setup-bathong.sh`) |
@@ -136,15 +146,14 @@ image):
 docker compose exec \
   -e SEED_ADMIN_EMAIL=you@example.com \
   -e SEED_ADMIN_PASSWORD='a-real-password' \
-  -e SEED_DEMO=true \
   bathong_payload npm run seed
 ```
 
 `SEED_ADMIN_*` creates the first admin login for `api.bathong.africa/admin`.
-`SEED_DEMO=true` adds the demo essay/frames so the site looks lived-in for a
-review; drop it for the real launch (the demo frames are still Johannesburg
-placeholders, issue #11). The seed is idempotent - rerunning updates rather
-than duplicates.
+Do not pass `SEED_DEMO=true` on the server: it is for local development and
+CI. It adds demo essays, walks and albums, and a demo member account whose
+password falls back to a development default unless `SEED_MEMBER_PASSWORD`
+is set. The seed is idempotent - rerunning updates rather than duplicates.
 
 Verify after a deploy: `https://bathong.africa` serves the site (walks page
 shows the route map, an RSVP submits, the devtools console shows no CSP
@@ -293,10 +302,12 @@ reused; a number typed by hand moves the sequence past it), set the
 account's plan, status, expiry, `profile` and `memberSince`, and send
 `membershipActivated`. A refund or cancellation after payment does not
 revoke membership by itself; an admin edits the account. Two limits are
-accepted at collective scale rather than engineered away: the welcome mail
-leaves inside the request transaction (Payload 3.84 has no post-commit
-hook), and two orders for one account marked paid in the same instant would
-compute the same expiry base. The activation hook reads the paid transition
+accepted at collective scale rather than engineered away (both are in
+Accepted limits below): the welcome mail leaves inside the request
+transaction (Payload has no post-commit hook; checked against 3.90.2, the
+version pinned in `backend/package.json`), and two orders for one account
+marked paid in the same instant would compute the same expiry base. The
+activation hook reads the paid transition
 off the saved order (`doc`/`previousDoc`), never off a flag passed through
 the hook context: a local API call made with `req` replaces `req.context`,
 so a flag set after such a call in `beforeChange` never reaches
@@ -418,11 +429,13 @@ Password-reset emails link to `/account/reset?token=...` on the site
 admin panel. The strict Traefik rate limit covers login, forgot-password
 and reset-password alongside the public POST endpoints.
 
-`SEED_DEMO=true` seeds a member login for the e2e suite:
-`member@bathong.local` / `SEED_MEMBER_PASSWORD` (default
-`bathong-member-dev`), plan monthly, status active, linked to the
-Mads Nørgaard profile. `frontend/e2e/account.spec.ts` covers the redirect,
-sign-in, a wrong password and sign-out.
+`SEED_DEMO=true` seeds a member login for the e2e suite: plan monthly,
+status active, linked to the Mads Nørgaard profile. Its password comes from
+`SEED_MEMBER_PASSWORD`; when that is unset the seed falls back to a
+development default (`backend/src/seed/seed.ts`), so set the variable on
+any stack that can be reached from outside. CI sets its own throwaway value
+(`ci.yml`). `frontend/e2e/account.spec.ts` covers the redirect, sign-in, a
+wrong password and sign-out.
 
 ## Share cards (og:image per entity)
 
@@ -586,11 +599,88 @@ Joining and orders). The `orders` collection (a webhook would find the order
 by its `reference`) and `bookingUrl` on walks and workshops are the seams;
 integrating later is additive.
 
+## Accepted limits
+
+Known, and left as they are: at the collective's size each costs less than
+its fix. One list, so nobody has to find them in the sections above. Each
+names the file that shows it; the Payload behaviour was read in 3.90.2,
+the pinned version.
+
+- **The welcome mail leaves inside the transaction.** The Orders
+  `afterChange` hook sends `membershipActivated` before the request
+  commits, and Payload has no post-commit hook. A commit that failed after
+  that point would leave a welcome mail for an activation that rolled
+  back; the `membership: activated` log line is the audit trail.
+  `backend/src/collections/Orders.ts`
+- **Two orders for one account marked paid in the same instant** compute
+  the same expiry base: `beforeChange` reads the account's expiry
+  (`activationBase`), `afterChange` writes the new one, and nothing locks
+  the account in between. `backend/src/collections/Orders.ts`,
+  `backend/src/lib/membership.ts`
+- **The hook context does not carry a flag from one hook to the next.** A
+  local API call made with `req` puts a new object on `req.context`
+  (Payload's `createLocalReq`), so a flag set on the destructured `context`
+  after such a call in `beforeChange` never reaches `afterChange`. Hooks
+  read the transition from `doc`, `previousDoc` and `operation` instead. A
+  guard passed into a nested call (`context: { syncingOwner: true }`) does
+  arrive. `backend/src/collections/Orders.ts`
+- **A refund or cancellation does not revoke a membership.** The Orders
+  hooks act only when an order becomes `paid`; an admin edits the account.
+  `backend/src/collections/Orders.ts`
+- **An event can end up over capacity.** RSVP capacity is a count query in
+  `beforeChange`, so two submits in the same instant can both pass it.
+  `backend/src/collections/Rsvps.ts`
+- **Mail is sent once and never retried.** The platform's own mail goes
+  through `sendSafe`, which is not awaited and never throws, so a slow or
+  dead SMTP hop cannot fail a request that has committed. A failed send is
+  an `email send failed` line in the Payload log and nothing else.
+  `backend/src/email/send.ts`
+- **Archive search is plain `ILIKE` and nothing is cached**, facets
+  included: sized for a few hundred frames (the upgrade path is under The
+  archive). `backend/src/endpoints/archive.ts`
+- **Styles keep `'unsafe-inline'` in the CSP.** Vue SSR emits style
+  attributes, which a nonce cannot cover; scripts carry no such allowance.
+  `frontend/nuxt.config.ts`
+- **The security page mirrors Payload internals.** Payload exports neither
+  its local password check nor its session write, so the hashing and the
+  lockout count are copied; a Payload upgrade that changes either has to
+  be followed there. `backend/src/lib/sessions.ts`
+- **A photograph replaced under the same file name can stay stale for up
+  to 30 days** in the image cache, which is what the 30-day validity
+  bounds. `ops/nginx/ipx-cache.conf`
+
 ## Roadmap milestones
 
-- **M1 Holding live** - holding page on bathong.africa (done)
-- **M2 Platform scaffold** - backend boots, admin gated, initial migration (done)
-- **M3 v1 site headless** - Nuxt + content, cutover from holding page (done, #12)
-- **M4 Members** - sign-in from the frontend (done, #13), open sign-up (done, #40), photocall submissions (v1 shipped), SMTP (done)
-- **M5 Payments** - pricing decided (#17), joining by EFT live (an editor confirms each payment), provider decision open (#18)
+Tracked as GitHub milestones; read against the tracker on 4 October 2026.
+
+Done:
+
+- **M1 Holding live** - holding page on bathong.africa
+- **M2 Platform scaffold** - backend boots, admin gated, initial migration
+- **M3 v1 site headless** - Nuxt + content, cutover from holding page (#12)
+- **M4 Members** - sign-in from the frontend (#13), open sign-up (#75),
+  photocall submissions (v1 shipped), SMTP
 - **M6 Archive** - the searchable open archive over frames (v1 shipped, #19)
+
+Open:
+
+- **M5 Payments** - pricing is decided (#17) and joining by EFT is live (an
+  editor confirms each payment). One issue is left, #18: choose the payment
+  provider and integrate it.
+- **M7 Open the door** - what has to be true before joining is announced:
+  the entity registered and its bank account, the real bank details on the
+  `membership` global, the photocall licence text signed off, the open
+  door decided (a form or the mailto), the site copy following the
+  three-capitals repositioning, and these docs telling the truth.
+- **M8 Keep it running** - the platform as an operated service: scheduled
+  off-host backups, uptime checks and alerts, renewal reminders and a lapse
+  notice, a reader for the newsletter preference, and the dependency
+  advisories. Also here: image performance (new sizes warmed after a
+  deploy, the essay reader, phone budgets, large screens), an
+  accessibility pass on the image pages, and the gaps between what the
+  repo configures and what runs.
+- **M9 Worth joining** - what makes a photographer want their work here
+  and pay for it: members choosing the frames that lead their page and
+  submitting work to it, benefits enforced in code with the lapse defined,
+  a public page for exhibitions, bookable member sessions, and a
+  membership page that says truthfully what paying gets.
