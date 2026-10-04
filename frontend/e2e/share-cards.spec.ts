@@ -43,7 +43,7 @@ async function ogImage(page: import('@playwright/test').Page, path: string) {
 
 test('essay page shares its generated C2 card', async ({ page, request }) => {
   const content = await ogImage(page, '/stories/demo-reader-essay')
-  expect(content).toMatch(/\/share\/essay\/demo-reader-essay\.jpg\?v=\d+$/)
+  expect(content).toMatch(/\/share\/essay\/demo-reader-essay\.jpg\?v=\d+&c=\d+$/)
   await expectGeneratedCard(request, '/share/essay/demo-reader-essay.jpg')
 })
 
@@ -51,37 +51,37 @@ test('photographer page shares its generated C3 card', async ({ page, request })
   // Mads has seeded frames, so with no portrait the newest frame leads. A
   // photographer with neither (the seeded Jacques) is served the default.
   const content = await ogImage(page, '/photographers/mads-norgaard')
-  expect(content).toMatch(/\/share\/photographer\/mads-norgaard\.jpg\?v=\d+$/)
+  expect(content).toMatch(/\/share\/photographer\/mads-norgaard\.jpg\?v=\d+&c=\d+$/)
   await expectGeneratedCard(request, '/share/photographer/mads-norgaard.jpg')
 })
 
 test('walks page shares the C4 card while a walk is upcoming', async ({ page, request }) => {
   const content = await ogImage(page, '/walks')
-  expect(content).toMatch(/\/share\/(walks\.jpg\?v=\d+|default\.jpg)$/)
+  expect(content).toMatch(/\/share\/(walks\.jpg\?v=\d+&c=\d+|default\.jpg)$/)
   if (content?.includes('walks.jpg')) await expectGeneratedCard(request, '/share/walks.jpg')
 })
 
 test('a walk page shares its own C4 card', async ({ page, request }) => {
   const content = await ogImage(page, '/walks/demo-past-walk')
-  expect(content).toMatch(/\/share\/walk\/demo-past-walk\.jpg\?v=\d+$/)
+  expect(content).toMatch(/\/share\/walk\/demo-past-walk\.jpg\?v=\d+&c=\d+$/)
   await expectGeneratedCard(request, '/share/walk/demo-past-walk.jpg')
 })
 
 test('an album page shares its generated C6 card', async ({ page, request }) => {
   const content = await ogImage(page, '/albums/demo-behind-the-walk')
-  expect(content).toMatch(/\/share\/album\/demo-behind-the-walk\.jpg\?v=\d+$/)
+  expect(content).toMatch(/\/share\/album\/demo-behind-the-walk\.jpg\?v=\d+&c=\d+$/)
   await expectGeneratedCard(request, '/share/album/demo-behind-the-walk.jpg')
 })
 
 test('a workshop page shares its own card', async ({ page, request }) => {
   const content = await ogImage(page, '/workshops/demo-past-workshop')
-  expect(content).toMatch(/\/share\/workshop\/demo-past-workshop\.jpg\?v=\d+$/)
+  expect(content).toMatch(/\/share\/workshop\/demo-past-workshop\.jpg\?v=\d+&c=\d+$/)
   await expectGeneratedCard(request, '/share/workshop/demo-past-workshop.jpg')
 })
 
 test('the workshops page shares the next-workshop card while one is upcoming', async ({ page, request }) => {
   const content = await ogImage(page, '/workshops')
-  expect(content).toMatch(/\/share\/(workshops\.jpg\?v=\d+|default\.jpg)$/)
+  expect(content).toMatch(/\/share\/(workshops\.jpg\?v=\d+&c=\d+|default\.jpg)$/)
   if (content?.includes('workshops.jpg')) await expectGeneratedCard(request, '/share/workshops.jpg')
 })
 
@@ -106,14 +106,23 @@ for (const [path, card] of [
 ] as const) {
   test(`the ${path} index shares its own photograph card`, async ({ page, request }) => {
     const content = await ogImage(page, path)
-    expect(content).toMatch(new RegExp(`/share/${card}\\.jpg\\?v=\\d+$`))
+    expect(content).toMatch(new RegExp(`/share/${card}\\.jpg\\?v=\\d+&c=\\d+$`))
     await expectGeneratedCard(request, `/share/${card}.jpg`)
   })
 }
 
 test('photocalls page shares the C5 card only while a call is open', async ({ page }) => {
   const content = await ogImage(page, '/photocalls')
-  expect(content).toMatch(/\/share\/(photocalls\.jpg\?v=\d+|default\.jpg)$/)
+  expect(content).toMatch(/\/share\/(photocalls\.jpg\?v=\d+&c=\d+|default\.jpg)$/)
+})
+
+test('a generated card answers HEAD like GET, and refuses to be posted to', async ({ request }) => {
+  // crawlers and validators probe with HEAD before they fetch the image
+  const head = await request.head('/share/album/demo-behind-the-walk.jpg')
+  expect(head.status()).toBe(200)
+  expect(head.headers()['content-type']).toContain('image/jpeg')
+  const post = await request.post('/share/album/demo-behind-the-walk.jpg')
+  expect(post.status()).toBe(405)
 })
 
 test('unknown entities and failures serve the default card, never an error', async ({

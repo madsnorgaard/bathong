@@ -441,13 +441,17 @@ const CACHE_MAX = 200
 
 /**
  * Serve a card: cached render keyed on name+version, default bytes on any
- * failure. Cache-control matches the /share/** route rule.
+ * failure. Cache-control matches the /share/** route rule. The route files
+ * carry no method suffix so HEAD reaches here too (crawlers and validators
+ * probe with it, and a GET-only route answered them 404); anything else is
+ * refused.
  */
 export async function serveCard(
   event: Parameters<typeof setHeader>[0],
   key: string,
   render: () => Promise<Buffer | null>,
 ): Promise<Buffer> {
+  assertMethod(event, 'GET', true)
   setHeader(event, 'content-type', 'image/jpeg')
   setHeader(event, 'cache-control', 'public, max-age=86400')
   const hit = cache.get(key)

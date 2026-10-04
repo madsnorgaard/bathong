@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canonicalUrl, shareLinks, shareText } from '~/utils/share'
+import { CARD_REVISION, canonicalUrl, shareLinks, shareText, withCardRevision } from '~/utils/share'
 
 describe('shareText (the voice)', () => {
   it('leads with Bathong! and puts the link on its own line', () => {
@@ -30,5 +30,16 @@ describe('canonicalUrl (never the request host)', () => {
     expect(canonicalUrl('https://bathong.africa/', '/walks/x')).toBe('https://bathong.africa/walks/x')
     expect(canonicalUrl('https://bathong.africa', 'walks/x')).toBe('https://bathong.africa/walks/x')
     expect(canonicalUrl('https://bathong.africa', '/')).toBe('https://bathong.africa/')
+  })
+})
+
+describe('withCardRevision (a new URL is the only way a platform refetches a card)', () => {
+  it('adds the revision to a generated card, after the document version', () => {
+    expect(withCardRevision('/share/album/x.jpg?v=123')).toBe(`/share/album/x.jpg?v=123&c=${CARD_REVISION}`)
+    expect(withCardRevision('/share/stories.jpg')).toBe(`/share/stories.jpg?c=${CARD_REVISION}`)
+  })
+  it('leaves the static default card and foreign URLs alone', () => {
+    expect(withCardRevision('/share/default.jpg')).toBe('/share/default.jpg')
+    expect(withCardRevision('https://cdn.example.org/card.jpg')).toBe('https://cdn.example.org/card.jpg')
   })
 })
