@@ -209,6 +209,18 @@ links back to the walk(s). Specs: `frontend/e2e/walk-detail.spec.ts`,
 `admin-walk-links.spec.ts` (admin config: future walks rejected, join
 respects drafts and access, album credit rule, picker hides future walks).
 
+## Exhibitions
+
+Exhibitions have a public index (`/exhibitions`) and a detail page
+(`/exhibitions/[slug]`), linked from the footer and from each photographer
+page whose frames hang there (#163). An exhibition's phase (on now, coming
+up, past) comes from its dates in SAST, on through its last day; the
+`status` field only decides when a date is missing. With no hero image the
+first frame leads the page. Share cards `/share/exhibition/[slug].jpg` and
+`/share/exhibitions.jpg` lead with the hero image, else the first frame.
+`SEED_DEMO` seeds one, `demo-first-hang`, for the e2e suite
+(`frontend/e2e/exhibitions.spec.ts`).
+
 ## Visual sequence editor (essays)
 
 Sequencing a photo essay is a visual judgement, so the essay's `sequence`

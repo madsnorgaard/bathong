@@ -26,6 +26,7 @@ const socials = computed(() => {
 // The header holds seven links; what does not fit there is reachable here.
 const siteLinks = [
   { to: '/albums', label: 'Albums' },
+  { to: '/exhibitions', label: 'Exhibitions' },
   { to: '/about', label: 'About' },
   { to: '/privacy', label: 'Privacy' },
 ]

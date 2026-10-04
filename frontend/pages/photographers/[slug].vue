@@ -3,10 +3,11 @@
  * The photographer page (W4): a photographer's front page, hosted by us.
  * Count row with real numbers only or it does not render. Essays first,
  * then the newest frames as a staggered run where every frame opens, the
- * member's albums, and the workshops they facilitated on paper. The
- * copyright line is a jacaranda plate, on the record.
+ * member's albums, the exhibitions that hang their frames, and the workshops
+ * they facilitated on paper. The copyright line is a jacaranda plate, on the
+ * record.
  */
-import type { Person, Essay, Frame, Album, Media, Workshop, SiteSetting } from '~/types/payload-types'
+import type { Person, Essay, Frame, Album, Media, Workshop, Exhibition, SiteSetting } from '~/types/payload-types'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -30,6 +31,7 @@ const [
   { data: albumsData },
   { data: workshopsData },
   { data: walksData },
+  { data: exhibitionsData },
   { data: settings },
 ] = await Promise.all([
   useCmsData<List<Essay>>(
@@ -54,6 +56,11 @@ const [
     `person-walks-${slug}`,
     `/api/walks?where[leaders][contains]=${personId}&limit=1&depth=0&joins[essays]=false&joins[frames]=false&joins[albums]=false`,
   ),
+  // the walls that hang this member's frames; published only for anonymous readers
+  useCmsData<List<Exhibition>>(
+    `person-exhibitions-${slug}`,
+    photographerExhibitionsQuery(personId, 12),
+  ),
   useCmsData<SiteSetting>('site-settings', '/api/globals/site-settings'),
 ])
 
@@ -66,6 +73,16 @@ const frames = computed(() =>
 const framesTotal = computed(() => framesData.value?.totalDocs ?? 0)
 const albums = computed(() => albumsData.value?.docs ?? [])
 const workshops = computed(() => workshopsData.value?.docs ?? [])
+// One clock for server and browser, so "on now" cannot change under hydration.
+const wallNow = useState('exhibitions-now', () => Date.now())
+const exhibitions = computed(() =>
+  (exhibitionsData.value?.docs ?? []).map((doc) => ({
+    doc,
+    phase: exhibitionPhaseLabel(exhibitionPhase(doc, wallNow.value)),
+    // how many of the frames on that wall are this member's
+    frames: framesOnWall(doc, personId),
+  })),
+)
 const archivePath = `/archive?photographer=${encodeURIComponent(slug)}`
 
 // A count row, not a badge system: real numbers or the entry does not render.
@@ -74,6 +91,7 @@ const counts = computed(() =>
     { label: 'Essays', n: essaysData.value?.totalDocs ?? 0 },
     { label: 'Frames in archive', n: framesTotal.value, to: archivePath },
     { label: 'Albums', n: albumsData.value?.totalDocs ?? 0 },
+    { label: 'Exhibitions', n: exhibitionsData.value?.totalDocs ?? 0 },
     { label: 'Workshops facilitated', n: workshopsData.value?.totalDocs ?? 0 },
     { label: 'Walks led', n: walksData.value?.totalDocs ?? 0 },
   ].filter((c) => c.n > 0) as { label: string; n: number; to?: string }[],
@@ -271,6 +289,22 @@ function onViewerKey(e: KeyboardEvent) {
       </div>
     </section>
 
+    <!-- where the frames hang: each row a door to the exhibition -->
+    <section v-if="exhibitions.length" v-reveal class="chapter">
+      <ChapterHead title="Exhibitions" />
+      <ul class="b-ruled">
+        <li v-for="exhibition in exhibitions" :key="exhibition.doc.id">
+          <span class="num wall-phase">{{ exhibition.phase }}</span>
+          <NuxtLink :to="exhibitionPath(exhibition.doc)" class="wall-link">
+            {{ exhibition.doc.title }} →
+            <small>
+              <template v-if="exhibition.frames">{{ exhibition.frames }} frame{{ exhibition.frames === 1 ? '' : 's' }} · </template>{{ exhibition.doc.venue ?? 'Venue TBC' }} · {{ exhibitionDates(exhibition.doc) }}
+            </small>
+          </NuxtLink>
+        </li>
+      </ul>
+    </section>
+
     <!-- the taught side, on paper: each row a door to the workshop's own page -->
     <section v-if="workshops.length" v-reveal class="chapter chapter--paper">
       <ChapterHead title="Workshops facilitated" />
@@ -448,6 +482,18 @@ function onViewerKey(e: KeyboardEvent) {
 .door {
   margin-top: var(--space-2);
   color: var(--signal);
+}
+.wall-link {
+  color: inherit;
+  display: block;
+}
+.wall-link:hover {
+  color: var(--signal);
+}
+/* the phase is a word, wider than a number: keep the titles on one edge */
+.b-ruled .wall-phase {
+  min-width: 7.4em;
+  text-transform: uppercase;
 }
 .row-link {
   color: inherit;
