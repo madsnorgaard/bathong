@@ -73,9 +73,13 @@ services:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       PAYLOAD_PUBLIC_SERVER_URL: https://api.${SITE_DOMAIN}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      # Site origin for the links in mail (verify, reset, membership). Set
+      # on purpose: without it they follow whichever origin is first in
+      # CORS_ORIGINS.
+      SITE_URL: ${SITE_URL:-https://${SITE_DOMAIN}}
       COOKIE_DOMAIN: .${SITE_DOMAIN}
       MEDIA_DIR: /app/media
-      # Auth emails (password reset; verification once self-signup opens) go
+      # Auth emails (sign-up verification and password reset) go
       # out through the collective's mail server as noreply@. Public hostname
       # on purpose: the Let's Encrypt cert matches it, unlike the container
       # aliases on the mail stack's own network.

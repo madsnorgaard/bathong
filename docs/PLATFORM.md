@@ -84,7 +84,7 @@ git):
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | always (container names, Traefik routers) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
-| `SITE_URL` | optional; where password-reset links point (defaults to the first CORS origin) |
+| `SITE_URL` | optional override; the compose file passes `https://$SITE_DOMAIN` to Payload by default. The origin for links in mail (verify, reset, membership) |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
 | `NUXT_PUBLIC_SITE_URL` | optional override; defaults to `https://$SITE_DOMAIN` |
 | `SMTP_PASS` | platform - the noreply@ mailbox password (mail repo's `setup-bathong.sh`) |
