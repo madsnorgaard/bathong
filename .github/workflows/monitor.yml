@@ -1,0 +1,211 @@
+name: Monitor
+
+# Reads the live site every two hours and fails when what it serves is wrong,
+# not only when it is down. From 16 Sep to 3 Oct 2026 every generated share
+# card fell back to the default image while the site answered 200 throughout;
+# a status check would not have seen it, a check of the bytes does.
+#
+# Cost: the repository is private, and every run of a scheduled workflow is
+# billed as at least one whole minute. Every two hours is 12 runs a day, about
+# 360 minutes a month (372 in a 31 day month). Hourly would be about 720, which
+# is too much of the allowance for what it adds: the failure this exists for
+# went unseen for 17 days, so two hours is soon enough. Do not shorten the
+# interval without doing that sum again.
+#
+# Minute 17, not 0: GitHub is busiest on the hour and starts schedules late
+# then. Times are UTC. A schedule runs from the default branch only.
+#
+# A failed run is mailed by GitHub to whoever created this workflow or last
+# changed its cron line, if that person has notifications for failed Actions
+# runs switched on. See "Monitoring" in docs/PLATFORM.md.
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+# No checkout, no token use, no secret: GET and HEAD against public URLs only.
+permissions: {}
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    # The script bounds itself: ten requests, each at most 10 seconds and one
+    # retry, is under four minutes if everything hangs. This is the backstop,
+    # so a stuck run cannot burn more than five.
+    timeout-minutes: 5
+    env:
+      SITE: https://bathong.africa
+      API: https://api.bathong.africa
+      PREVIEW: https://next.bathong.africa
+    steps:
+      - name: Check the live site
+        shell: bash
+        run: |
+          # Every check runs even when an earlier one failed, so no -e. The
+          # job fails once, at the end.
+          set +e
+          set -u
+
+          tmp="$(mktemp -d)"
+          failed=0
+          code=000
+          ctype=''
+
+          ok()   { echo "ok    $1"; }
+          skip() { echo "skip  $1"; }
+          fail() {
+            echo "FAIL  $1"
+            failed=$((failed + 1))
+            if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::error title=Monitor::$1"; fi
+          }
+
+          # One retry rides out a restart during a deploy; -g because media
+          # file names can carry brackets, which curl would otherwise expand.
+          CURL=(curl -sS -g -A bathong-monitor --connect-timeout 5 --max-time 10 --retry 1 --retry-delay 2)
+
+          # get URL FILE: body to FILE, headers to $tmp/headers, sets $code and
+          # $ctype. A request that never got an answer leaves code 000 and an
+          # empty FILE.
+          get() {
+            local out
+            : > "$2"
+            out="$("${CURL[@]}" -o "$2" -D "$tmp/headers" -w '%{http_code} %{content_type}' "$1")"
+            code="${out%% *}"
+            ctype="${out#* }"
+          }
+
+          # The og:image of a saved page, as a platform would read it.
+          og_image() {
+            grep -o '<meta[^>]*property="og:image"[^>]*>' "$1" | head -n 1 \
+              | sed -e 's/.*content="\([^"]*\)".*/\1/' -e 's/&amp;/\&/g'
+          }
+
+          is_jpeg() { [ "$(head -c 3 "$1" | od -An -tx1 | tr -d ' \n')" = ffd8ff ]; }
+
+          # 1. The home page answers and advertises a share image.
+          get "$SITE/" "$tmp/home.html"
+          image="$(og_image "$tmp/home.html")"
+          if [ "$code" != 200 ]; then
+            fail "site: $SITE/ answered $code, expected 200"
+          elif [ -z "$image" ]; then
+            fail "site: $SITE/ answered 200 but the HTML has no og:image"
+          else
+            ok "site: $SITE/ 200, og:image $image"
+          fi
+
+          # 2. The API answers from the database. frames is readable by anyone
+          # and Payload has no cache in front of a find, so a paginated JSON
+          # answer with a count is a round trip to Postgres.
+          url="$API/api/frames?limit=1&depth=0"
+          get "$url" "$tmp/api.json"
+          total="$(grep -o '"totalDocs":[0-9]*' "$tmp/api.json" | head -n 1 | cut -d: -f2)"
+          if [ "$code" != 200 ]; then
+            fail "api: $url answered $code, expected 200"
+          elif [[ "$ctype" != application/json* ]] || ! grep -q '"docs":\[{"id":' "$tmp/api.json" || [ -z "$total" ]; then
+            fail "api: $url answered 200 ($ctype) but not a page of frames: no docs with an id, or no totalDocs"
+          else
+            ok "api: $url 200, JSON with docs, totalDocs $total"
+          fi
+
+          # Find one published entity page, without knowing a slug: the first
+          # album on /albums, or failing that the first essay on /stories. An
+          # index or entity page that does not answer 200 is a failure of its
+          # own; an empty site is not.
+          page=''
+          none='no published album or essay is linked from /albums or /stories'
+          for index in albums stories; do
+            get "$SITE/$index" "$tmp/index.html"
+            if [ "$code" != 200 ]; then
+              fail "index: $SITE/$index answered $code, expected 200"
+              none='no entity page could be read, see the failure above'
+              continue
+            fi
+            path="$(grep -o "href=\"/$index/[^\"#?]*\"" "$tmp/index.html" | head -n 1 | cut -d'"' -f2)"
+            if [ -n "$path" ]; then
+              page="$SITE$path"
+              break
+            fi
+          done
+          if [ -n "$page" ]; then
+            get "$page" "$tmp/page.html"
+            if [ "$code" != 200 ]; then
+              fail "page: $page answered $code, expected 200"
+              none='no entity page could be read, see the failure above'
+              page=''
+            fi
+          fi
+
+          # 3. A generated share card is a real card. The card routes answer
+          # 200 with the default card when a render fails, so the status says
+          # nothing: compare the bytes.
+          if [ -z "$page" ]; then
+            skip "share card: $none, nothing to check"
+          else
+            card="$(og_image "$tmp/page.html")"
+            why=''
+            if [ -z "$card" ]; then
+              why=' the page has no og:image;'
+            else
+              get "$SITE/share/default.jpg" "$tmp/default.jpg"
+              default_code="$code"
+              get "$card" "$tmp/card.jpg"
+              head_code="$("${CURL[@]}" -I -o /dev/null -w '%{http_code}' "$card")"
+              if [ "$default_code" != 200 ] || ! is_jpeg "$tmp/default.jpg"; then
+                why="$why $SITE/share/default.jpg answered $default_code or is not a JPEG, nothing to compare with;"
+              fi
+              if [ "$code" != 200 ]; then
+                why="$why GET answered $code, expected 200;"
+              elif [[ "$ctype" != image/jpeg* ]] || ! is_jpeg "$tmp/card.jpg"; then
+                why="$why not a JPEG ($ctype);"
+              elif cmp -s "$tmp/card.jpg" "$tmp/default.jpg"; then
+                why="$why byte-identical to /share/default.jpg, the render failed;"
+              fi
+              if [ "$head_code" != 200 ]; then
+                why="$why HEAD answered $head_code, expected 200;"
+              fi
+            fi
+            if [ -n "$why" ]; then
+              fail "share card: ${card:-$page}:$why"
+            else
+              ok "share card: $card GET 200, HEAD 200, JPEG of $(wc -c < "$tmp/card.jpg") bytes, differs from the default card"
+            fi
+          fi
+
+          # 4. A photograph through the image cache. The URL is taken as the
+          # page wrote it in a src attribute, whole: modifiers can contain a
+          # comma (f_avif,webp), so nothing here splits on one.
+          if [ -z "$page" ]; then
+            skip "image: $none, nothing to check"
+          else
+            src="$(grep -o 'src="[^"]*/_ipx/[^"]*"' "$tmp/page.html" | head -n 1 | cut -d'"' -f2 | sed 's/&amp;/\&/g')"
+            if [ -z "$src" ]; then
+              skip "image: $page has no /_ipx/ image in a src attribute, nothing to check"
+            else
+              case "$src" in /*) src="$SITE$src" ;; esac
+              get "$src" /dev/null
+              cache="$(grep -i '^x-cache-status:' "$tmp/headers" | tail -n 1 | cut -d: -f2 | tr -d ' \r')"
+              if [ "$code" != 200 ]; then
+                fail "image: $src answered $code, expected 200"
+              elif [[ "$ctype" != image/* ]]; then
+                fail "image: $src answered 200 but as $ctype, expected image/*"
+              else
+                ok "image: $src 200, $ctype, X-Cache-Status ${cache:-absent}"
+              fi
+            fi
+          fi
+
+          # 5. The preview host is still locked. 200 here would mean the basic
+          # auth in front of it is gone.
+          get "$PREVIEW/" /dev/null
+          if [ "$code" != 401 ]; then
+            fail "preview: $PREVIEW/ answered $code, expected 401 (basic auth)"
+          else
+            ok "preview: $PREVIEW/ 401, still behind basic auth"
+          fi
+
+          rm -rf "$tmp"
+          if [ "$failed" -gt 0 ]; then
+            echo "$failed check(s) failed"
+            exit 1
+          fi
+          echo "all checks passed"

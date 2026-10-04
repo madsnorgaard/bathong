@@ -103,6 +103,67 @@ The rest of the SMTP settings (`SMTP_HOST`/`PORT`/`USER`/`FROM`) are fixed in
 the compose file. With `SMTP_HOST` unset (local dev, e2e) Payload logs
 would-be emails to the console instead of sending.
 
+### Monitoring
+
+`.github/workflows/monitor.yml` (#81) reads the live site every two hours
+and fails when what it serves is wrong, not only when it is down. The case
+for it: from 16 Sep to 3 Oct 2026 every generated share card fell back to
+the default image while the site answered 200 throughout, and nobody saw it
+for 17 days. It is one job with no checkout and no secret, GET and HEAD
+only, and takes a few seconds. Each check prints one line (`ok`, `skip` or
+`FAIL`), all of them run, and the job fails at the end if any did:
+
+- **site**: `https://bathong.africa/` answers 200 and the HTML carries an
+  `og:image`.
+- **api**: `https://api.bathong.africa/api/frames?limit=1&depth=0` answers
+  200 with JSON that has a document in `docs` and a `totalDocs`. Frames are
+  readable by anyone and nothing caches a Payload find, so this cannot be
+  answered without Postgres.
+- **share card**: the first album linked from `/albums` (or the first essay
+  from `/stories`; no slug is written down) is read for its `og:image`. The
+  card must answer 200 to GET and to HEAD, be a JPEG, and not be
+  byte-identical to `/share/default.jpg`.
+- **image**: the first `/_ipx/` URL in a `src` on that page answers 200 with
+  an `image/` content type. The line prints its `X-Cache-Status`.
+- **preview**: `https://next.bathong.africa/` answers 401. A 200 would mean
+  the basic auth is gone.
+
+With no published album or essay the card and image checks say `skip` and
+do not fail; an index or entity page that does not answer 200 is a `FAIL`
+of its own. `000` in a line means the request got no answer at all.
+
+Cost: the repository is private and every run of a scheduled workflow is
+billed as at least one whole minute. Every two hours is 12 runs a day, about
+360 minutes a month (372 in a 31 day month); hourly would be about 720. Do
+that sum again before shortening the interval. Each request gives up after
+10 seconds and is retried once, so a run against a site that hangs ends
+inside four minutes, and the job is cut off at five.
+
+How a failure reaches a person: GitHub mails the run to whoever created the
+workflow or last changed its `cron` line, and only if that person has
+notifications for failed Actions runs switched on (Settings, Notifications,
+Actions). Nobody else is told, so check that setting when the file changes
+hands. The red run in the Actions tab names the check that failed; run it
+again from there (`workflow_dispatch`) once the cause is fixed. A run that
+lands on the restart during a deploy can fail once for no other reason.
+GitHub may start a scheduled run late, so the worst case to notice a fault
+is a little over two hours.
+
+Not watched:
+
+- Container health. Only `db` has a healthcheck in `docker-compose.yml`.
+  Healthchecks on the other containers are left out on purpose for now:
+  Traefik stops routing to a container that reports unhealthy, so a wrong
+  check would take the site down, and it has to be tried on a machine with
+  Docker first.
+- Backups: whether the dump in `~/backups` was written and can be restored.
+- The deploy job. A failed Deploy run is a red run in the Actions tab; this
+  workflow does not report it, it only sees the site afterwards.
+- Anything behind sign-in: the admin, member accounts, joining, RSVPs,
+  orders and outgoing mail.
+- Certificate expiry ahead of time, and the redirects from `www.` and the
+  alternate domain.
+
 ## Security headers (#37)
 
 Two layers, no overlap. Traefik (compose labels) owns HSTS on every router
