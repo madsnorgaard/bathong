@@ -55,6 +55,13 @@ function leadSrc(essay: Essay): string | null {
   if (lead && typeof lead === 'object') return mediaSrc(lead.image as never)
   return null
 }
+// The card's link already says the title; the photograph says what it
+// shows, or nothing when the file has no alt text in the CMS.
+function leadAlt(essay: Essay): string {
+  const lead = essay.leadFrame
+  const image = lead && typeof lead === 'object' ? lead.image : null
+  return image && typeof image === 'object' ? (image.alt ?? '') : ''
+}
 function leadCredit(essay: Essay): string {
   const lead = essay.leadFrame
   return lead && typeof lead === 'object' ? frameCredit(lead) : 'Bathong. Collective'
@@ -70,14 +77,15 @@ function frameCount(essay: Essay): number {
 <template>
   <div class="chapter">
     <div class="head-row">
-      <ChapterHead title="Stories" />
+      <ChapterHead title="Stories" :level="1" />
       <nav v-if="tags.length > 1" class="filters b-kicker" aria-label="Filter stories">
-        <NuxtLink to="/stories" :class="{ active: !activeTag }">all</NuxtLink>
+        <NuxtLink to="/stories" :class="{ active: !activeTag }" :aria-current="!activeTag ? 'true' : undefined">all</NuxtLink>
         <NuxtLink
           v-for="tag in tags"
           :key="tag"
           :to="`/stories?tag=${encodeURIComponent(tag)}`"
           :class="{ active: activeTag === tag }"
+          :aria-current="activeTag === tag ? 'true' : undefined"
         >
           {{ tag }}
         </NuxtLink>
@@ -97,7 +105,7 @@ function frameCount(essay: Essay): number {
     <NuxtLink v-if="hero" :to="`/stories/${hero.slug}`" class="hero">
       <BFrame
         :src="leadSrc(hero)"
-        :alt="hero.title"
+        :alt="leadAlt(hero)"
         :credit="leadCredit(hero)"
         sizes="390:100vw xs:100vw md:60vw lg:60vw xl:60vw"
         class="hero-frame"
@@ -118,7 +126,7 @@ function frameCount(essay: Essay): number {
       <NuxtLink v-for="essay in rest" :key="essay.id" :to="`/stories/${essay.slug}`" class="card">
         <BFrame
           :src="leadSrc(essay)"
-          :alt="essay.title"
+          :alt="leadAlt(essay)"
           :credit="leadCredit(essay)"
           sizes="390:100vw xs:100vw md:33vw lg:33vw xl:33vw"
           class="card-frame"
@@ -189,6 +197,12 @@ function frameCount(essay: Essay): number {
   color: inherit;
 }
 @media (max-width: 840px) {
+  /* a filter is a tap target on a phone */
+  .filters a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
   .hero,
   .grid {
     grid-template-columns: 1fr;

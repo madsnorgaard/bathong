@@ -690,6 +690,17 @@ and the e2e suite fails a change that breaks it.
   it. On that page it took the four lead frames in the first view from
   594 KB to 400 KB with nothing softer.
 
+### Accessibility
+
+The image pages are checked by `e2e/a11y.spec.ts`: axe at WCAG 2.1 A and AA
+on the photographer page, an album, the reader and the archive, plus the
+frame viewer by keyboard (#172). Every page starts with a skip link to
+`main`, and a client-side move announces the new title. Small type on
+jacaranda cannot reach 4.5:1 with the palette (paper 4.18, signal 4.33), so
+the copyright plate is excluded from the contrast rule there, with the
+reason in the spec. Missing alt text is fixed in the CMS, never invented in
+code.
+
 ## Migrations (Postgres + Payload)
 
 - Migrations are the source of truth everywhere; Drizzle push is dev-only and

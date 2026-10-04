@@ -6,6 +6,8 @@ await callOnce('auth-me', () => fetchMe())
 </script>
 
 <template>
+  <!-- says the new page's title to a screen reader after a client-side move -->
+  <NuxtRouteAnnouncer />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

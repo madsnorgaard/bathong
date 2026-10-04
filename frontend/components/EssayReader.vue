@@ -228,20 +228,29 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
-function advance(direction: 1 | -1) {
+/** Move to the next or previous frame; false when there is none that way. */
+function advance(direction: 1 | -1): boolean {
   const els = frameEls()
   const target = els.find((el) => Number(el.dataset.frameIndex) === current.value + direction)
-  target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  // no behaviour named: the page's own scroll-behavior applies, which is
+  // smooth unless the reader asked for reduced motion
+  target?.scrollIntoView({ block: 'center' })
+  return Boolean(target)
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-    e.preventDefault()
-    advance(1)
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-    e.preventDefault()
-    advance(-1)
-  }
+  // a key with a modifier is the browser's (Alt+Left is back), not ours
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+  const direction =
+    e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown'
+      ? 1
+      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp'
+        ? -1
+        : 0
+  if (!direction) return
+  // Past the last frame the key is left alone and scrolls the page, which
+  // is how the door below the sequence is reached by keyboard.
+  if (advance(direction)) e.preventDefault()
 }
 </script>
 

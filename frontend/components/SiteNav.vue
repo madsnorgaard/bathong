@@ -81,7 +81,8 @@ function setPageInert(on: boolean) {
   }
 }
 
-// The layout owns <main> and gives it no id, so the skip link finds it.
+// The layout's <main> carries the id, so the link works on its own; with
+// JavaScript the focus is moved there as well.
 function skipToMain() {
   const main = document.querySelector<HTMLElement>('main')
   if (!main) return

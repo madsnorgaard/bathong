@@ -1,7 +1,8 @@
 <template>
   <div class="site on-ink grain">
     <SiteNav />
-    <main>
+    <!-- the skip link's target: reachable by its href without JavaScript -->
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <SiteFooter />
