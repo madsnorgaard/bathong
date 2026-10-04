@@ -54,3 +54,10 @@ ipx_container="${site}_ipx_cache"
 docker exec "${ipx_container}" nginx -t
 docker exec "${ipx_container}" nginx -s reload
 echo "image cache: config reloaded"
+
+# Last, encode the image variants the entry pages use before a visitor asks
+# for one (a first encode is about 2 seconds per image). The deploy is done
+# by now and this must never fail it: the `||` keeps `set -e` out of it and
+# `timeout` bounds a run that hangs. Its last line is the summary.
+timeout 720 bash ops/warm-images.sh "https://${site}" \
+  || echo "image warm-up: incomplete (exit $?), the deploy itself is done"
