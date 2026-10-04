@@ -2,13 +2,21 @@
 /**
  * The sequencer (W2). Owns the 82vh cap (a photograph is seen whole or it is
  * not seen), the current-frame tracking for the counter rule, keyboard and
- * tap advance, and the streaming loader: frame 1 eager, frames 2-3 on idle,
- * the rest on approach. Nothing autoplays, ever. Frames are never cropped:
- * width follows from height and ratio.
+ * tap advance, and the streaming loader: frame 1 eager, the rest on
+ * approach. Nothing autoplays, ever. Frames are never cropped: width follows
+ * from height and ratio, and every frame holds its place before its file
+ * arrives.
  */
+interface MediaDoc {
+  url?: string | null
+  alt?: string | null
+  width?: number | null
+  height?: number | null
+}
+
 interface FrameDoc {
   id: number
-  image?: { url?: string | null; alt?: string | null } | number | null
+  image?: MediaDoc | number | null
   photographer?: { name?: string | null } | number | null
   creditOverride?: string | null
   caption?: string | null
@@ -40,44 +48,148 @@ type SequenceBlock = FrameBlock | PairBlock | TextBlock
 const props = defineProps<{ sequence: SequenceBlock[] }>()
 const emit = defineEmits<{ progress: [current: number, total: number] }>()
 
+// ---- renditions ----
+/**
+ * The reader writes its own picture element instead of using NuxtPicture.
+ * A frame is as wide as the 82vh cap and its ratio allow, so the width it
+ * is shown at depends on the height of the window and the shape of the
+ * file. NuxtPicture's sizes takes one px or vw value per screen key and
+ * cannot say that; the sizes attribute itself can (min() and vh). The
+ * renditions still come from @nuxt/image, so every one is an /_ipx/ URL
+ * over a relative source, one source per format.
+ */
+type Slot = 'bleed' | 'single' | 'pair'
+
+interface FramePicture {
+  avif: string
+  webp: string
+  /** JPEG, for the few browsers with neither format. */
+  fallback: string
+  sizes: string
+  width?: number
+  height?: number
+  /** The custom properties the stylesheet sizes a known file from. */
+  style?: Record<string, string>
+}
 
 interface RenderFrame {
   frame: FrameDoc
   index: number
   captionOverride?: string | null
+  picture: FramePicture | null
+}
+
+/**
+ * The rendition widths on offer, a step of 13 to 33 percent apart, so a
+ * screen is sent the pixels it needs and few more. A file is offered up to
+ * its own width and never past it: ipx does not enlarge, so a wider
+ * candidate would be the same pixels under a larger label.
+ */
+const LADDER = [480, 640, 840, 960, 1120, 1280, 1440, 1680, 1920, 2400, 2880, 3840]
+
+/**
+ * A frame held by the 82vh cap asks for this much more than the width it is
+ * shown at. A rendition matched to the pixel is resampled by the browser a
+ * second time at almost 1:1 and loses fine texture: measured on a 1440x900
+ * screen at 1107px shown, 1120px scored 34.3 dB against the original and
+ * 1440px scored 37.7 dB, and the grain of the stone was visibly smoother.
+ * 1.3 is what that screen was sent before, so nothing gets softer.
+ */
+const HEADROOM = 1.3
+
+/**
+ * The sizes attribute: the layout's own limit (the full width, half of it
+ * for a pair, 1440px), the 82vh cap as a width with its headroom, and the
+ * file's own pixels, whichever is least. A browser that cannot read min()
+ * here falls back to 100vw: heavier, never softer.
+ */
+function slotSizes(slot: Slot, width?: number, height?: number): string {
+  if (slot === 'bleed') return '100vw'
+  const caps =
+    width && height ? `, ${Math.ceil((8200 * HEADROOM * width) / height) / 100}vh, ${width}px` : ''
+  if (slot === 'pair') return `(max-width: 840px) min(100vw${caps}), min(50vw${caps})`
+  return `min(100vw, 1440px${caps})`
+}
+
+const img = useImage()
+
+function framePicture(f: FrameDoc, slot: Slot): FramePicture | null {
+  const src = mediaSrc(f.image as never)
+  if (!src) return null
+  const media = typeof f.image === 'object' ? f.image : null
+  const width = media?.width || undefined
+  const height = media?.height || undefined
+  const quality = img.options.quality
+  const widths = width ? [...LADDER.filter((w) => w < width), width] : LADDER
+  const srcset = (format: string) =>
+    widths.map((w) => `${img(src, { width: w, format, quality })} ${w}w`).join(', ')
+  const picture: FramePicture = {
+    avif: srcset('avif'),
+    webp: srcset('webp'),
+    fallback: img(src, { width: Math.min(1440, width ?? 1440), format: 'jpeg', quality }),
+    sizes: slotSizes(slot, width, height),
+  }
+  if (width && height) {
+    picture.width = width
+    picture.height = height
+    picture.style = { '--ratio': (width / height).toFixed(4), '--file-width': `${width}px` }
+  }
+  return picture
 }
 
 /** Flatten blocks into render data, numbering every frame (pairs count as two). */
 const rendered = computed(() => {
-  let n = 0
-  const numbered = (f: unknown, captionOverride?: string | null): RenderFrame | null => {
+  const frames: RenderFrame[] = []
+  const numbered = (f: unknown, slot: Slot, captionOverride?: string | null): RenderFrame | null => {
     if (!f || typeof f !== 'object') return null
-    n += 1
-    return { frame: f as FrameDoc, index: n, captionOverride }
+    const frame = f as FrameDoc
+    const rf = { frame, index: frames.length + 1, captionOverride, picture: framePicture(frame, slot) }
+    frames.push(rf)
+    return rf
   }
   const blocks = props.sequence.map((block) => {
     if (block.blockType === 'frame') {
-      return { ...block, single: numbered(block.frame, block.captionOverride) }
+      const slot = block.fullBleed ? 'bleed' : 'single'
+      return { ...block, single: numbered(block.frame, slot, block.captionOverride) }
     }
     if (block.blockType === 'pair') {
       return {
         ...block,
-        pairLeft: numbered(block.left, block.captionOverride),
-        pairRight: numbered(block.right),
+        pairLeft: numbered(block.left, 'pair', block.captionOverride),
+        pairRight: numbered(block.right, 'pair'),
       }
     }
     return { ...block, paragraphs: richTextParagraphs(block.body as never) }
   })
-  return { blocks, total: n }
+  return { blocks, total: frames.length, first: frames[0]?.picture ?? null }
 })
+
+// Frame 1 is the page's largest paint: the head names it, so the fetch
+// starts before the body is parsed. The type keeps a browser without AVIF
+// from fetching a file it would not use.
+if (import.meta.server) {
+  useHead({
+    link: () => {
+      const first = rendered.value.first
+      if (!first) return []
+      return [
+        {
+          rel: 'preload',
+          as: 'image',
+          type: 'image/avif',
+          imagesrcset: first.avif,
+          imagesizes: first.sizes,
+          fetchpriority: 'high',
+        },
+      ]
+    },
+  })
+}
 
 const total = computed(() => rendered.value.total)
 const current = ref(1)
 watch([current, total], () => emit('progress', current.value, total.value), { immediate: true })
 
-function frameSrc(f: FrameDoc): string | null {
-  return mediaSrc(f.image as never)
-}
 function frameAlt(f: FrameDoc): string {
   return (typeof f.image === 'object' && f.image?.alt) || f.caption || ''
 }
@@ -108,15 +220,6 @@ onMounted(() => {
     { threshold: [0.4, 0.6] },
   )
   frameEls().forEach((el) => observer!.observe(el))
-
-  // streaming: frames 2-3 fetch on idle, ahead of the scroll
-  const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1500))
-  idle(() => {
-    for (const el of frameEls().slice(1, 3)) {
-      const img = el.querySelector('img')
-      if (img?.loading === 'lazy') img.loading = 'eager'
-    }
-  })
 
   document.addEventListener('keydown', onKeydown)
 })
@@ -153,16 +256,20 @@ function onKeydown(e: KeyboardEvent) {
         :data-frame-index="block.single.index"
         @click="advance(1)"
       >
-        <NuxtImg
-          v-if="frameSrc(block.single.frame)"
-          :src="frameSrc(block.single.frame)!"
-          :alt="frameAlt(block.single.frame)"
-          sizes="xs:100vw md:100vw lg:100vw xl:1440px"
-          format="avif,webp"
-          :loading="block.single.index === 1 ? 'eager' : 'lazy'"
-          :preload="block.single.index === 1"
-          class="frame-img"
-        />
+        <picture v-if="block.single.picture">
+          <source type="image/avif" :srcset="block.single.picture.avif" :sizes="block.single.picture.sizes">
+          <source type="image/webp" :srcset="block.single.picture.webp" :sizes="block.single.picture.sizes">
+          <img
+            :loading="block.single.index === 1 ? 'eager' : 'lazy'"
+            :fetchpriority="block.single.index === 1 ? 'high' : undefined"
+            :src="block.single.picture.fallback"
+            :alt="frameAlt(block.single.frame)"
+            :width="block.single.picture.width"
+            :height="block.single.picture.height"
+            :style="block.single.picture.style"
+            class="frame-img"
+          >
+        </picture>
         <FrameCaption
           standalone
           :credit="capsule(block.single).credit"
@@ -181,15 +288,20 @@ function onKeydown(e: KeyboardEvent) {
           :data-frame-index="rf?.index"
           @click="advance(1)"
         >
-          <NuxtImg
-            v-if="rf && frameSrc(rf.frame)"
-            :src="frameSrc(rf.frame)!"
-            :alt="frameAlt(rf.frame)"
-            sizes="xs:100vw md:50vw"
-            format="avif,webp"
-            loading="lazy"
-            class="frame-img"
-          />
+          <picture v-if="rf?.picture">
+            <source type="image/avif" :srcset="rf.picture.avif" :sizes="rf.picture.sizes">
+            <source type="image/webp" :srcset="rf.picture.webp" :sizes="rf.picture.sizes">
+            <img
+              :loading="rf.index === 1 ? 'eager' : 'lazy'"
+              :fetchpriority="rf.index === 1 ? 'high' : undefined"
+              :src="rf.picture.fallback"
+              :alt="frameAlt(rf.frame)"
+              :width="rf.picture.width"
+              :height="rf.picture.height"
+              :style="rf.picture.style"
+              class="frame-img"
+            >
+          </picture>
           <FrameCaption
             v-if="rf"
             standalone
@@ -224,12 +336,25 @@ function onKeydown(e: KeyboardEvent) {
   align-items: center;
   cursor: pointer;
 }
+/* the picture element is only a wrapper: the image is the flex or grid child */
+.frame-unit picture,
+.pair-half picture {
+  display: contents;
+}
 .frame-unit .frame-img {
   max-height: 82vh;
   max-width: min(100% - 2 * var(--space-4), 1440px);
   width: auto;
   height: auto;
   display: block;
+}
+/* A file that knows its size holds its place before it arrives: the width is
+   spelled out from the 82vh cap and the file's ratio, never past the file's
+   own pixels, and the height follows from the width and height attributes.
+   A file without them is sized on arrival, as before. */
+.frame-unit .frame-img[width],
+.pair-half .frame-img[width] {
+  width: min(82vh * var(--ratio), var(--file-width));
 }
 .frame-unit .capsule {
   width: auto;
