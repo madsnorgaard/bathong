@@ -1,0 +1,18 @@
+# Off-host backup of bathong.africa, on the backup host (#82).
+# Install: copy this and the timer to /etc/systemd/system, set User and
+# ExecStart to where the checkout lives, then
+#   systemctl daemon-reload && systemctl enable --now bathong-backup.timer
+# Read a run: journalctl -u bathong-backup -n 20
+[Unit]
+Description=Bathong off-host backup: pull from production, snapshot with restic
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=bathong-backup
+ExecStart=/opt/bathong/ops/backup/pull.sh /etc/bathong-backup.env
+# a pull that hangs must not meet the next night
+TimeoutStartSec=3h
+Nice=10
+IOSchedulingClass=idle
