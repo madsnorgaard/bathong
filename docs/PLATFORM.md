@@ -167,6 +167,84 @@ Not watched:
 - Certificate expiry ahead of time, and the redirects from `www.` and the
   alternate domain.
 
+### Backups
+
+Off-host backups are built to be pulled by a second server (#82): the
+backup host fetches from production each night and keeps the history;
+production holds no key or password for the backup host, so a compromised
+production can spoil the next pull but never the copies already taken.
+Everything is in `ops/backup/`. As of 5 Oct 2026 it is written and tested
+against a stand-in production with the real restic and rsync, and **not yet
+installed on either server**. Until it is, the only backup is the dump
+`ops/deploy.sh` takes before each deploy, on the same disk, and nothing
+backs up `./media`.
+
+- **Production side, `serve.sh`:** the one thing the backup host's SSH key
+  may run, pinned as a forced command in `authorized_keys`. It answers
+  `dump` with a gzip'd `pg_dump` from the database container and hands a
+  sender-only rsync of `./media` to `rrsync -ro`. Anything else is refused,
+  including writes and paths outside the folder.
+- **Backup host, `pull.sh`:** fetches the dump (checked to be a whole gzip
+  file that ends where `pg_dump` ends one, and only then swapped in),
+  mirrors `./media`, takes an encrypted restic snapshot of the mirror, and
+  thins the history to 30 daily and 12 monthly snapshots. The last line of
+  its output says `ok` or `FAILED` and why.
+- **A bad night never costs a good one.** If the dump fails or media has
+  shrunk to less than half of what the last good night held, the night is
+  still snapshotted but reported as a failure, and the history is not
+  thinned. It keeps failing until the files are back or the loss is
+  acknowledged with `ACCEPT_SHRINK=1 ops/backup/pull.sh`, once.
+- **`restore-drill.sh`**, monthly: restores the latest snapshot to a
+  scratch directory, loads the dump into a throwaway `postgres:16-alpine`
+  and reports the frame, essay, people and media counts and whether every
+  media row's original file came back. Without docker it checks the dump
+  and counts the files, and says so.
+- **Scheduling:** `bathong-backup.timer` (nightly) and
+  `bathong-restore-drill.timer` (the first of the month). Set
+  `HEARTBEAT_URL` in the env file to have each run ping a dead man's
+  switch; without it a failure only shows in `journalctl -u bathong-backup`.
+
+Install, once. On the backup host, as a dedicated user (in the `docker`
+group if the drill is to load the dump):
+
+```bash
+# tools: bash, ssh, rsync, gzip, flock (util-linux) and restic
+ssh-keygen -t ed25519 -f ~/.ssh/bathong_backup -C bathong-backup -N ''
+# ~/.ssh/config: an alias for production with that key and nothing else
+#   Host bathong-production
+#     HostName <production>   Port <port>   User <user>
+#     IdentityFile ~/.ssh/bathong_backup   IdentitiesOnly yes
+sudo install -m 600 ops/backup/backup.env.example /etc/bathong-backup.env   # then edit
+sudo sh -c 'umask 077; openssl rand -base64 32 > /etc/bathong-backup.pass'
+restic init        # with RESTIC_REPOSITORY and RESTIC_PASSWORD_FILE from the env file
+```
+
+On production, add the public key to `~/.ssh/authorized_keys` on one line,
+pinned to the script (the exact line is in the header of `serve.sh`), and
+check `rrsync` exists (`command -v rrsync`). Then, on the backup host, run
+`ops/backup/pull.sh` by hand, read its last line, run
+`ops/backup/restore-drill.sh`, and only then enable the two timers (the
+install lines are in the unit files).
+
+**Keep a copy of the restic password somewhere that is not the backup
+host.** Without it the snapshots cannot be read by anyone.
+
+To restore for real: on the backup host, `restic restore latest --tag
+bathong --target /tmp/restore`; copy `mirror/db/bathong.sql.gz` and
+`mirror/media/` to production; stop Payload; load the dump into an empty
+database (`gzip -dc bathong.sql.gz | docker exec -i <site>_db psql -U
+bathong -d bathong`); put the media folder back; start the stack. This
+procedure has not been exercised on the servers; the first restore drill
+after installing is the time to walk it once on a scratch stack.
+
+Not covered: both servers are with one provider, so this protects against
+a lost disk or a bad `rm`, not against losing the provider account. A third
+copy in object storage elsewhere (`restic copy`) would close that. The
+privacy notice (`/privacy`, "How long") does not mention backups yet: once
+they run, closing an account no longer removes personal details from
+everywhere at once, they age out of the snapshots over up to 12 months, and
+the notice has to say so.
+
 ## Security headers (#37)
 
 Two layers, no overlap. Traefik (compose labels) owns HSTS on every router

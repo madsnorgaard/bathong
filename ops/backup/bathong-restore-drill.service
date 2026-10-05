@@ -1,0 +1,14 @@
+# The monthly restore drill on the backup host (#82): restore the latest
+# snapshot, load the dump into a throwaway Postgres, count what came back.
+# Read a run: journalctl -u bathong-restore-drill -n 20
+[Unit]
+Description=Bathong restore drill: restore the latest snapshot and count it
+Wants=network-online.target
+After=network-online.target bathong-backup.service
+
+[Service]
+Type=oneshot
+User=bathong-backup
+ExecStart=/opt/bathong/ops/backup/restore-drill.sh /etc/bathong-backup.env
+TimeoutStartSec=2h
+Nice=10

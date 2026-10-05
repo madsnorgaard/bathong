@@ -1,0 +1,13 @@
+# Nightly, after production's quiet hour, with a spread so it never starts
+# on the same second as anything else on the host.
+[Unit]
+Description=Bathong off-host backup, nightly
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=20min
+# a night the host was down is made up at the next boot
+Persistent=true
+
+[Install]
+WantedBy=timers.target
