@@ -11,6 +11,14 @@ updates:
       # against payload 3.84) broke the aksel-pedersen backend image on 2026-09-17.
       payload:
         patterns: ["payload", "@payloadcms/*"]
+      # Every other minor and patch update moves in one pull request. Each
+      # pull request runs the whole suite, about 25 Actions minutes on a
+      # private repository, and on 5 Oct 2026 eight separate ones cost over
+      # three hours of them. A major stays on its own: it is a decision.
+      routine:
+        patterns: ["*"]
+        exclude-patterns: ["payload", "@payloadcms/*"]
+        update-types: ["minor", "patch"]
     ignore:
       # TypeScript 7 is the new native compiler; upgrade deliberately (#109 failed the backend check).
       - dependency-name: "typescript"
@@ -22,9 +30,19 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      # One pull request for every minor and patch update, for the same
+      # reason as in /backend. A major stays on its own.
+      routine:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       # Nuxt 3 site; a Nuxt 4 bump is a deliberate migration, not a Dependabot merge.
       - dependency-name: "nuxt"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 crashes vue-tsc, which the typecheck gate runs (#193
+      # failed on it). Upgrade deliberately, together with vue-tsc.
+      - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
@@ -59,3 +77,7 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      # the actions move together: one pull request, one run of the suite
+      actions:
+        patterns: ["*"]
