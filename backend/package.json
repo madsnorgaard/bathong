@@ -23,14 +23,14 @@
     "@payloadcms/richtext-lexical": "3.91.0",
     "@payloadcms/ui": "3.91.0",
     "graphql": "^17.0.2",
-    "next": "16.3.7",
+    "next": "16.4.2",
     "payload": "3.91.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "sharp": "0.35.4"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tsx": "^4.23.15",
