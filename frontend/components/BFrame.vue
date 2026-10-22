@@ -16,8 +16,12 @@ const props = withDefaults(
     /** Lead frames load eagerly; everything else is lazy. */
     eager?: boolean
     /**
-     * Nuxt Image screen-keyed sizes ("xs:100vw md:33vw"). Screens are pinned
-     * to the spec widths 480/960/1440/1920 in nuxt.config.
+     * Nuxt Image screen-keyed sizes ("xs:100vw md:33vw"): each key adds its
+     * width at 1x and 2x to the srcset, and the value holds from that screen
+     * up to the next key. Screens are 480/840/1440/1920 in nuxt.config. The
+     * grids are fluid at every width, so the xl value is a fraction of the
+     * viewport, never a pixel width: 'xl:60vw' offers 1152w and 2304w, which
+     * covers a 3440px display at 1x (#171).
      */
     sizes?: string
   }>(),

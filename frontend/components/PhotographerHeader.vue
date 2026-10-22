@@ -24,7 +24,7 @@ const email = computed(() =>
       :src="mediaSrc(person.portrait as never)"
       :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
       ratio="tall"
-      sizes="xs:100vw md:30vw lg:30vw xl:560px"
+      sizes="xs:100vw md:32vw lg:32vw xl:32vw"
       class="portrait"
       eager
     />

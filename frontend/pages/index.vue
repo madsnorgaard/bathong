@@ -180,7 +180,7 @@ const tickerItems = computed(() =>
         :credit="leadFrame ? frameCredit(leadFrame) : 'Bathong. Collective'"
         :place="leadFrame?.location ?? undefined"
         eager
-        sizes="xs:100vw md:100vw lg:100vw xl:1440px"
+        sizes="xs:100vw md:100vw lg:100vw xl:100vw"
         class="lead-frame"
       />
     </section>
@@ -226,12 +226,12 @@ const tickerItems = computed(() =>
     <section v-if="albums.length" v-reveal class="chapter">
       <ChapterHead title="Albums" />
       <div class="albums-grid">
-        <NuxtLink v-for="album in albums" :key="album.id" :to="`/albums/${album.slug}`" class="card">
+        <NuxtLink v-for="(album, i) in albums" :key="album.id" :to="`/albums/${album.slug}`" class="card">
           <BFrame
             :src="mediaSrc(albumCover(album) as never)"
             :alt="albumCover(album)?.alt ?? album.title"
             :credit="albumCredit(album)"
-            sizes="xs:100vw md:33vw lg:33vw xl:480px"
+            :sizes="i % 2 === 0 ? 'xs:100vw md:60vw lg:60vw xl:60vw' : 'xs:100vw md:40vw lg:40vw xl:40vw'"
             class="card-frame"
           />
           <h3 class="b-display-2">{{ album.title }}</h3>
