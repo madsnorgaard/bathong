@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
-# Deploy the checked-out main to this server: dump the database, fast-forward
-# the checkout, rebuild both images, restart the platform profile and wait
-# for Payload to come back (it applies pending migrations before serving).
+# Deploy main to this server: dump the database, move the checkout to the
+# commit being deployed, rebuild both images, restart the platform profile
+# and wait for Payload to come back (it applies pending migrations before
+# serving).
 #
-# Run from anywhere on the server: ~/docker/bathong/ops/deploy.sh
-# The GitHub deploy workflow runs exactly this over SSH after CI passes on main.
+# Run from anywhere on the server: ~/docker/bathong/ops/deploy.sh [commit]
+# The GitHub deploy workflow runs exactly this over SSH after CI passes on
+# main, passing the commit that CI ran on. Without an argument the tip of
+# origin/main is deployed (a manual run on the server).
+#
+# Why the argument: the workflow fires when a CI run on main completes. Two
+# merges a few minutes apart would otherwise let the first merge's green CI
+# deploy the second merge before its own CI had finished (#228).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -24,7 +31,16 @@ echo "database dump: ${backups}/bathong-pre-${stamp}.sql.gz ($(du -h "${backups}
 ls -1t "${backups}"/bathong-pre-*.sql.gz 2>/dev/null | tail -n +21 | xargs -r rm -f
 
 git fetch -q origin main
-git pull -q --ff-only origin main
+target="${1:-origin/main}"
+# Only commits that are on main get deployed, whoever asks.
+if ! git merge-base --is-ancestor "${target}" origin/main; then
+  echo "refusing to deploy ${target}: not a commit on origin/main"
+  exit 1
+fi
+# Point local main at the target and check it out. Local changes to tracked
+# files stop this the way `git pull` did, and the next run fast-forwards on
+# from here because the target is an ancestor of origin/main.
+git checkout -q -B main "${target}"
 echo "deploying commit: $(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
 
 docker compose --profile platform build 2>&1 | grep -E "Built|ERROR|error" || true
