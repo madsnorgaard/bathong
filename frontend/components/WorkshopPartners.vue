@@ -40,7 +40,7 @@ const entries = computed(() =>
             v-if="partner.logoSrc"
             :src="partner.logoSrc"
             :alt="partner.logoAlt"
-            sizes="xs:200px md:200px lg:200px xl:200px"
+            sizes="390:200px xs:200px md:200px lg:200px xl:200px"
             format="avif,webp"
             loading="lazy"
             :img-attrs="{ class: 'logo' }"

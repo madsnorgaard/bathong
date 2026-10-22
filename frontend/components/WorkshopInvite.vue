@@ -22,7 +22,7 @@ const fullSrc = computed(() => (src.value ? img(src.value, { width: 2200, qualit
     <NuxtPicture
       :src="src"
       :alt="media.alt ?? (title ? `Invite for ${title}` : 'Workshop invite')"
-      sizes="xs:100vw md:60vw lg:50vw xl:640px"
+      sizes="390:100vw xs:100vw md:60vw lg:50vw xl:640px"
       format="avif,webp"
       loading="lazy"
       :img-attrs="{ class: 'invite-img' }"
