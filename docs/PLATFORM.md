@@ -248,13 +248,30 @@ the notice has to say so.
 
 ## Security headers (#37)
 
-Two layers, no overlap. Traefik (compose labels) owns HSTS on every router
-of both hosts and the baseline headers on the API host, plus rate limits.
-The Nuxt app (`frontend/nuxt.config.ts`) owns everything on the site host:
-the baseline headers (X-Frame-Options DENY, nosniff, Referrer-Policy,
-Permissions-Policy, COOP/CORP same-origin) on every response via routeRules,
-and a nonce-based Content-Security-Policy on HTML renders via the
-`nuxt-security` module. Each SSR `<script>` gets a per-request nonce and
+Three layers. The outermost is not in this repo: the server's Traefik
+applies a shared `security-headers@file` middleware to its whole HTTPS
+entrypoint (traefik repo, `traefik.toml` and `traefik_dynamic.toml`). An
+entrypoint middleware wraps the router middlewares and the app, so on the
+way out it has the last word: production serves its HSTS (one year,
+includeSubDomains), X-Content-Type-Options, Referrer-Policy, X-Frame-Options
+SAMEORIGIN (chosen for other services on the server that frame themselves),
+Permissions-Policy (camera, microphone, geolocation, payment, usb), COOP
+same-origin-allow-popups and CORP cross-origin, and it strips Server and
+X-Powered-By. It sets no Content-Security-Policy. The Monitor workflow
+checks that live set every two hours (#174).
+
+Inside it, two layers with no overlap between them. Traefik (compose
+labels) owns HSTS on every router of both hosts and the baseline headers on
+the API host, plus rate limits. The Nuxt app (`frontend/nuxt.config.ts`)
+owns everything on the site host: the baseline headers (X-Frame-Options
+DENY, nosniff, Referrer-Policy, Permissions-Policy, COOP/CORP same-origin)
+on every response via routeRules, and a nonce-based Content-Security-Policy
+on HTML renders via the `nuxt-security` module. Where these overlap the
+outer layer, the outer layer wins in production (so the live site says
+SAMEORIGIN where the repo says DENY); the repo's values are what local runs
+and the e2e suite see, and what the site would serve behind any other
+proxy. Framing is refused either way: the CSP carries
+`frame-ancestors 'none'`, which browsers consult before X-Frame-Options. Each SSR `<script>` gets a per-request nonce and
 `'strict-dynamic'` lets the nonced entry load its chunks, so script-src
 carries no `unsafe-inline`. `script-src-attr` allows one inline event
 handler by hash, with `unsafe-hashes`: the `onerror` NuxtImg puts on every

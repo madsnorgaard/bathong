@@ -199,11 +199,12 @@ services:
       # deliberately does not get this middleware.
       - traefik.http.middlewares.bathong-compress.compress.excludedContentTypes=image/avif,image/webp,image/jpeg,image/png,image/tiff
       - traefik.http.services.bathong_nuxt.loadbalancer.server.port=3000
-      # HSTS (#37) on every router of both hosts. Deliberately starting at one
-      # day - raise stsSeconds to 31536000 after a clean week. All subdomains
-      # (api., next., www.) terminate TLS at this Traefik, so includeSubdomains
-      # is safe. No preload: the preload list is near-irreversible.
-      - traefik.http.middlewares.bathong-hsts.headers.stsSeconds=86400
+      # HSTS (#37) on every router of both hosts, one year. The server's
+      # Traefik forces the same value on its whole HTTPS entrypoint (#174), so
+      # this is what production has served all along. All subdomains (api.,
+      # next., www.) terminate TLS at this Traefik, so includeSubdomains is
+      # safe. No preload: the preload list is near-irreversible.
+      - traefik.http.middlewares.bathong-hsts.headers.stsSeconds=31536000
       - traefik.http.middlewares.bathong-hsts.headers.stsIncludeSubdomains=true
       # www + .org variants 301 to the primary host
       - traefik.http.routers.bathong_alias.rule=Host(`www.${SITE_DOMAIN}`) || Host(`${ALT_DOMAIN}`) || Host(`www.${ALT_DOMAIN}`)

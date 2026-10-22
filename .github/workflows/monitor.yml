@@ -82,6 +82,10 @@ jobs:
 
           is_jpeg() { [ "$(head -c 3 "$1" | od -An -tx1 | tr -d ' \n')" = ffd8ff ]; }
 
+          # The last value of a response header from the most recent get, or
+          # nothing. Header names arrive in lower case over HTTP/2.
+          hdr() { grep -i "^$1:" "$tmp/headers" | tail -n 1 | cut -d: -f2- | tr -d '\r' | sed 's/^ *//'; }
+
           # 1. The home page answers and advertises a share image.
           get "$SITE/" "$tmp/home.html"
           image="$(og_image "$tmp/home.html")"
@@ -91,6 +95,43 @@ jobs:
             fail "site: $SITE/ answered 200 but the HTML has no og:image"
           else
             ok "site: $SITE/ 200, og:image $image"
+          fi
+
+          # 1b. The headers the site relies on, as a browser receives them. Two
+          # layers set them (docs/PLATFORM.md, "Security headers"): the
+          # server's Traefik forces HSTS, nosniff, Referrer-Policy, a frame
+          # header and Permissions-Policy on every response and strips the
+          # Server header; the app's CSP is what refuses framing. A change in
+          # either layer shows up here (#174).
+          if [ "$code" != 200 ]; then
+            skip "headers: $SITE/ did not answer 200, nothing to check"
+          else
+            want=(
+              'strict-transport-security|max-age=31536000'
+              'x-content-type-options|^nosniff$'
+              'referrer-policy|^strict-origin-when-cross-origin$'
+              'x-frame-options|^(DENY|SAMEORIGIN)$'
+              'permissions-policy|camera=\(\)'
+              "content-security-policy|frame-ancestors 'none'"
+            )
+            wrong=''
+            for w in "${want[@]}"; do
+              name="${w%%|*}"
+              pattern="${w#*|}"
+              value="$(hdr "$name")"
+              if ! printf '%s' "$value" | grep -Eiq -- "$pattern"; then
+                wrong="$wrong $name: ${value:-absent};"
+              fi
+            done
+            for name in server x-powered-by; do
+              value="$(hdr "$name")"
+              if [ -n "$value" ]; then wrong="$wrong $name: $value, expected none;"; fi
+            done
+            if [ -n "$wrong" ]; then
+              fail "headers: $SITE/ serves$wrong"
+            else
+              ok "headers: $SITE/ HSTS one year, nosniff, referrer policy, frame header, permissions policy, CSP refuses framing, no server header"
+            fi
           fi
 
           # 2. The API answers from the database. frames is readable by anyone
