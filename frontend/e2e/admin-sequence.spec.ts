@@ -113,7 +113,11 @@ async function setBleed(tile: Locator, on: boolean) {
 
 // 90s: in CI the backend is `next dev`, and the essay edit view compiles
 // on the first hit - that alone can consume most of the default 30s.
-test.describe.configure({ mode: 'serial', timeout: 90_000 })
+// retries: one on CI only (#224). A single-test failure here (a draft save
+// answering 500) has been a race, green on re-run; locally a failure stays a
+// failure. In serial mode a retry re-runs the file from the first test, and
+// the failed attempt's trace is kept and uploaded by ci.yml either way.
+test.describe.configure({ mode: 'serial', timeout: 90_000, retries: process.env.CI ? 1 : 0 })
 
 test.beforeAll(async ({ request }) => {
   // One login per run (global-setup.ts): concurrent logins as the same

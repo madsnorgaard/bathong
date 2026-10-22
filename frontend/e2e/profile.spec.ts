@@ -12,6 +12,11 @@ import { API, deleteUserByEmail, freshEmail, gotoHydrated, joinAndActivate, retr
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures')
 const made: string[] = []
+
+// One retry on CI only (#224): a single-test failure in this file has been a
+// timing race, green on re-run. Locally a failure stays a failure. The trace
+// of the failed attempt is kept and uploaded by ci.yml either way.
+test.describe.configure({ retries: process.env.CI ? 1 : 0 })
 test.afterAll(async ({ request }) => {
   for (const email of made) await deleteUserByEmail(request, email)
 })

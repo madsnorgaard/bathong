@@ -154,8 +154,25 @@ jobs:
           else
             echo "The backend never started: no log was written."
           fi
+      # A test that failed once and passed on its retry leaves the job green
+      # and its trace in test-results (#224). Keep that evidence too, with the
+      # backend log beside it, so the next occurrence explains itself. When
+      # every test passed first time there is nothing to keep: Playwright
+      # removes the output of passing tests and leaves no directory behind.
+      - name: Collect the evidence of a failed attempt
+        id: evidence
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -n "$(find frontend/test-results -mindepth 1 -type d 2>/dev/null | head -n 1)" ]; then
+            cp "$RUNNER_TEMP/backend.log" frontend/test-results/backend.log 2>/dev/null || true
+            echo "keep=true" >> "$GITHUB_OUTPUT"
+            echo "A test failed at least once; test-results is uploaded as an artifact."
+          else
+            echo "keep=false" >> "$GITHUB_OUTPUT"
+            echo "Every test passed first time; nothing to upload."
+          fi
       - name: Upload Playwright results
-        if: failure()
+        if: ${{ !cancelled() && steps.evidence.outputs.keep == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: playwright-results
