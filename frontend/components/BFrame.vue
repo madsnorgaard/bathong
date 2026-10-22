@@ -24,6 +24,20 @@ const props = withDefaults(
   { alt: '', ratio: 'default', eager: false, sizes: 'xs:100vw md:100vw lg:100vw xl:100vw' },
 )
 
+/**
+ * A 390px phone at 2x asks for 780px. The xs screen is 480, so a sizes spec
+ * without a 390 key offers that phone nothing between the xs value at 1x and
+ * at 2x (480w and 960w for 100vw), and the browser takes the larger one for
+ * a 344px box (#185, #187). Every frame gets the 390 key for its xs value
+ * unless the caller set one; the keys add candidates, they take none away.
+ */
+const phoneSizes = computed(() => {
+  const spec = props.sizes
+  if (/(^|\s)390:/.test(spec)) return spec
+  const xs = /(^|\s)xs:(\S+)/.exec(spec)
+  return xs ? `390:${xs[2]} ${spec}` : spec
+})
+
 const ratioClass = computed(() => ({
   'b-frame--wide': props.ratio === 'wide',
   'b-frame--tall': props.ratio === 'tall',
@@ -37,7 +51,7 @@ const ratioClass = computed(() => ({
       v-if="src"
       :src="src"
       :alt="alt"
-      :sizes="sizes"
+      :sizes="phoneSizes"
       format="avif,webp"
       :loading="eager ? 'eager' : 'lazy'"
       :preload="eager"

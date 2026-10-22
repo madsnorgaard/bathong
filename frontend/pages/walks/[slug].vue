@@ -144,7 +144,7 @@ useShareMeta({
               v-if="mediaSrc(frame.image as never)"
               :src="mediaSrc(frame.image as never)!"
               :alt="typeof frame.image === 'object' && frame.image?.alt ? frame.image.alt : ''"
-              sizes="xs:33vw md:12vw lg:12vw xl:200px"
+              sizes="390:33vw xs:33vw md:12vw lg:12vw xl:200px"
               format="avif,webp"
               loading="lazy"
               :img-attrs="{ class: 'sheet-img' }"
