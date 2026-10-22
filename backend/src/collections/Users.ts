@@ -254,8 +254,9 @@ export const Users: CollectionConfig = {
       },
     ],
     afterRead: [
-      // A membership past its date reads as lapsed without a write; a job
-      // that writes it and emails the member comes later.
+      // A membership past its date reads as lapsed without a write. The
+      // nightly job (jobs/membershipNotices.ts) mails the member and writes
+      // nothing here either.
       ({ doc }) => {
         if (
           doc?.membershipStatus === 'active' &&

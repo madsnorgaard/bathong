@@ -19,6 +19,9 @@ const every = () => [
   templates.joinInstructions('Thabo', { plan: 'annual', amount: 1250, joiningFee: 250, reference: 'BTG-ABC234' }, { accountName: 'Bathong. Collective', bankName: 'Bank', accountNumber: '123', branchCode: '456' }),
   templates.membershipActivated('Thabo', 7, 'monthly', '2026-09-30T04:00:00Z', 'https://bathong.africa/account'),
   templates.editorNewJoin('Thabo', 't@example.org', 'annual', 1250, 'BTG-ABC234', 'https://api.example/admin/collections/orders/1'),
+  templates.renewalReminder('Thabo', 30, '2026-11-30T04:00:00Z', { plan: 'monthly', amount: 100, reference: 'BTG-ABC234' }, { accountName: 'Bathong. Collective', bankName: 'Bank', accountNumber: '123' }, 'https://bathong.africa/account/join'),
+  templates.renewalReminder('Thabo', 7, '2026-11-30T04:00:00Z', null, {}, 'https://bathong.africa/account/join'),
+  templates.membershipLapsed('Thabo', '2026-11-30T04:00:00Z', 'https://bathong.africa/account/join'),
 ]
 
 describe('email templates', () => {

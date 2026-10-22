@@ -1,5 +1,6 @@
 import type { Endpoint, PayloadRequest } from 'payload'
-import { bad, ok, str } from './respond'
+import { runMembershipNotices } from '../jobs/membershipNotices'
+import { bad, ok, readJson, str } from './respond'
 
 /**
  * Test-only doors, registered solely when E2E_HOOKS=true (set in ci.yml and
@@ -35,4 +36,19 @@ const verificationToken: Endpoint = {
   },
 }
 
-export const e2eHooks: Endpoint[] = process.env.E2E_HOOKS === 'true' ? [verificationToken] : []
+/** Runs the membership notices job as if today were `now` (#83). */
+const membershipNotices: Endpoint = {
+  path: '/e2e/membership-notices',
+  method: 'post',
+  handler: async (req: PayloadRequest) => {
+    const roles = (req.user?.roles as string[] | undefined) ?? []
+    if (!roles.includes('admin')) return bad('Admins only.', 403)
+    const body = await readJson(req)
+    const now = typeof body?.now === 'string' ? new Date(body.now) : new Date()
+    if (Number.isNaN(now.getTime())) return bad('now must be an ISO date.')
+    const result = await runMembershipNotices(req.payload, req, now)
+    return ok({ ...result })
+  },
+}
+
+export const e2eHooks: Endpoint[] = process.env.E2E_HOOKS === 'true' ? [verificationToken, membershipNotices] : []

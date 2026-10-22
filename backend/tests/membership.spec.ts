@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activationBase, daysUntil, makeReference, nextExpiry, orderAmount } from '../src/lib/membership'
+import { activationBase, daysUntil, makeReference, nextExpiry, noticeDue, orderAmount } from '../src/lib/membership'
 
 const at = (iso: string) => new Date(iso)
 
@@ -56,5 +56,28 @@ describe('daysUntil', () => {
   it('rounds up to whole days', () => {
     expect(daysUntil('2026-09-30T00:00:00Z', at('2026-09-01T12:00:00Z'))).toBe(29)
     expect(daysUntil('2026-08-01T00:00:00Z', at('2026-09-01T12:00:00Z'))).toBeLessThan(0)
+  })
+})
+
+describe('noticeDue', () => {
+  const expires = '2026-11-30T04:00:00Z'
+  const none = new Set<never>()
+  it('owes nothing outside the renewal window', () => {
+    expect(noticeDue(expires, none, at('2026-10-20T06:00:00Z'))).toBeNull()
+  })
+  it('owes the 30-day reminder inside the window, once', () => {
+    expect(noticeDue(expires, none, at('2026-11-05T06:00:00Z'))).toEqual({ send: 'reminder-30', overtaken: [] })
+    expect(noticeDue(expires, new Set(['reminder-30'] as const), at('2026-11-06T06:00:00Z'))).toBeNull()
+  })
+  it('owes the 7-day reminder in the last week, and overtakes an unsent 30-day one', () => {
+    expect(noticeDue(expires, new Set(['reminder-30'] as const), at('2026-11-24T06:00:00Z'))).toEqual({ send: 'reminder-7', overtaken: [] })
+    expect(noticeDue(expires, none, at('2026-11-28T06:00:00Z'))).toEqual({ send: 'reminder-7', overtaken: ['reminder-30'] })
+    expect(noticeDue(expires, new Set(['reminder-30', 'reminder-7'] as const), at('2026-11-29T06:00:00Z'))).toBeNull()
+  })
+  it('owes the lapse notice the day after expiry, not the day of', () => {
+    expect(noticeDue(expires, new Set(['reminder-30', 'reminder-7'] as const), at('2026-11-30T06:00:00Z'))).toBeNull()
+    expect(noticeDue(expires, new Set(['reminder-30', 'reminder-7'] as const), at('2026-12-01T06:00:00Z'))).toEqual({ send: 'lapsed', overtaken: [] })
+    expect(noticeDue(expires, none, at('2026-12-10T06:00:00Z'))).toEqual({ send: 'lapsed', overtaken: ['reminder-30', 'reminder-7'] })
+    expect(noticeDue(expires, new Set(['lapsed'] as const), at('2026-12-10T06:00:00Z'))).toBeNull()
   })
 })

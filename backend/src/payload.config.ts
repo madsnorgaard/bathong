@@ -19,6 +19,8 @@ import { Photocalls } from './collections/Photocalls'
 import { Submissions } from './collections/Submissions'
 import { Orders } from './collections/Orders'
 import { Rsvps } from './collections/Rsvps'
+import { MembershipNotices } from './collections/MembershipNotices'
+import { membershipNoticesTask } from './jobs/membershipNotices'
 import { photocallEntry } from './endpoints/photocallEntry'
 import { framesIndex } from './endpoints/framesIndex'
 import { archive } from './endpoints/archive'
@@ -71,8 +73,17 @@ export default buildConfig({
     Submissions,
     Orders,
     Rsvps,
+    MembershipNotices,
   ],
   globals: [SiteSettings, Manifesto, Membership],
+  // The nightly queue (#83): the task above schedules itself at 06:00 UTC
+  // and autoRun, inside this long-running server, queues and runs it. One
+  // runner per queue; a second process on the same database would double
+  // the scheduling, so this stays the only one.
+  jobs: {
+    tasks: [membershipNoticesTask],
+    autoRun: [{ cron: '*/10 * * * *', queue: 'nightly' }],
+  },
   endpoints: [
     photocallEntry,
     framesIndex,
