@@ -157,6 +157,15 @@ choices() {
 
     # Print the candidate of one srcset a browser takes at each viewport.
     function choose(srcset, sizes,    n, cand, field, k, m, i, j, v, t, vw, vh, dpr, px, swap, cur, nxt) {
+      # The srcset comes out of an HTML attribute: undo the entities the
+      # markup had to use, the named ones and the numeric apostrophe (a file
+      # name with an apostrophe arrived as &#39; and answered 403), with
+      # &amp; last so that an encoded ampersand is decoded exactly once.
+      # This sits inside a single-quoted shell string: no apostrophes here.
+      gsub(/&#39;/, "\047", srcset)
+      gsub(/&quot;/, "\"", srcset)
+      gsub(/&lt;/, "<", srcset)
+      gsub(/&gt;/, ">", srcset)
       gsub(/&amp;/, "\\&", srcset)
       n = split(srcset, cand, /,[ \t\r\n]+/)
       m = 0
