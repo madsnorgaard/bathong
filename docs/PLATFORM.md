@@ -61,6 +61,16 @@ as `/etc/nginx/conf.d` so the running container sees a pulled change.
   least recently used first.
 - `X-Cache-Status` on the response says what happened: `HIT`, `STALE`,
   `UPDATING`, `MISS` (a first encode, about 2 seconds) or `EXPIRED`.
+- Cold encodes do not noticeably slow page renders on production (#168).
+  Measured 22 Oct 2026 from outside: `/stories` answered its first byte in
+  0.20 to 0.23 s idle, 0.21 to 0.33 s with one sample at 1.7 s while 8 cold
+  encodes ran, and 0.20 to 0.63 s (median 0.29 s) while 16 ran, with the
+  encodes themselves queueing up to 7.6 s. The thread-pool starvation CI
+  showed (a hostname lookup waiting behind sharp encodes, see Local
+  development) needs a cold connection; the server-side page fetch keeps
+  its connection to Payload, so in production it rarely pays. If a slow
+  page is ever seen during encodes, `UV_THREADPOOL_SIZE` on the Nuxt
+  container is the one-line thing to try, against these numbers.
 - CI runs `nginx -t` on the config (job `ops`): an invalid config would take
   every photograph down. The deploy script runs the same test inside the
   container before it reloads.
