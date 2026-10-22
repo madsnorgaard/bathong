@@ -17,7 +17,7 @@ import * as migration_20260909_174002_phase8_workshops from './20260909_174002_p
 import * as migration_20260909_192337_phase9_workshop_partners from './20260909_192337_phase9_workshop_partners';
 import * as migration_20261002_193121_payload_3_90_reset_password_requested_at from './20261002_193121_payload_3_90_reset_password_requested_at';
 import * as migration_20261004_180000_phase10_exhibition_status_values from './20261004_180000_phase10_exhibition_status_values';
-import * as migration_20261022_171338_membership_notices_and_jobs from './20261022_171338_membership_notices_and_jobs';
+import * as migration_20261022_172007_membership_notices_and_jobs from './20261022_172007_membership_notices_and_jobs';
 
 export const migrations = [
   {
@@ -116,8 +116,8 @@ export const migrations = [
     name: '20261004_180000_phase10_exhibition_status_values',
   },
   {
-    up: migration_20261022_171338_membership_notices_and_jobs.up,
-    down: migration_20261022_171338_membership_notices_and_jobs.down,
-    name: '20261022_171338_membership_notices_and_jobs'
+    up: migration_20261022_172007_membership_notices_and_jobs.up,
+    down: migration_20261022_172007_membership_notices_and_jobs.down,
+    name: '20261022_172007_membership_notices_and_jobs'
   },
 ];

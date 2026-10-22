@@ -292,6 +292,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reset_password_requested_at": {
+          "name": "reset_password_requested_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "_verified": {
           "name": "_verified",
           "type": "boolean",
@@ -11372,6 +11378,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "a073e941-fca3-4c2d-aec0-195b7a57ad3a",
+  "id": "54b5997a-1370-4915-a0a9-a5a68719a8b9",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

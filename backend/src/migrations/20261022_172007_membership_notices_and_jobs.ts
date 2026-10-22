@@ -1,13 +1,11 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 /**
- * Generated with `payload migrate:create` against a scratch Postgres on
- * 22 Oct 2026 (#83): the membership-notices collection with its unique
- * (user, kind, expires) index, and Payload's own payload_jobs tables, which
- * arrive with the first jobs config. It also drops users.reset_password_
- * requested_at: Payload 3.90 added that column (migration 20261002_193121)
- * and 3.91 no longer references it anywhere, so the generator removes the
- * drift here rather than in every migration after this one.
+ * Generated with `payload migrate:create` (Payload 3.91.0, the locked
+ * version) against a scratch Postgres on 22 Oct 2026 (#83): the
+ * membership-notices collection with its unique (user, kind, expires)
+ * index, and Payload's own payload_jobs tables, which arrive with the first
+ * jobs config. Nothing else changes.
  */
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
@@ -84,8 +82,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_jobs_updated_at_idx" ON "payload_jobs" USING btree ("updated_at");
   CREATE INDEX "payload_jobs_created_at_idx" ON "payload_jobs" USING btree ("created_at");
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_membership_notices_fk" FOREIGN KEY ("membership_notices_id") REFERENCES "public"."membership_notices"("id") ON DELETE cascade ON UPDATE no action;
-  CREATE INDEX "payload_locked_documents_rels_membership_notices_id_idx" ON "payload_locked_documents_rels" USING btree ("membership_notices_id");
-  ALTER TABLE "users" DROP COLUMN "reset_password_requested_at";`)
+  CREATE INDEX "payload_locked_documents_rels_membership_notices_id_idx" ON "payload_locked_documents_rels" USING btree ("membership_notices_id");`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
@@ -101,7 +98,6 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_membership_notices_fk";
   
   DROP INDEX "payload_locked_documents_rels_membership_notices_id_idx";
-  ALTER TABLE "users" ADD COLUMN "reset_password_requested_at" timestamp(3) with time zone;
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "membership_notices_id";
   DROP TYPE "public"."enum_membership_notices_kind";
   DROP TYPE "public"."enum_membership_notices_outcome";
