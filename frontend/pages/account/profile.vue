@@ -129,7 +129,7 @@ async function save() {
           :src="mediaSrc(portrait as never)"
           :alt="portrait.alt || `Portrait of ${person.name}`"
           ratio="tall"
-          sizes="xs:60vw md:20vw"
+          sizes="xs:60vw md:20vw lg:20vw xl:20vw"
           class="portrait"
         />
         <div v-else class="portrait empty" aria-hidden="true" />

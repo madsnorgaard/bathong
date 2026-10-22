@@ -35,7 +35,7 @@ defineProps<{
         :alt="image.alt ?? ''"
         :width="image.width ?? undefined"
         :height="image.height ?? undefined"
-        sizes="390:100vw xs:100vw md:60vw lg:60vw xl:900px"
+        :sizes="i % 4 === 0 || i % 4 === 3 ? '390:100vw xs:100vw md:60vw lg:60vw xl:60vw' : '390:100vw xs:100vw md:40vw lg:40vw xl:40vw'"
         format="avif,webp"
         :loading="i === 0 ? 'eager' : 'lazy'"
         :img-attrs="{ class: 'run-img' }"

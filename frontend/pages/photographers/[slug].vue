@@ -231,7 +231,7 @@ function onViewerKey(e: KeyboardEvent) {
           <BFrame
             :src="essayLeadSrc(essay)"
             :alt="essayLeadAlt(essay)"
-            sizes="xs:100vw md:33vw lg:33vw xl:480px"
+            sizes="xs:100vw md:33vw lg:33vw xl:33vw"
             class="card-frame"
           />
           <h3 class="b-display-2">{{ essay.title }}</h3>
@@ -263,7 +263,7 @@ function onViewerKey(e: KeyboardEvent) {
               :alt="frameAlt(frame)"
               :width="frameMedia(frame)?.width ?? undefined"
               :height="frameMedia(frame)?.height ?? undefined"
-              sizes="390:100vw xs:100vw md:60vw lg:60vw xl:900px"
+              sizes="390:100vw xs:100vw md:60vw lg:60vw xl:60vw"
               format="avif,webp"
               :loading="i === 0 ? 'eager' : 'lazy'"
               :img-attrs="{ class: 'run-img' }"
@@ -294,7 +294,7 @@ function onViewerKey(e: KeyboardEvent) {
               :alt="albumCover(album)?.alt ?? ''"
               :width="albumCover(album)?.width ?? undefined"
               :height="albumCover(album)?.height ?? undefined"
-              sizes="390:100vw xs:100vw md:60vw lg:60vw xl:900px"
+              sizes="390:100vw xs:100vw md:60vw lg:60vw xl:60vw"
               format="avif,webp"
               loading="lazy"
               :img-attrs="{ class: 'run-img' }"

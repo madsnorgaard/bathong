@@ -115,7 +115,7 @@ useShareMeta({
               :src="mediaSrc(albumCover(album) as never)"
               :alt="albumCover(album)?.alt ?? album.title"
               :credit="albumCredit(album)"
-              sizes="xs:100vw md:50vw lg:50vw xl:720px"
+              sizes="xs:100vw md:50vw lg:50vw xl:50vw"
               class="card-frame"
             />
             <h3 class="b-display-2">{{ album.title }}</h3>
@@ -129,7 +129,7 @@ useShareMeta({
         <ChapterHead title="Essays" />
         <div class="essay-grid">
           <NuxtLink v-for="essay in essays" :key="essay.id" :to="`/stories/${essay.slug}`" class="card">
-            <BFrame :src="leadSrc(essay)" :alt="essay.title" sizes="xs:100vw md:33vw lg:33vw xl:480px" class="card-frame" />
+            <BFrame :src="leadSrc(essay)" :alt="essay.title" sizes="xs:100vw md:33vw lg:33vw xl:33vw" class="card-frame" />
             <h3 class="b-display-2">{{ essay.title }}</h3>
           </NuxtLink>
         </div>

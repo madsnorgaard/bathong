@@ -135,7 +135,7 @@ useShareMeta({
               :src="mediaSrc(albumCover(album) as never)"
               :alt="albumCover(album)?.alt ?? album.title"
               :credit="albumCredit(album)"
-              sizes="xs:100vw md:50vw lg:50vw xl:720px"
+              sizes="xs:100vw md:50vw lg:50vw xl:50vw"
               class="card-frame"
             />
             <h3 class="b-display-2">{{ album.title }}</h3>

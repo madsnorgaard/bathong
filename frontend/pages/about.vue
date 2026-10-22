@@ -84,7 +84,7 @@ function contactParts(person: Person): [string, string] {
             :src="mediaSrc(person.portrait as never)"
             :alt="typeof person.portrait === 'object' && person.portrait?.alt ? person.portrait.alt : `Portrait of ${person.name}`"
             ratio="tall"
-            sizes="xs:50vw md:25vw"
+            sizes="xs:50vw md:25vw lg:25vw xl:25vw"
             class="portrait"
           />
           <NuxtLink :to="`/photographers/${person.slug}`" class="name-link">
