@@ -348,13 +348,16 @@ test('lead frame picks visually and persists', async ({ page, request }) => {
 
   await page.getByRole('button', { name: /choose frame/i }).click()
   await expect(page.locator('.seq-picker__tile img').first()).toBeVisible({ timeout: 15_000 })
-  await page.locator('.seq-picker__tile').first().click()
+  // A seeded frame, not the first tile: the picker lists newest first, and
+  // the newest is often a frame another worker made and deletes before the
+  // draft version is written (a foreign-key 500 on save, #224).
+  await page.locator(`.seq-picker__tile[data-frame-id="${frameIds[0]}"]`).click()
   await expect(page.locator('.seq-lead__current img')).toBeVisible()
   await page.screenshot({ path: `${SHOTS}/6-leadframe.png`, fullPage: true })
   await saveDraft(page)
 
   const essay = await getEssay(request)
-  expect(typeof essay.leadFrame).toBe('number')
+  expect(essay.leadFrame).toBe(frameIds[0])
 })
 
 test('frames-index endpoint is editor-gated', async ({ request }) => {

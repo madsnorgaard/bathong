@@ -113,6 +113,7 @@ export const FramePickerDrawer: React.FC<{
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                data-frame-id={f.id}
                 key={f.id}
                 onClick={() => toggle(f.id)}
                 type="button"
