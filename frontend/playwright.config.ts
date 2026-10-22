@@ -13,6 +13,8 @@ export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
   timeout: 30_000,
+  // No retries, so a failure is a failure. Three specs allow one retry on CI
+  // only, where they have raced (#224); they say so at the top of the file.
   retries: 0,
   use: {
     baseURL: 'http://localhost:3000',

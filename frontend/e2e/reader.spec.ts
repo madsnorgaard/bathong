@@ -12,6 +12,11 @@ import { gotoHydrated } from './helpers/account'
 
 const READER = '/stories/demo-reader-essay'
 
+// One retry on CI only (#224): a single-test failure in this file has been a
+// timing race, green on re-run. Locally a failure stays a failure. The trace
+// of the failed attempt is kept and uploaded by ci.yml either way.
+test.describe.configure({ retries: process.env.CI ? 1 : 0 })
+
 test('reader chrome: wordmark, live counter, progress rule, close to stories', async ({ page }) => {
   await gotoHydrated(page, READER)
   await expect(page.locator('.chrome .counter')).toHaveText('01 / 06')
@@ -20,8 +25,10 @@ test('reader chrome: wordmark, live counter, progress rule, close to stories', a
   // no site chrome in the reader
   await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0)
 
+  // Closing is a client-side navigation to the stories index, which renders
+  // cold on a loaded runner: longer than the 5 s default (#224).
   await page.getByRole('link', { name: /Close the essay/ }).click()
-  await expect(page).toHaveURL(/\/stories$/)
+  await expect(page).toHaveURL(/\/stories$/, { timeout: 15_000 })
 })
 
 test('exactly one og:image, article type, from the lead frame og rendition', async ({ page }) => {
