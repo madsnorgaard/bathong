@@ -26,6 +26,7 @@ import { accountResendVerification, accountSignUp } from './endpoints/accountSig
 import { accountJoin } from './endpoints/accountJoin'
 import { accountSecurity } from './endpoints/accountSecurity'
 import { e2eHooks } from './endpoints/e2eHooks'
+import { keepOperationalErrorMessage } from './hooks/keepOperationalErrorMessage'
 import { SiteSettings } from './globals/SiteSettings'
 import { Manifesto } from './globals/Manifesto'
 import { Membership } from './globals/Membership'
@@ -83,6 +84,8 @@ export default buildConfig({
     ...e2eHooks,
   ],
   editor: lexicalEditor(),
+  // See the hook: Next 16.4 builds lose APIError messages (payload#18774).
+  hooks: { afterError: [keepOperationalErrorMessage] },
   // The frontend is REST-only; removing the GraphQL surface (and with it the
   // unauthenticated playground route) beats gating it.
   graphQL: { disable: true },
