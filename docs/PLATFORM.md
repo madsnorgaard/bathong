@@ -24,16 +24,19 @@ it; `api.bathong.africa` reserved for Payload.
 ## Deploy
 
 Merging to `main` deploys: `.github/workflows/deploy.yml` waits for CI to
-pass on `main`, then runs `ops/deploy.sh` on the server over SSH with a
-dedicated key (GitHub environment `production`: `DEPLOY_SSH_KEY`,
+pass on `main`, then runs `ops/deploy.sh` on the server over SSH, passing
+the commit CI ran on so that exactly that commit is deployed (two merges a
+few minutes apart would otherwise let the first one's green CI deploy the
+second before its own CI had finished, #228). It uses a dedicated key (GitHub environment `production`: `DEPLOY_SSH_KEY`,
 `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`; the public key sits in the
 server user's `authorized_keys` with a forced command, so that key can run
 the deploy script and nothing else). Deploys are serialised; re-run one from
 the Actions tab (`workflow_dispatch`) if needed.
 
 `ops/deploy.sh` is the whole deploy and can be run by hand on the server:
-it dumps the database to `~/backups` (last 20 kept), fast-forwards the
-checkout, rebuilds both images, restarts the platform profile, waits for
+it dumps the database to `~/backups` (last 20 kept), moves the checkout
+to the commit given (or the tip of `origin/main` when run by hand; it
+refuses a commit that is not on main), rebuilds both images, restarts the platform profile, waits for
 Payload (which applies pending migrations before serving), checks the
 site answers 200, then tests and reloads the image cache config. It prints
 the rollback commit first.

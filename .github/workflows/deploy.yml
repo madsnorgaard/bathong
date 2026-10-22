@@ -1,7 +1,9 @@
 name: Deploy
 
-# Production deploys itself when CI has passed on main. One deploy at a time;
-# a second merge while one runs waits for it. Manual trigger for re-runs.
+# Production deploys itself when CI has passed on main: the commit that CI
+# ran on is the commit that gets deployed, not whatever main is at that
+# moment (#228). One deploy at a time; a second merge while one runs waits
+# for it. Manual trigger for re-runs, which deploy the tip of main.
 on:
   workflow_run:
     workflows: ['CI']
@@ -32,4 +34,4 @@ jobs:
           -o BatchMode=yes -o ConnectTimeout=20
           -o ServerAliveInterval=30 -o ServerAliveCountMax=20
           "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
-          '~/docker/bathong/ops/deploy.sh'
+          '~/docker/bathong/ops/deploy.sh ${{ github.event.workflow_run.head_sha || github.sha }}'
