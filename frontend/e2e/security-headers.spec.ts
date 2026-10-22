@@ -30,6 +30,10 @@ test('the home page carries a nonce-based CSP and the baseline headers once', as
   expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=_-]+'/)
   expect(scriptSrc).toContain("'strict-dynamic'")
   expect(scriptSrc).not.toContain("'unsafe-inline'")
+  // Only NuxtImg's fixed onerror attribute is allowed, by hash: no 'none'
+  // (which blocked it silently) and no 'unsafe-inline'.
+  const scriptSrcAttr = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src-attr '))
+  expect(scriptSrcAttr).toMatch(/^script-src-attr 'unsafe-hashes' 'sha256-[A-Za-z0-9+/=]+'$/)
   expect(csp).toContain("frame-ancestors 'none'")
   expect(csp).toContain("object-src 'none'")
 

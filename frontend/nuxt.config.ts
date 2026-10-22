@@ -108,7 +108,16 @@ export default defineNuxtConfig({
       contentSecurityPolicy: {
         'default-src': ["'self'"],
         'script-src': ["'self'", "'nonce-{{nonce}}'", "'strict-dynamic'", analyticsOrigin],
-        'script-src-attr': ["'none'"],
+        // NuxtImg (@nuxt/image) renders every SSR <img> with a fixed
+        // onerror="this.setAttribute('data-error', 1)" so an image that
+        // failed before hydration is retried on mount. 'none' blocked that
+        // handler on every page, silently, and from Chromium 156 the block is
+        // logged as a CSP violation, which the security-headers spec catches.
+        // A hash of that one attribute value, with 'unsafe-hashes' (hashes do
+        // not cover event handlers without it), allows exactly that string
+        // and nothing else. Recompute the hash if @nuxt/image changes the
+        // attribute: sha256 of the unescaped value, base64.
+        'script-src-attr': ["'unsafe-hashes'", "'sha256-bwK6T5wZVTANitXbrTsel7kl/PyCjCd/Dq5Qoz3imjM='"],
         'style-src': ["'self'", "'unsafe-inline'"],
         // data:/blob: for maplibre's generated sprites and canvases
         'img-src': ["'self'", 'data:', 'blob:'],
