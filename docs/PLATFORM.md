@@ -519,6 +519,39 @@ through `safeHref()` on the site, so a member cannot publish a
 `javascript:` href. `people.owner` never populates (`maxDepth: 0`): the
 profile is public, the account is not.
 
+## Renewal reminders and the lapse notice (#83)
+
+A job runs once a day and mails, around each membership's expiry: a
+reminder 30 days before, a reminder 7 days before, and a lapse notice the
+day after (`backend/src/jobs/membershipNotices.ts`). The reminders carry the
+bank details and the member's open renewal order, found or made through the
+same `openMembershipOrder` the join door uses, so a member has one reference
+whichever door they came through. The lapse notice says the card is paused
+and points at `/account/join`; what else a lapse takes away is #161's
+decision, and the mail claims nothing about it.
+
+The job writes no membership state: the Orders hooks stay the single
+writer, and a lapsed membership reads as lapsed through the `users`
+`afterRead` as before. What it writes is `membership-notices`, one row per
+notice per expiry (`user`, `kind`, `expires`, `outcome` sent or overtaken,
+`sentAt`), unique on the first three, which is what makes a re-run send
+nothing twice; a reminder that was owed and overtaken (the 30-day one when a
+week is left, both once it has lapsed) is recorded as overtaken so it never
+follows out of order. A renewal moves `membershipExpires`, and the old
+expiry's rows no longer match anything. The arithmetic is `noticeDue` in
+`lib/membership.ts`, unit-tested; editors see the rows in the admin.
+
+It runs on Payload's jobs queue: the task schedules itself at 06:00 UTC
+(08:00 in Pretoria) on the `nightly` queue and `autoRun` in
+`payload.config.ts` queues and runs it from inside the long-running server
+every ten minutes. One runner per queue: a second backend process on the
+same database would double the scheduling. The `payload-jobs` table came
+with the same migration as `membership-notices`
+(`20261022_171338_membership_notices_and_jobs`). With `E2E_HOOKS`,
+`POST /api/e2e/membership-notices` runs the job as if today were `now`;
+`frontend/e2e/renewal.spec.ts` walks a membership through all three
+notices and a renewal on the old expiry.
+
 ## Profile self-service
 
 `/account/profile` is the member's own page, edited by the member through

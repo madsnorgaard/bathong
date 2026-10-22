@@ -75,3 +75,28 @@ export function orderAmount(
 
 export const daysUntil = (iso: string, now: Date = new Date()): number =>
   Math.ceil((new Date(iso).getTime() - now.getTime()) / 86_400_000)
+
+/** The notices a membership gets around its expiry (#83). */
+export type NoticeKind = 'reminder-30' | 'reminder-7' | 'lapsed'
+export const NOTICE_KINDS: NoticeKind[] = ['reminder-30', 'reminder-7', 'lapsed']
+
+/**
+ * Which notice a membership is owed on `now`, given the ones already sent
+ * for this expiry. At most one: the most urgent. A reminder that was owed
+ * and overtaken (the 30-day one when 7 days are left, both once it has
+ * lapsed) is marked with it so it never follows out of order.
+ */
+export function noticeDue(
+  expiresIso: string,
+  sent: ReadonlySet<NoticeKind>,
+  now: Date = new Date(),
+): { send: NoticeKind; overtaken: NoticeKind[] } | null {
+  const left = daysUntil(expiresIso, now)
+  const pick = (send: NoticeKind, earlier: NoticeKind[]) =>
+    sent.has(send) ? null : { send, overtaken: earlier.filter((k) => !sent.has(k)) }
+  // the day after expiry, not the day of: `left` is 0 until a whole day has passed
+  if (left < 0) return pick('lapsed', ['reminder-30', 'reminder-7'])
+  if (left <= 7) return pick('reminder-7', ['reminder-30'])
+  if (left <= RENEWAL_WINDOW_DAYS) return pick('reminder-30', [])
+  return null
+}

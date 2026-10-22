@@ -232,6 +232,59 @@ export const membershipActivated = (
     SIGNATURE,
 })
 
+/**
+ * Thirty days and seven days before a membership runs out (#83). The
+ * reference is the member's open renewal order, the same one the join page
+ * shows; without prices set there is no order and we say so.
+ */
+export const renewalReminder = (
+  name: string,
+  daysLeft: number,
+  until: string,
+  order: { plan: string; amount: number; reference: string } | null,
+  bank: BankDetails,
+  joinLink: string,
+) => {
+  const bankLines = [
+    bank.accountName,
+    bank.bankName,
+    bank.accountNumber ? `Account ${bank.accountNumber}` : null,
+    bank.branchCode ? `Branch ${bank.branchCode}` : null,
+    bank.accountType,
+  ].filter(Boolean)
+  const when = daysLeft <= 7 ? 'in a week' : 'in a month'
+  return {
+    subject: `Your Bathong. membership runs out ${when}`,
+    text:
+      `Hi ${name},\n\n` +
+      `Your membership runs until ${longDate(until)}, ${daysLeft} day${daysLeft === 1 ? '' : 's'} from now. ` +
+      `Renew before then and the new period starts where this one ends; nothing is lost.\n\n` +
+      (order
+        ? `To renew the ${planWord(order.plan)} plan:\n\n` +
+          `Amount: ${rand(order.amount)}\n` +
+          `Reference: ${order.reference}\n\n` +
+          (bankLines.length ? `Pay by EFT to:\n${bankLines.join('\n')}\n\n` : `Bank details follow from us by reply.\n\n`) +
+          `Use the reference exactly as shown. ` +
+          `${bank.paymentNote ?? 'We confirm EFTs by hand, usually within two working days.'}\n\n`
+        : `Write to us for the amount and the bank details, and we sort it by hand.\n\n`) +
+      `The same details sit on your desk: ${joinLink}\n\n` +
+      `If you would rather let it run out, do nothing; your page and your published work stay as they are.` +
+      SIGNATURE,
+  }
+}
+
+/** The day after a membership has run out without a renewal (#83). */
+export const membershipLapsed = (name: string, until: string, joinLink: string) => ({
+  subject: 'Your Bathong. membership has lapsed',
+  text:
+    `Hi ${name},\n\n` +
+    `Your membership ran until ${longDate(until)} and no renewal reached us, so it has lapsed. ` +
+    `Your page and your published work stay as they are; your card is paused.\n\n` +
+    `The door back is on your desk whenever you want it: ${joinLink}\n\n` +
+    `If a payment is on its way, ignore this; we activate it when it shows.` +
+    SIGNATURE,
+})
+
 export const editorNewJoin = (
   name: string,
   email: string,
