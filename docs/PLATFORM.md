@@ -256,8 +256,11 @@ Permissions-Policy, COOP/CORP same-origin) on every response via routeRules,
 and a nonce-based Content-Security-Policy on HTML renders via the
 `nuxt-security` module. Each SSR `<script>` gets a per-request nonce and
 `'strict-dynamic'` lets the nonced entry load its chunks, so script-src
-carries no `unsafe-inline`. Styles keep `unsafe-inline` (Vue SSR emits style
-attributes, which nonces cannot cover). `connect-src` allows the API host
+carries no `unsafe-inline`. `script-src-attr` allows one inline event
+handler by hash, with `unsafe-hashes`: the `onerror` NuxtImg puts on every
+SSR image so a failed image is retried on mount. `'none'` blocked it
+silently; Chromium 156 reports the block as a violation. Styles keep
+`unsafe-inline` (Vue SSR emits style attributes, which nonces cannot cover). `connect-src` allows the API host
 (forms, member sign-in) and the analytics origin; `worker-src` allows `blob:`
 for the maplibre tile worker. The module's rate limiter, request size limit,
 XSS validator and CORS handler are all off: Traefik and Payload do those
