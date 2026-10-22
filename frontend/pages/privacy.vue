@@ -59,7 +59,7 @@ const contact = computed(() => settings.value?.contactEmail || 'hello@bathong.af
       <h3 class="b-kicker">How long</h3>
       <p>
         Until you close your account. Then your account and personal details are deleted, your RSVPs
-        name nobody, entries still under judging are withdrawn, and photographs and essays you
+        name nobody, entries still under judging are withdrawn with their photographs, and photographs and essays you
         published stay on the site with your name on them, as agreed when you published. Walk RSVPs
         made without an account are deleted on request.
       </p>
