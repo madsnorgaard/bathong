@@ -171,7 +171,7 @@ async function save() {
         <p v-else-if="saved" class="b-caption ok" role="status">Saved.</p>
         <div class="actions">
           <BButton type="submit" variant="ghost" :disabled="saving">{{ saving ? 'Saving...' : 'Save →' }}</BButton>
-          <NuxtLink v-if="person.onRoster && person.slug" :to="`/photographers/${person.slug}`" class="b-caption">Your public page →</NuxtLink>
+          <NuxtLink v-if="person?.onRoster && person?.slug" :to="`/photographers/${person?.slug}`" class="b-caption">Your public page →</NuxtLink>
         </div>
       </form>
     </template>
