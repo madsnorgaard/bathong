@@ -5,12 +5,12 @@ name: Monitor
 # card fell back to the default image while the site answered 200 throughout;
 # a status check would not have seen it, a check of the bytes does.
 #
-# Cost: the repository is private, and every run of a scheduled workflow is
-# billed as at least one whole minute. Every two hours is 12 runs a day, about
-# 360 minutes a month (372 in a 31 day month). Hourly would be about 720, which
-# is too much of the allowance for what it adds: the failure this exists for
-# went unseen for 17 days, so two hours is soon enough. Do not shorten the
-# interval without doing that sum again.
+# Cadence: every two hours is 12 runs a day. The failure this exists for went
+# unseen for 17 days, so two hours is soon enough, and hourly would double
+# the runs for little. The repository is public, so hosted minutes are not
+# billed; if it ever goes private again, every run counts as at least one
+# whole minute (about 360 a month at this interval) against the allowance,
+# and an account billing failure stops every run - do the sum again then.
 #
 # Minute 17, not 0: GitHub is busiest on the hour and starts schedules late
 # then. Times are UTC. A schedule runs from the default branch only.

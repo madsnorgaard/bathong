@@ -135,11 +135,12 @@ With no published album or essay the card and image checks say `skip` and
 do not fail; an index or entity page that does not answer 200 is a `FAIL`
 of its own. `000` in a line means the request got no answer at all.
 
-Cost: the repository is private and every run of a scheduled workflow is
-billed as at least one whole minute. Every two hours is 12 runs a day, about
-360 minutes a month (372 in a 31 day month); hourly would be about 720. Do
-that sum again before shortening the interval. Each request gives up after
-10 seconds and is retried once, so a run against a site that hangs ends
+Cadence: every two hours is 12 runs a day; the failure this exists for went
+unseen for 17 days, so that is soon enough. The repository is public, so
+hosted minutes are not billed. If it goes private again, every run counts
+as at least one whole minute (about 360 a month) against the allowance, and
+a billing failure on the account stops every hosted job. Each request gives
+up after 10 seconds and is retried once, so a run against a site that hangs ends
 inside four minutes, and the job is cut off at five.
 
 How a failure reaches a person: GitHub mails the run to whoever created the

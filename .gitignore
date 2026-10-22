@@ -9,3 +9,18 @@ Untitled.jpg
 jacques-nelles-bathong/
 # local dev uploads of the same set (repo /media is the dev staticDir)
 media/jacques-nelles-bathong*
+
+# Local assistant and editor tooling: never part of the public repository.
+.agents/
+.claude/
+.codex/
+.cursor/
+.opencode/
+.vibe/
+.jumbo/
+.github/hooks/
+.github/copilot-instructions.md
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+JUMBO.md
