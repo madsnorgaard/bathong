@@ -23,8 +23,6 @@ import {
 
 const NEW_PASSWORD = 'another long enough password'
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures')
-// Payload takes the session cookie only from an origin on its csrf list
-const origin = (page: Page) => ({ Origin: new URL(page.url()).origin })
 const made: string[] = []
 const leftovers: { people: number[]; rsvps: string[] } = { people: [], rsvps: [] }
 test.afterAll(async ({ request }) => {
