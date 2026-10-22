@@ -1,4 +1,4 @@
-import type { Endpoint, PayloadRequest } from 'payload'
+import type { Endpoint, PayloadRequest, Where } from 'payload'
 import { commitTransaction, initTransaction, killTransaction } from 'payload'
 import crypto from 'crypto'
 import { getContactEmail, sendSafe } from '../email/send'
@@ -241,15 +241,41 @@ export const accountDelete: Endpoint = {
         }),
       )
       // Entries still under judging are withdrawn with their files;
-      // published entries keep the credit they were made under, not the account.
+      // published entries keep the credit they were made under, not the
+      // account. Photographs entered through the public form carry no
+      // uploader, so the entrant cannot alter them (#162); they are found
+      // through the entries being withdrawn, not by uploader (#189).
+      const judging: Where = { and: [{ submitter: { equals: user.id } }, { status: { not_equals: 'published' } }] }
+      const withdrawn = await payload.find({
+        collection: 'submissions',
+        where: judging,
+        depth: 0,
+        limit: 500,
+        overrideAccess: true,
+        req,
+      })
+      const entryFiles = [
+        ...new Set(withdrawn.docs.flatMap((s) => (s.images ?? []).map((i) => (typeof i === 'object' ? i.id : i)))),
+      ]
       strict(
         'submissions',
         await payload.delete({
           collection: 'submissions',
-          where: { and: [{ submitter: { equals: user.id } }, { status: { not_equals: 'published' } }] },
+          where: judging,
           ...closing,
         }),
       )
+      if (entryFiles.length) {
+        strict(
+          'media',
+          await payload.delete({
+            collection: 'media',
+            // restricted only: a file that has since been published stays
+            where: { and: [{ id: { in: entryFiles } }, { visibility: { equals: 'restricted' } }] },
+            ...closing,
+          }),
+        )
+      }
       strict(
         'submissions',
         await payload.update({

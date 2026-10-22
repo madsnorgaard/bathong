@@ -1,4 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   API,
   PASSWORD,
@@ -19,6 +22,7 @@ import {
  */
 
 const NEW_PASSWORD = 'another long enough password'
+const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures')
 const made: string[] = []
 const leftovers: { people: number[]; rsvps: string[] } = { people: [], rsvps: [] }
 test.afterAll(async ({ request }) => {
@@ -212,6 +216,26 @@ test('closing the account: the password is checked, the person goes, the work st
     data: { walk: walk.id, name: 'Closing Member', email },
   })
   expect(rsvp.status()).toBe(201)
+  // an entry still under judging, with a photograph entered through the
+  // public door (no uploader on the file, #162): it goes with the account
+  const calls = await request.get(`${API}/api/photocalls?where[slug][equals]=demo-open-call&depth=0&limit=1`)
+  const call = ((await calls.json()) as { docs: { id: number }[] }).docs[0]
+  expect(call, 'the seeded demo call').toBeTruthy()
+  const entered = await page.request.post(`${API}/api/photocall-entries`, {
+    headers: origin(page),
+    multipart: {
+      photocall: String(call.id),
+      name: 'Closing Member',
+      email,
+      agreedToTerms: 'true',
+      frames: { name: 'entry-1.jpg', mimeType: 'image/jpeg', buffer: readFileSync(path.join(FIXTURES, 'entry-1.jpg')) },
+    },
+  })
+  expect(entered.status(), await entered.text()).toBe(201)
+  const entryId = ((await entered.json()) as { id: number }).id
+  const entry = await request.get(`${API}/api/submissions/${entryId}?depth=0`, { headers: adminHeaders() })
+  const frameId = ((await entry.json()) as { images: number[] }).images[0]
+  expect(frameId, 'the entry has its photograph').toBeTruthy()
   const me = await page.request.get(`${API}/api/users/me?depth=1`, { headers: origin(page) })
   const { user } = (await me.json()) as { user: { id: number; profile: { id: number; memberNumber: number } } }
   leftovers.people.push(user.profile.id)
@@ -242,6 +266,10 @@ test('closing the account: the password is checked, the person goes, the work st
   expect(doc.owner).toBeNull()
   expect(doc.onRoster).toBe(false)
   expect(doc.memberNumber).toBe(user.profile.memberNumber)
+
+  // the entry under judging is withdrawn, photograph included (#189)
+  expect((await request.get(`${API}/api/submissions/${entryId}?depth=0`, { headers: adminHeaders() })).status()).toBe(404)
+  expect((await request.get(`${API}/api/media/${frameId}?depth=0`, { headers: adminHeaders() })).status()).toBe(404)
 
   // the RSVP names nobody
   const rsvps = await request.get(
