@@ -137,7 +137,7 @@ function thumbSrc(url: string | null): string | null {
           <BFrame
             :src="thumbSrc(frame.thumb)"
             :alt="frame.alt ?? frame.caption ?? ''"
-            sizes="xs:50vw md:25vw"
+            sizes="xs:50vw md:25vw lg:25vw xl:25vw"
             class="cell-frame"
           />
         </component>

@@ -364,7 +364,7 @@ function onViewerKey(e: KeyboardEvent) {
           :alt="frameAlt(openFrame)"
           :width="frameMedia(openFrame)?.width ?? undefined"
           :height="frameMedia(openFrame)?.height ?? undefined"
-          sizes="xs:100vw md:100vw lg:100vw xl:1920px"
+          sizes="390:100vw xs:100vw md:100vw lg:100vw xl:1920px"
           format="avif,webp"
           :img-attrs="{ class: 'viewer-img' }"
         />
