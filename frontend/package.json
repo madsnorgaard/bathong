@@ -23,7 +23,7 @@
     "@nuxt/image": "^2.2.0",
     "@resvg/resvg-js": "2.6.2",
     "maplibre-gl": "^6.15.0",
-    "nuxt": "^3.21.11",
+    "nuxt": "^4.6.2",
     "nuxt-security": "^2.6.0",
     "pmtiles": "^4.5.0",
     "satori": "0.63.2",
