@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "@nuxt/eslint": "^1.17.0",
-    "@nuxt/fonts": "^1.1.0",
-    "@nuxt/image": "^2.2.0",
+    "@nuxt/fonts": "^1.2.0",
+    "@nuxt/image": "^2.2.1",
     "@resvg/resvg-js": "2.6.2",
-    "maplibre-gl": "^6.15.0",
+    "maplibre-gl": "^6.16.0",
     "nuxt": "^3.21.11",
-    "nuxt-security": "^2.6.0",
+    "nuxt-security": "^2.7.0",
     "pmtiles": "^4.5.0",
     "satori": "0.63.2",
     "sharp": "0.35.5",
@@ -37,7 +37,7 @@
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^21.0.4",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.5",
-    "vue-tsc": "3.3.13"
+    "vitest": "^5.1.0",
+    "vue-tsc": "3.3.14"
   }
 }
