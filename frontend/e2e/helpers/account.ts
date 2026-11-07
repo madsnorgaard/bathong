@@ -113,7 +113,7 @@ export async function markPaid(request: APIRequestContext, reference: string) {
   })
   const { docs } = (await list.json()) as { docs: { id: number }[] }
   expect(docs[0], `order ${reference}`).toBeTruthy()
-  const res = await request.patch(`${API}/api/orders/${docs[0].id}`, {
+  const res = await request.patch(`${API}/api/orders/${docs[0]!.id}`, {
     headers: adminHeaders(),
     data: { status: 'paid', note: 'e2e: EFT seen' },
   })

@@ -29,8 +29,8 @@ describe('parseRouteGeo (the untyped-field boundary)', () => {
     expect(route).not.toBeNull()
     expect(route!.line).toHaveLength(3)
     expect(route!.landmarks.map((l) => l.name)).toEqual(['Church Square', 'Home Affairs'])
-    expect(route!.landmarks[0].kind).toBe('start')
-    expect(route!.landmarks[1].kind).toBeNull()
+    expect(route!.landmarks[0]?.kind).toBe('start')
+    expect(route!.landmarks[1]?.kind).toBeNull()
   })
 
   it('never throws on garbage, it returns null', () => {

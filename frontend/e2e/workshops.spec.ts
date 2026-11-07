@@ -31,7 +31,7 @@ async function workshopId(request: import('@playwright/test').APIRequestContext,
     `${API}/api/workshops?where[slug][equals]=${encodeURIComponent(slug)}&limit=1&depth=0`,
   )
   const body = (await res.json()) as { docs: { id: number }[] }
-  return body.docs[0].id
+  return body.docs[0]!.id
 }
 
 test('the workshops index is the next workshop: plate, venue, price, practical lines, RSVP', async ({ page }) => {
@@ -99,7 +99,7 @@ test('an RSVP names exactly one event, and a held workshop takes none', async ({
   const walkRes = await request.get(
     `${API}/api/walks?where[slug][equals]=demo-next-walk&limit=1&depth=0`,
   )
-  const walk = ((await walkRes.json()) as { docs: { id: number }[] }).docs[0].id
+  const walk = ((await walkRes.json()) as { docs: { id: number }[] }).docs[0]!.id
 
   const both = await request.post(`${API}/api/rsvps`, {
     data: { walk, workshop, name: 'Greedy', email: freshEmail('workshop-both') },

@@ -98,7 +98,7 @@ test('a member fills in their profile, adds a portrait, and joins the roster', a
   const me = await retryOnReset(() => page.request.get(`${API}/api/users/me?depth=1`, { headers: origin }))
   const { user } = (await me.json()) as { user: { id: number; profile: { id: number } } }
   const theirs = await request.get(`${API}/api/media?limit=1&depth=0&sort=id`)
-  const someoneElses = ((await theirs.json()) as { docs: { id: number; uploadedBy?: number | null }[] }).docs[0]
+  const someoneElses = ((await theirs.json()) as { docs: { id: number; uploadedBy?: number | null }[] }).docs[0]!
   expect(someoneElses, 'a public media file by someone else').toBeTruthy()
   expect(someoneElses.uploadedBy ?? null).not.toBe(user.id)
   const stolen = await page.request.patch(`${API}/api/people/${user.profile.id}`, {
@@ -118,7 +118,7 @@ test('a member fills in their profile, adds a portrait, and joins the roster', a
   expect(after.slug).toBe('profile-member')
   expect(after.roleTitle ?? null).toBeNull()
   const founders = await request.get(`${API}/api/people?where[foundingCircle][equals]=true&limit=1&depth=0`)
-  const founder = ((await founders.json()) as { docs: { id: number }[] }).docs[0]
+  const founder = ((await founders.json()) as { docs: { id: number }[] }).docs[0]!
   const theirsToo = await page.request.patch(`${API}/api/people/${founder.id}`, { headers: origin, data: { basedIn: 'Nowhere' } })
   expect([403, 404]).toContain(theirsToo.status())
 

@@ -69,10 +69,12 @@ export function parseRouteGeo(raw: unknown): ParsedRoute | null {
  * on each side (with a small floor so a short route still gets context).
  */
 export function routeBounds(route: ParsedRoute, pad = 0): RouteBounds {
-  const coords = [...route.line, ...route.landmarks.map((l) => l.lngLat)]
-  let [minLng, minLat] = coords[0]
-  let [maxLng, maxLat] = coords[0]
-  for (const [lng, lat] of coords) {
+  const [origin, ...rest] = [...route.line, ...route.landmarks.map((l) => l.lngLat)]
+  // parseRouteGeo never yields a line under two points, so origin is always
+  // set; the fallback only satisfies the type.
+  let [minLng, minLat] = origin ?? [0, 0]
+  let [maxLng, maxLat] = origin ?? [0, 0]
+  for (const [lng, lat] of rest) {
     if (lng < minLng) minLng = lng
     if (lng > maxLng) maxLng = lng
     if (lat < minLat) minLat = lat
