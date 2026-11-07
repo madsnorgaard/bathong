@@ -26,6 +26,23 @@ const baseHeaders = {
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
+  hooks: {
+    // RouteMap.vue imports the MapLibre worker as a URL (`?worker&url`), a
+    // 500 KB script the map hands to setWorkerUrl when it boots. Nuxt 4 lists
+    // it among the component's assets and would prefetch it on every page
+    // that renders a map section, long before the visitor scrolls near it.
+    // The map fetches it itself when it mounts; nothing else should.
+    'build:manifest'(manifest) {
+      const isMapWorker = (file: string) => /maplibre-gl-worker/.test(file)
+      for (const entry of Object.values(manifest)) {
+        if (isMapWorker(entry.file)) {
+          entry.prefetch = false
+          entry.preload = false
+        }
+        if (entry.assets) entry.assets = entry.assets.filter((asset) => !isMapWorker(asset))
+      }
+    },
+  },
   devtools: { enabled: false },
   modules: ['@nuxt/image', '@nuxt/fonts', '@nuxt/eslint', 'nuxt-security'],
   css: ['~/assets/css/main.css', '~/assets/css/app.css'],
