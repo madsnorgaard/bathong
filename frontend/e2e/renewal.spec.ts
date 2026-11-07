@@ -57,7 +57,7 @@ test('a member is reminded at 30 and 7 days with one reference, then told the me
 
   // 20 days out: the 30-day reminder, and the renewal order it quotes
   expect(await runOn(dayBefore(until, 20))).toEqual(['reminder-30'])
-  const [order] = await openOrders()
+  const order = (await openOrders())[0]!
   expect(order).toMatchObject({ plan: 'monthly' })
   expect(order.reference).toMatch(/^BTG-[A-HJ-NP-Z2-9]{6}$/)
 

@@ -23,7 +23,7 @@ test('the home page carries a nonce-based CSP and the baseline headers once', as
   const res = await request.get('/')
   expect(res.ok()).toBeTruthy()
 
-  const csp = res.headers()['content-security-policy']
+  const csp = res.headers()['content-security-policy'] ?? ''
   expect(csp, 'content-security-policy header').toBeTruthy()
   const scriptSrc = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src '))
   expect(scriptSrc).toBeTruthy()
@@ -50,7 +50,7 @@ test('the home page carries a nonce-based CSP and the baseline headers once', as
 
 test('every inline script in the SSR html carries the response nonce', async ({ request }) => {
   const res = await request.get('/')
-  const nonce = res.headers()['content-security-policy'].match(/'nonce-([^']+)'/)?.[1]
+  const nonce = res.headers()['content-security-policy']?.match(/'nonce-([^']+)'/)?.[1]
   expect(nonce).toBeTruthy()
   const html = await res.text()
   const scripts = html.match(/<script\b[^>]*>/g) ?? []

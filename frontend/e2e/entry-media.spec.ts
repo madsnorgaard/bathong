@@ -82,7 +82,7 @@ test('an entrant views the frames of their own entry; nobody else does, and nobo
     const mine = origin(page)
 
     const calls = await request.get(`${API}/api/photocalls?where[slug][equals]=demo-open-call&depth=0&limit=1`)
-    const call = ((await calls.json()) as { docs: { id: number }[] }).docs[0]
+    const call = ((await calls.json()) as { docs: { id: number }[] }).docs[0]!
     expect(call, 'the seeded demo call').toBeTruthy()
 
     // the entry goes through the one door, with the member's session

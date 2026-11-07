@@ -189,16 +189,16 @@ test('five wrong passwords lock the doors, as at sign-in', async ({ page, reques
       data: { current: `wrong ${i} wrong wrong`, password: NEW_PASSWORD },
     })
     expect(res.status()).toBe(400)
-    expect(((await res.json()) as { errors: { message: string }[] }).errors[0].message).toBe('That is not your current password.')
+    expect(((await res.json()) as { errors: { message: string }[] }).errors[0]?.message).toBe('That is not your current password.')
   }
   const fifth = await page.request.post(`${API}/api/account/change-password`, {
     headers,
     data: { current: 'wrong five wrong wrong', password: NEW_PASSWORD },
   })
-  expect(((await fifth.json()) as { errors: { message: string }[] }).errors[0].message).toMatch(/locked/)
+  expect(((await fifth.json()) as { errors: { message: string }[] }).errors[0]?.message).toMatch(/locked/)
   // the right password is refused while the lock holds, on every door
   const right = await page.request.post(`${API}/api/account/delete`, { headers, data: { password: PASSWORD } })
-  expect(((await right.json()) as { errors: { message: string }[] }).errors[0].message).toMatch(/locked/)
+  expect(((await right.json()) as { errors: { message: string }[] }).errors[0]?.message).toMatch(/locked/)
   expect((await request.post(`${API}/api/users/login`, { data: { email, password: PASSWORD } })).status()).toBe(401)
 })
 
@@ -210,7 +210,7 @@ test('closing the account: the password is checked, the person goes, the work st
   await joinAndActivate(page, request)
 
   const walks = await request.get(`${API}/api/walks?where[slug][equals]=demo-next-walk&limit=1&depth=0`)
-  const walk = ((await walks.json()) as { docs: { id: number }[] }).docs[0]
+  const walk = ((await walks.json()) as { docs: { id: number }[] }).docs[0]!
   const rsvp = await page.request.post(`${API}/api/rsvps`, {
     headers: origin(page),
     data: { walk: walk.id, name: 'Closing Member', email },
@@ -219,7 +219,7 @@ test('closing the account: the password is checked, the person goes, the work st
   // an entry still under judging, with a photograph entered through the
   // public door (no uploader on the file, #162): it goes with the account
   const calls = await request.get(`${API}/api/photocalls?where[slug][equals]=demo-open-call&depth=0&limit=1`)
-  const call = ((await calls.json()) as { docs: { id: number }[] }).docs[0]
+  const call = ((await calls.json()) as { docs: { id: number }[] }).docs[0]!
   expect(call, 'the seeded demo call').toBeTruthy()
   const entered = await page.request.post(`${API}/api/photocall-entries`, {
     headers: origin(page),
@@ -278,8 +278,8 @@ test('closing the account: the password is checked, the person goes, the work st
   )
   const rows = ((await rsvps.json()) as { docs: { name: string; user: number | null }[] }).docs
   expect(rows).toHaveLength(1)
-  expect(rows[0].name).toBe('Former member')
-  expect(rows[0].user).toBeNull()
+  expect(rows[0]?.name).toBe('Former member')
+  expect(rows[0]?.user).toBeNull()
   const byOld = await request.get(`${API}/api/rsvps?where[email][equals]=${encodeURIComponent(email)}&depth=0`, {
     headers: adminHeaders(),
   })
