@@ -22,14 +22,14 @@
     "@nuxt/fonts": "^1.2.0",
     "@nuxt/image": "^2.2.1",
     "@resvg/resvg-js": "2.6.2",
-    "maplibre-gl": "^6.16.0",
+    "maplibre-gl": "^6.18.0",
     "nuxt": "^4.6.4",
     "nuxt-security": "^2.7.0",
     "pmtiles": "^4.5.0",
     "satori": "0.63.2",
     "sharp": "0.35.5",
     "vue": "^3.5.45",
-    "vue-router": "5.4.0"
+    "vue-router": "5.5.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
