@@ -87,8 +87,8 @@ via /design-sync. The site mirrors `design-system/` in turn (rules in
 
 ## Roadmap
 
-Domains: **bathong.africa** (primary) and **bathong.org** (redirects). DNS is
-live; bathong.co.za remains a want (owner contacted).
+Domains: **bathong.africa** (primary); **bathong.org** and **bathong.org.za**
+redirect to it. bathong.co.za remains a want (owner contacted).
 
 The work is tracked as GitHub issues under milestones. Done: the holding
 page (M1), the platform (M2), the Nuxt site and the cutover (M3), member
