@@ -18,8 +18,8 @@ data is modelled and how deploys happen.
   per-project `internal` network, lets-encrypt resolver), same pattern as the
   other production sites.
 
-Domains: **bathong.africa** primary; `www.` and `bathong.org` variants 301 to
-it; `api.bathong.africa` reserved for Payload.
+Domains: **bathong.africa** primary; `www.`, `bathong.org` and `bathong.org.za`
+variants 301 to it; `api.bathong.africa` reserved for Payload.
 
 ## Deploy
 
@@ -109,6 +109,7 @@ git):
 | Key | Stage |
 |---|---|
 | `SITE_DOMAIN`, `ALT_DOMAIN` | always (container names, Traefik routers) |
+| `ALT_DOMAIN_ZA` | optional, defaults to `bathong.org.za` (second redirect domain) |
 | `DB_PASSWORD`, `PAYLOAD_SECRET`, `CORS_ORIGINS` | platform |
 | `SITE_URL` | optional override; the compose file passes `https://$SITE_DOMAIN` to Payload by default. The origin for links in mail (verify, reset, membership) |
 | `STAGING_BASIC_AUTH` | preview router (#39) |
@@ -333,7 +334,7 @@ is set. The seed is idempotent - rerunning updates rather than duplicates.
 
 Verify after a deploy: `https://bathong.africa` serves the site (walks page
 shows the route map, an RSVP submits, the devtools console shows no CSP
-violations, admin reachable at `api.bathong.africa/admin`), `www.` and `bathong.org` 301 to the primary
+violations, admin reachable at `api.bathong.africa/admin`), `www.`, `bathong.org` and `bathong.org.za` 301 to the primary
 host, and `next.bathong.africa` (if DNS exists) challenges for the password.
 
 ## Data model (Payload collections)

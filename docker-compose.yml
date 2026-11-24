@@ -7,6 +7,7 @@
 # Required in .env next to this file:
 #   SITE_DOMAIN=bathong.africa
 #   ALT_DOMAIN=bathong.org
+# Optional: ALT_DOMAIN_ZA (defaults to bathong.org.za)
 #   DB_PASSWORD, PAYLOAD_SECRET, CORS_ORIGINS, STAGING_BASIC_AUTH
 #   SMTP_PASS (the noreply@ mailbox password, from the mail repo's setup-bathong.sh)
 #
@@ -215,6 +216,16 @@ services:
       - traefik.http.middlewares.bathong-primary.redirectregex.regex=^https?://[^/]+/(.*)
       - traefik.http.middlewares.bathong-primary.redirectregex.replacement=https://${SITE_DOMAIN}/$${1}
       - traefik.http.middlewares.bathong-primary.redirectregex.permanent=true
+      # bathong.org.za 301s to the primary host too. Its own router on purpose:
+      # Traefik asks for one certificate per router covering every Host in the
+      # rule, so folding these into bathong_alias would tie the .org / www
+      # certificate renewal to this domain validating. Defaulted, so the
+      # server .env needs no new key.
+      - traefik.http.routers.bathong_alias_za.rule=Host(`${ALT_DOMAIN_ZA:-bathong.org.za}`) || Host(`www.${ALT_DOMAIN_ZA:-bathong.org.za}`)
+      - traefik.http.routers.bathong_alias_za.tls=true
+      - traefik.http.routers.bathong_alias_za.tls.certresolver=lets-encrypt
+      - traefik.http.routers.bathong_alias_za.middlewares=bathong-hsts,bathong-primary
+      - traefik.http.routers.bathong_alias_za.service=bathong_nuxt
       # basic-auth preview router (#39), kept for reviewing future work
       - traefik.http.routers.bathong_next.rule=Host(`next.${SITE_DOMAIN}`)
       - traefik.http.routers.bathong_next.tls=true
